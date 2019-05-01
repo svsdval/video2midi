@@ -34,4 +34,4 @@ frame by frame we scan the virtual keyboard and write the keys to the midi file.
 
 # todo
 
-- gui to configure keyboard layauts
+- gui to configure keyboard layouts
