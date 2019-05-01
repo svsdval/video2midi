@@ -1,5 +1,5 @@
 # video2midi
-youtube synhesia video to midi, just for fun )
+youtube synthesia video to midi, just for fun )
 
 # dependency 
 - python-opencv
