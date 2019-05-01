@@ -7,8 +7,6 @@ from midiutil.MidiFile import MIDIFile
 import os
 import sys
 import ntpath
-#vidcap = cv2.VideoCapture('test.mp4')
-#vidcap = cv2.VideoCapture('test.webm')
 
 if ( len(sys.argv) < 2 ):
   print "halt, no args";
@@ -25,7 +23,7 @@ else:
 outputmid= ntpath.basename( filepath ) + "_output.mid";
 
 success,image = vidcap.read()
-frame = 52
+frame = 0
 
 debug = 0;
 debug_keys = 0;
@@ -53,8 +51,6 @@ mf = MIDIFile(1) # only 1 track
 track = 0 # the only track
 
 time = 0 # start at the beginning
-#tempo = round(fps * 2);
-#print "music tempo : %d" % tempo;
 
 mf.addTrackName(track, time, "Sample Track")
 mf.addTempo(track, time, 60 )
@@ -134,8 +130,8 @@ while success:
 
         if ( debug_keys == 1 ):
           print "white keys, note released :" + str( note ) + " de = " + str(notes_de[note]) + "- db =" + str(notes_db[note]);
-	  print "midi add white keys, note : " +str(note) + " time:" +str(time) + " duration:" + str(duration);
-	mf.addNote(track, channel, basenote+ note, time , duration , volume )
+          print "midi add white keys, note : " +str(note) + " time:" +str(time) + " duration:" + str(duration);
+        mf.addNote(track, channel, basenote+ note, time , duration , volume )
 
   xapp=0;
 
