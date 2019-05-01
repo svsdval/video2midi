@@ -40,11 +40,12 @@ success,image = vidcap.read()
 #
 print "video fps: %d" % fps;
 
-xoffset_whitekeys = 5
+xoffset_whitekeys = 5 # 40 for avengers, else 5
+
 yoffset_whitekeys = 673
 
 yoffset_blackkeys = 637
-xoffset_blackkeys = 15
+xoffset_blackkeys = xoffset_whitekeys + 10
 
 # create  MIDI object
 mf = MIDIFile(1) # only 1 track
@@ -84,6 +85,10 @@ while success:
 	# generate key position:
     pixx=xoffset_whitekeys + i * 28 -i;
     pixy=yoffset_whitekeys
+
+    if ( pixx > width ) or ( pixy > height ): break;
+    if ( pixx < 0 ) or ( pixy < 0 ): continue;
+
     keybgr=image[pixy,pixx]
     key= [ keybgr[2], keybgr[1],keybgr[0] ];
 
@@ -142,6 +147,9 @@ while success:
 	# generate key position:
     pixx=xoffset_blackkeys + i * 32 + xapp;
     pixy=yoffset_blackkeys;
+
+    if ( pixx > width ) or ( pixy > height ): break;
+    if ( pixx < 0 ) or ( pixy < 0 ): continue;
 
     keybgr=image[pixy,pixx] 
     key= [ keybgr[2], keybgr[1],keybgr[0] ];
