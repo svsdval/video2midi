@@ -23,10 +23,11 @@ else:
 outputmid= ntpath.basename( filepath ) + "_output.mid";
 
 success,image = vidcap.read()
-frame = 0
+frame = 308
 
 debug = 0;
-debug_keys = 0;
+resize= 1;
+debug_keys = 1;
 
 length = int(vidcap.get(cv2.CAP_PROP_FRAME_COUNT))
 width  = int(vidcap.get(cv2.CAP_PROP_FRAME_WIDTH))
@@ -40,12 +41,6 @@ success,image = vidcap.read()
 #
 print "video fps: %d" % fps;
 
-xoffset_whitekeys = 5 # 40 for avengers, else 5
-
-yoffset_whitekeys = 673
-
-yoffset_blackkeys = 637
-xoffset_blackkeys = xoffset_whitekeys + 10
 
 # create  MIDI object
 mf = MIDIFile(1) # only 1 track
@@ -64,27 +59,55 @@ basenote=35;
 notes=[];
 notes_db=[];
 notes_de=[];
+keys_pos=[];
 
-keyp_colors = [ [241,173,64], [216,57,77], [218,52,64] ];
+keyp_colors = [ [241,173,64], [216,57,77], [218,52,64], [105,150,192], [39,87,149], [166,250,103], [102,185,43] ];
 keyp1d = 90;
 #
 minimal_duration = 0.1;
 
-for i in range(88):
+for i in range(96):
   notes.append(0)
   notes_db.append(0);
   notes_de.append(0);
+  #
 
+xoffset_whitekeys = 5 # 40 for avengers, else 5
+xoffset_whitekeys = 60
+
+yoffset_whitekeys = 603
+
+yoffset_blackkeys = yoffset_whitekeys - 30
+xoffset_blackkeys = xoffset_whitekeys + 10
 #
+width=1280;
+height=720;
+whitekey_width=24.6;
+debug= 0;
+resize= 0;
+
+xx=0
+for i in range(8):
+ for j in range(12):
+  keys_pos.append( [0,0] )
+  keys_pos[i*12+j][0] = int(round(xoffset_whitekeys + xx ));
+  keys_pos[i*12+j][1] = yoffset_whitekeys;
+  if (j == 1) or ( j ==3 ) or ( j == 6 ) or ( j == 8) or ( j == 10 ):
+   xx += -whitekey_width;
+   keys_pos[i*12+j][0] = int(round(xoffset_whitekeys + xx  + whitekey_width *0.5 ));
+   keys_pos[i*12+j][1] = yoffset_blackkeys;
+  xx += whitekey_width
+
 while success:
   if (frame % 100 == 0):
     print "processing frame: " + str(frame) + " / " + str(length);
+  if ( resize == 1 ):
+    image=cv2.resize(image, (width , height));
 
   # processing white keys
-  for i in range(48):
-	# generate key position:
-    pixx=xoffset_whitekeys + i * 28 -i;
-    pixy=yoffset_whitekeys
+  for i in range( 96 ):
+    pixx=keys_pos[i][0]
+    pixy=keys_pos[i][1]
 
     if ( pixx > width ) or ( pixy > height ): break;
     if ( pixx < 0 ) or ( pixy < 0 ): continue;
@@ -92,18 +115,7 @@ while success:
     keybgr=image[pixy,pixx]
     key= [ keybgr[2], keybgr[1],keybgr[0] ];
 
-    # generate note ID
-    nk = (i+1)  % 7;
-    nko= math.trunc( (i+1) / 7 );
-    if ( nk == 0 ): addk =+ addk + 5;
-    note = nko;
-
-    addk = 0;
-    if nk == 2 : addk=1;
-    if (nk == 3) or (nk == 4) : addk=2;
-    if nk >= 5 : addk=nk-2;
-
-    note = nko * 12 + nk+addk;
+    note=i;
 
     if ( debug == 1 ):
       cv2.rectangle(image, (pixx-5,pixy-5), (pixx+5,pixy+5), (255,0,255));
@@ -111,6 +123,7 @@ while success:
       cv2.putText(image, str(note), (pixx-5,pixy+20), 0, 0.5, (255,0,255));
  
     keypressed=0;
+
     for keyc in keyp_colors:
       if ( abs( int(key[0]) - keyc[0] ) < keyp1d ) and ( abs( int(key[1]) - keyc[1] ) < keyp1d ) and ( abs( int(key[2]) - keyc[2] ) < keyp1d ):
        keypressed=1;
@@ -140,63 +153,16 @@ while success:
 
   xapp=0;
 
-  # processing black keys
-  for i in range(34):
-    if (i % 5 == 2) or ((i % 5 == 0) and (i != 0)):
-      xapp=xapp + 15;
-	# generate key position:
-    pixx=xoffset_blackkeys + i * 32 + xapp;
-    pixy=yoffset_blackkeys;
-
-    if ( pixx > width ) or ( pixy > height ): break;
-    if ( pixx < 0 ) or ( pixy < 0 ): continue;
-
-    keybgr=image[pixy,pixx] 
-    key= [ keybgr[2], keybgr[1],keybgr[0] ];
-    image[pixy:pixy+10,pixx:pixx] = (255,0,255)
-
-    nk= (i+1) % 5;
-    note = i + (i / 5) * 7 + (i % 5)+3;
-
-    if ( nk == 1 ) or ( nk == 2 ): note += -1
-
-    if ( debug == 1 ):
-      cv2.rectangle(image, (pixx-5,pixy-5), (pixx+5,pixy+5), (255,0,255));
-      cv2.rectangle(image, (pixx-1,pixy-1), (pixx+1,pixy+1), (255,0,255));
-      cv2.putText(image, str(note), (pixx-5,pixy-10), 0, 0.5, (255,0,255));
-
-    keypressed=0;
-    for keyc in keyp_colors:
-      if ( abs( key[0] - keyc[0] ) < keyp1d ) and ( abs( key[1] - keyc[1] ) < keyp1d ) and ( abs( key[2] - keyc[2] ) < keyp1d ):
-       keypressed=1;
-
-    if keypressed==1:
-      if ( notes[note] == 0 ):
-        if ( debug_keys == 1 ):
-          print "black keys, note pressed on [" +str(i) + "] =" + str( note );
-        notes[ note ] = 1;
-        notes_db[ note ] = frame;
-    else:
-      if ( notes[note] == 1 ):
-        notes[ note ] = 0;
-        notes_de[ note ] = frame;
-        if ( debug_keys == 1 ):
-          print "black keys, note released :" + str( note ) + " de = " + str(notes_de[note]) + "- db =" + str(notes_db[note]);
-        duration = ( notes_de[note] - notes_db[note] ) / fps;
-        time = notes_db[note] / fps;
-        if ( duration < minimal_duration ): duration = minimal_duration;
-
-        if ( debug_keys == 1 ):
-          print "midi add black keys, note: " +str(note) + " time:" +str(time) + " duration:" + str(duration);
-        mf.addNote(track, channel, basenote+note, time , duration , volume )
 
 #  os.remove("/tmp/frame%d.jpg" % frame)
 
-#  if frame > 60: 
-#    break;
+  #cv2.imwrite("/tmp/frame%d.jpg" % frame, image)  # save frame as JPEG file
 
   if ( debug == 1 ):
     cv2.imwrite("/tmp/frame%d.jpg" % frame, image)  # save frame as JPEG file
+
+#  if frame > 0: 
+#    break;
   success,image = vidcap.read()
   frame += 1
 
