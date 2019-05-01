@@ -30,7 +30,7 @@ xoffset_blackkeys = xoffset_whitekeys + 10
 
 frame by frame we scan the virtual keyboard and write the keys to the midi file...
 
-![Alt text](docs/image47.jpg?raw=true "input from image")
+![Alt text](docs/frame47.jpg?raw=true "input from image")
 
 # todo
 
