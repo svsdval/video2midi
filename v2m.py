@@ -18,6 +18,7 @@ from pygame.locals import *;
 from OpenGL.GL import *;
 from OpenGL.GLU import *;
 
+
 width=640;
 height=480;
 
@@ -46,15 +47,43 @@ else:
   sys.exit( 0 ) ;
 
 outputmid= ntpath.basename( filepath ) + "_output.mid";
+fileid=0;
+while os.path.exists( outputmid ):
+ outputmid = ntpath.basename( filepath ) + "_"+str(fileid)+ "_output.mid";
+ fileid+=1;
+ if ( fileid > 99 ): break;
 
 frame= 0;
-# set start frame;
-vidcap.set(cv2.CAP_PROP_POS_FRAMES, frame);
+resize= 0;
+convertCvtColor=0;
 
+vidcap.set(cv2.CAP_PROP_POS_FRAMES, frame);
 success,image = vidcap.read();
 
+
+# set start frame;
+def getFrame( framenum =-1 ):
+  global resize;
+  global image;
+  global success;
+  global width;
+  global height;
+  global convertCvtColor;
+
+  if ( framenum != -1 ):
+    vidcap.set(cv2.CAP_PROP_POS_FRAMES, framenum);
+
+  if ( resize == 1 ):
+    image=cv2.resize(image, (width , height));
+
+  if ( convertCvtColor == 1 ):
+    cv2.cvtColor(image,cv2.COLOR_BGR2RGB)
+
+  success,image = vidcap.read();
+
+getFrame();
+
 debug = 0;
-resize= 1;
 debug_keys = 0;
 
 length = int(vidcap.get(cv2.CAP_PROP_FRAME_COUNT));
@@ -62,7 +91,7 @@ width  = int(vidcap.get(cv2.CAP_PROP_FRAME_WIDTH));
 height = int(vidcap.get(cv2.CAP_PROP_FRAME_HEIGHT));
 fps    = float(vidcap.get(cv2.CAP_PROP_FPS));
 #;
-print "video fps: %d" % fps;
+print "video " + str(width) + "x" + str(height) +" fps: " + str(fps);
 
 
 
@@ -112,13 +141,19 @@ def updatekeys( append=0 ):
 
 
 def loadImage(idframe=130):
-  vidcap.set(cv2.CAP_PROP_POS_FRAMES, idframe);
-  success,image = vidcap.read();
+  global image;
+  getFrame(idframe);
+
+  print "video " + str(width) + "x" + str(height) + " frame: "+ str(frame) ;
+  glPixelStorei(GL_UNPACK_ALIGNMENT,1)
 
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
   glTexImage2D(GL_TEXTURE_2D, 0, 3, width, height, 0, GL_BGR, GL_UNSIGNED_BYTE, image );
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-  glEnable(GL_TEXTURE_2D);
+#  glTexImage2D(GL_TEXTURE_2D, 0, 3, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image)
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
+  glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL)
+
 
 
 def DrawQuad(x,y,x2,y2, texx=1, texy=-1):
@@ -149,6 +184,9 @@ def processmidi():
  global notes;
  global notes_db;
  global notes_de;
+ global success,image;
+
+ print "video " + str(width) + "x" + str(height);
 
  # create  MIDI object;
  mf = MIDIFile(1) # only 1 track;
@@ -159,8 +197,9 @@ def processmidi():
  mf.addTrackName(track, time, "Sample Track");
  mf.addTempo(track, time, 60 );
 
- vidcap.set(cv2.CAP_PROP_POS_FRAMES, frame);
- success,image = vidcap.read();
+# vidcap.set(cv2.CAP_PROP_POS_FRAMES, frame);
+# success,image = vidcap.read();
+ getFrame();
 
  while success:
 
@@ -205,7 +244,7 @@ def processmidi():
     pixx=xoffset_whitekeys + keys_pos[i][0];
     pixy=yoffset_whitekeys + keys_pos[i][1];
 
-    if ( pixx > width ) or ( pixy > height ) or ( pixx < 0 ) or ( pixy < 0 ): continue;
+    if ( pixx >= width ) or ( pixy >= height ) or ( pixx < 0 ) or ( pixy < 0 ): continue;
 
     keybgr=image[pixy,pixx];
     key= [ keybgr[2], keybgr[1],keybgr[0] ];
@@ -250,8 +289,18 @@ def processmidi():
   if ( debug == 1 ):
     cv2.imwrite("/tmp/frame%d.jpg" % frame, image)  # save frame as JPEG file
 
-  success,image = vidcap.read();
+#  success,image = vidcap.read();
+  getFrame();
+
   frame += 1;
+  for event in pygame.event.get():
+   if event.type == pygame.QUIT: 
+     success = False;
+     pygame.quit();
+     quit();
+   elif event.type == pygame.KEYDOWN:
+    if event.key == pygame.K_SPACE:
+     success = False;
 
 # write midi to disk;
  with open(outputmid, 'wb') as outf:
@@ -291,6 +340,7 @@ def main():
   display = (width,height);
   screen = pygame.display.set_mode(display, DOUBLEBUF|OPENGL);
 
+  glPixelStorei(GL_UNPACK_ALIGNMENT,1)
   bgImgGL = glGenTextures(1);
   glBindTexture(GL_TEXTURE_2D, bgImgGL);
   loadImage();
@@ -366,10 +416,10 @@ def main():
        yoffset_blackkeys += 1;
        updatekeys( );
       if event.key == pygame.K_LEFT:
-       whitekey_width-=0.1;
+       whitekey_width-=0.5;
        updatekeys( );
       if event.key == pygame.K_RIGHT:
-       whitekey_width+=0.1;
+       whitekey_width+=0.5;
        updatekeys( );
       if event.key == pygame.K_PAGEUP:
        frame+=100;
