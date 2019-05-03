@@ -28,9 +28,6 @@ yoffset_whitekeys = 673;
 
 yoffset_blackkeys = -30;
 
-keys_pos=[];
-keyp_colors = [ [241,173,64], [216,57,77], [218,52,64], [105,150,192], [39,87,149] ];
-
 keygrab=0;
 keygrabid=-1;
 
@@ -81,7 +78,7 @@ notes_de=[];
 keys_pos=[];
 
 keyp_colors = [ [241,173,64], [216,57,77], [218,52,64], [105,150,192], [39,87,149], [166,250,103], [102,185,43] ];
-keyp1d = 90;
+keyp_delta = 90;
 #;
 minimal_duration = 0.1;
 bgImgGL=-1;
@@ -223,7 +220,7 @@ def processmidi():
     keypressed=0;
 
     for keyc in keyp_colors:
-      if ( abs( int(key[0]) - keyc[0] ) < keyp1d ) and ( abs( int(key[1]) - keyc[1] ) < keyp1d ) and ( abs( int(key[2]) - keyc[2] ) < keyp1d ):
+      if ( abs( int(key[0]) - keyc[0] ) < keyp_delta ) and ( abs( int(key[1]) - keyc[1] ) < keyp_delta ) and ( abs( int(key[2]) - keyc[2] ) < keyp_delta ):
        keypressed=1;
 
     # reg pressed key;
