@@ -2,6 +2,7 @@
 youtube synthesia video to midi, just for fun )
 
 Воссоздание midi с видео роликов synthesia и ей подобным..
+![Alt text](docs/mainwindow.png?raw=true "main window")
 
 # dependency / зависимости
 
