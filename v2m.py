@@ -251,16 +251,20 @@ def processmidi():
 
     note=(i+1);
 
-    if ( debug == 1 ):
-      cv2.rectangle(image, (pixx-5,pixy-5), (pixx+5,pixy+5), (255,0,255));
-      cv2.rectangle(image, (pixx-1,pixy-1), (pixx+1,pixy+1), (255,0,255));
-      cv2.putText(image, str(note), (pixx-5,pixy+20), 0, 0.5, (255,0,255));
 
     keypressed=0;
 
     for keyc in keyp_colors:
       if ( abs( int(key[0]) - keyc[0] ) < keyp_delta ) and ( abs( int(key[1]) - keyc[1] ) < keyp_delta ) and ( abs( int(key[2]) - keyc[2] ) < keyp_delta ):
        keypressed=1;
+
+    if ( debug == 1 ):
+      if (keypressed == 1 ):
+        cv2.rectangle(image, (pixx-5,pixy-5), (pixx+5,pixy+5), (128,128,255), -1 );
+      cv2.rectangle(image, (pixx-5,pixy-5), (pixx+5,pixy+5), (255,0,255));
+      cv2.rectangle(image, (pixx-1,pixy-1), (pixx+1,pixy+1), (255,0,255));
+      cv2.putText(image, str(note), (pixx-5,pixy+20), 0, 0.5, (255,0,255));
+
 
     # reg pressed key;
     if keypressed==1:
