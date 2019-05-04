@@ -90,6 +90,10 @@ length = int(vidcap.get(cv2.CAP_PROP_FRAME_COUNT));
 width  = int(vidcap.get(cv2.CAP_PROP_FRAME_WIDTH));
 height = int(vidcap.get(cv2.CAP_PROP_FRAME_HEIGHT));
 fps    = float(vidcap.get(cv2.CAP_PROP_FPS));
+
+startframe=0;
+endframe=length;
+
 #;
 print "video " + str(width) + "x" + str(height) +" fps: " + str(fps);
 
@@ -185,6 +189,7 @@ def processmidi():
  global notes_db;
  global notes_de;
  global success,image;
+ global startframe;
 
  print "video " + str(width) + "x" + str(height);
 
@@ -199,7 +204,7 @@ def processmidi():
 
 # vidcap.set(cv2.CAP_PROP_POS_FRAMES, frame);
 # success,image = vidcap.read();
- getFrame();
+ getFrame( startframe );
 
  while success:
 
@@ -386,9 +391,30 @@ def main():
     glTranslatef(xoffset_whitekeys,yoffset_whitekeys,0);
     glDisable(GL_TEXTURE_2D);
     for i in range( len( keys_pos) ):
+
+     pixx=xoffset_whitekeys + keys_pos[i][0];
+     pixy=yoffset_whitekeys + keys_pos[i][1];
+
+     if ( pixx >= width ) or ( pixy >= height ) or ( pixx < 0 ) or ( pixy < 0 ): continue;
+
+     keybgr=image[pixy,pixx];
+     key= [ keybgr[2], keybgr[1],keybgr[0] ];
+     note=(i+1);
+     keypressed=0;
+
+     for keyc in keyp_colors:
+        if ( abs( int(key[0]) - keyc[0] ) < keyp_delta ) and ( abs( int(key[1]) - keyc[1] ) < keyp_delta ) and ( abs( int(key[2]) - keyc[2] ) < keyp_delta ):
+         keypressed=1;
+
      glPushMatrix();
      glTranslatef(keys_pos[i][0],keys_pos[i][1],0);
-     DrawQuad(-5,-5,5,5);
+
+     if ( keypressed == 1 ):
+       glColor4f(1.0, 0.5, 1.0, 0.9);
+       DrawQuad(-5,-7,5,7);
+     else:
+       glColor4f(0.5, 1, 1.0, 0.5);
+       DrawQuad(-5,-5,5,5);
      DrawQuad(-1,-1,1,1);
      glPopMatrix();
      glColor4f(0.0, 1.0, 1.0, 0.5);
