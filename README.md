@@ -79,6 +79,8 @@ By default, each color key will be recorded in its own channel, so if you want t
 keyp_colors_channel = [ 0, 1, 2, 3, 4, 5, 6 ];
 ```
 
+![Alt text](docs/multichannel.png?raw=true "main window")
+
 ##### RU:
 Если есть необходимть обработать лижь какой то кусок файла, Вы можете указать начальный и конечные кадры для реконструкции. Только в указанных интервалах будет выполняться обработка.
 Для этого в файле v2m.py необходимо изменить переменные "startframe" и "endframe".
