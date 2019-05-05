@@ -8,13 +8,12 @@ youtube synthesia video to midi, just for fun )
 
 - python-opencv
 - python-pygame
-- midiutil
+- python-midiutil
 
 # install dependency / установка зависимостей.
 
 ```bash
-sudo apt install python-opencv python-pygame
-pip install midiutil
+sudo apt install python-opencv python-pygame python-midiutil
 ```
 
 # usage / использование
@@ -62,6 +61,19 @@ It may also be useful to change the response delta (keyp_delta variable)
 ```python
 keyp_colors = [ [241,173,64], [216,57,77], [218,52,64], [105,150,192], [39,87,149] ];
 keyp_delta = 90
+```
+
+##### RU:
+Так же можно настроить разбиение на каналы в зависимости от цвета клавиши. Для этого в файле v2m.py нужно поправить соответствие цвета каналу midi трека. 
+По умолчанию каждый цвет активирующий клавишу будет записан в собственный канал, таким образом если хотите объединить каналы просто укажите для разных цветов одинаковые номера.
+
+##### EN:
+You can also customize the separation into channels depending on the color of the key. To do this, in the v2m.py file, you need to modify the color matching to the midi channel of the track.
+By default, each color key will be recorded in its own channel, so if you want to combine the channels, simply specify the same numbers for different colors.
+
+
+```python
+keyp_colors_channel = [ 0, 1, 2, 3, 4, 5, 6 ];
 ```
 
 ![Alt text](docs/frame47.jpg?raw=true "input from image")

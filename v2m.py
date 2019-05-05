@@ -6,7 +6,6 @@
 
 import math;
 import cv2;
-from PIL import Image;
 from midiutil.MidiFile import MIDIFile;
 import os;
 import sys;
@@ -91,35 +90,37 @@ width  = int(vidcap.get(cv2.CAP_PROP_FRAME_WIDTH));
 height = int(vidcap.get(cv2.CAP_PROP_FRAME_HEIGHT));
 fps    = float(vidcap.get(cv2.CAP_PROP_FPS));
 
-startframe=0;
-endframe=length;
+startframe = 0;
+endframe = length;
 
 #;
 print "video " + str(width) + "x" + str(height) +" fps: " + str(fps);
 
-
-
 # add some notes;
 channel = 0;
 volume = 100;
-basenote=35;
+basenote = 35;
 
 
 notes=[];
 notes_db=[];
 notes_de=[];
+notes_channel=[];
+
 keys_pos=[];
 
 keyp_colors = [ [241,173,64], [216,57,77], [218,52,64], [105,150,192], [39,87,149], [166,250,103], [102,185,43] ];
 keyp_delta = 90;
+keyp_colors_channel = [ 0, 1, 2, 3, 4, 5, 6 ];
 #;
-minimal_duration = 0.1;
+minimal_duration = 0.6;
 bgImgGL=-1;
 
 for i in range(127):
   notes.append(0);
   notes_db.append(0);
   notes_de.append(0);
+  notes_channel.append(0);
 #;
 resize= 0;
 
@@ -188,6 +189,9 @@ def processmidi():
  global notes;
  global notes_db;
  global notes_de;
+ global notes_channel;
+ global keyp_colors_channel;
+
  global success,image;
  global startframe;
 
@@ -258,14 +262,18 @@ def processmidi():
 
 
     keypressed=0;
+    note_channel=0;
 
-    for keyc in keyp_colors:
-      if ( abs( int(key[0]) - keyc[0] ) < keyp_delta ) and ( abs( int(key[1]) - keyc[1] ) < keyp_delta ) and ( abs( int(key[2]) - keyc[2] ) < keyp_delta ):
+    for j in range(len(keyp_colors)):
+      if ( abs( int(key[0]) - keyp_colors[j][0] ) < keyp_delta ) and ( abs( int(key[1]) - keyp_colors[j][1] ) < keyp_delta ) and ( abs( int(key[2]) - keyp_colors[j][2] ) < keyp_delta ):
        keypressed=1;
+       note_channel=keyp_colors_channel[j];
+
 
     if ( debug == 1 ):
       if (keypressed == 1 ):
         cv2.rectangle(image, (pixx-5,pixy-5), (pixx+5,pixy+5), (128,128,255), -1 );
+        cv2.putText(image, str(note_channel), (pixx-5,pixy-10), 0, 0.3, (64,128,255));
       cv2.rectangle(image, (pixx-5,pixy-5), (pixx+5,pixy+5), (255,0,255));
       cv2.rectangle(image, (pixx-1,pixy-1), (pixx+1,pixy+1), (255,0,255));
       cv2.putText(image, str(note), (pixx-5,pixy+20), 0, 0.5, (255,0,255));
@@ -279,6 +287,7 @@ def processmidi():
           print "white keys, note pressed on :" + str( note );
         notes[ note ] = 1;
         notes_db[ note ] = frame;
+        notes_channel[ note ] = note_channel;
 
     else:
       # if key been presed and released:
@@ -292,7 +301,7 @@ def processmidi():
         if ( debug_keys == 1 ):
           print "white keys, note released :" + str(note ) + " de = " + str(notes_de[note]) + "- db =" + str(notes_db[note]);
           print "midi add white keys, note : " +str(note) + " time:" +str(time) + " duration:" + str(duration);
-        mf.addNote(track, channel, basenote+ note, time , duration , volume );
+        mf.addNote(track, notes_channel[note] , basenote+ note, time , duration , volume );
 
   xapp=0;
   if ( debug == 1 ):
