@@ -50,12 +50,12 @@ Frame by frame we scan the virtual keyboard and write the keys to the midi file.
 # Troubleshooting / Устранение проблем 
 
 ##### RU:
-Если клавиши не считываются, в файле v2m.py нужно поправить переменную keyp_colors, в ней записаны цвета активных клавиш (можно изменить либо добавить ) [ R,G,B ] , ... 
+Если клавиши не считываются, в файле v2m.py нужно поправить переменную keyp_colors, в ней записаны цвета активных клавиш (можно изменить либо добавить/удалить ) [ R,G,B ] , ... 
 
 Ещё так же может быть полезным изменить дельту срабатывания ( переменная keyp_delta )
 
 ##### EN:
-If the keys are not readable, in the v2m.py file you need to modify the variable keyp_colors, it contains the colors of the active keys (you can change or add) [R, G, B], ...
+If the keys are not readable, in the v2m.py file you need to modify the variable keyp_colors, it contains the colors of the active keys (you can change or append/remove ) [R, G, B], ...
 
 It may also be useful to change the response delta (keyp_delta variable)
 
