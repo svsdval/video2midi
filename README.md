@@ -45,6 +45,7 @@ sudo apt install python-opencv python-pygame python-midiutil
 ##### EN:
 Frame by frame we scan the virtual keyboard and write the keys to the midi file...
 
+![Alt text](docs/frame47.jpg?raw=true "input from image")
 
 # Troubleshooting / Устранение проблем 
 
@@ -76,4 +77,3 @@ By default, each color key will be recorded in its own channel, so if you want t
 keyp_colors_channel = [ 0, 1, 2, 3, 4, 5, 6 ];
 ```
 
-![Alt text](docs/frame47.jpg?raw=true "input from image")
