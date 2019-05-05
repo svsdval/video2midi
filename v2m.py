@@ -116,6 +116,8 @@ keyp_colors_channel = [ 0, 1, 2, 3, 4, 5, 6 ];
 minimal_duration = 0.6;
 bgImgGL=-1;
 
+experimental = 0;
+
 for i in range(127):
   notes.append(0);
   notes_db.append(0);
@@ -194,6 +196,7 @@ def processmidi():
 
  global success,image;
  global startframe;
+ global experimental;
 
  print "video " + str(width) + "x" + str(height);
 
@@ -260,7 +263,6 @@ def processmidi():
 
     note=(i+1);
 
-
     keypressed=0;
     note_channel=0;
 
@@ -288,7 +290,19 @@ def processmidi():
         notes[ note ] = 1;
         notes_db[ note ] = frame;
         notes_channel[ note ] = note_channel;
+      if ( notes[note] == 1 ) and ( notes_channel[ note ] != note_channel ) and ( experimental == 1 ):
+        # case if one key over other
+        time = notes_db[note] / fps;
+        duration = ( frame - notes_db[note] ) / fps;
+        if ( duration < minimal_duration ): duration = minimal_duration;
 
+        if ( debug_keys == 1 ):
+          print "keys (one over other), note released :" + str(note) + " de = " + str(notes_de[note]) + "- db =" + str(notes_db[note]);
+          print "midi add white keys, note : " +str(note) + " time:" +str(time) + " duration:" + str(duration);
+        mf.addNote(track, notes_channel[note] , basenote+ note, time , duration , volume );
+
+        notes_db[ note ] = frame;
+        notes_channel[ note ] = note_channel;
     else:
       # if key been presed and released:
       if ( notes[note] == 1 ):
@@ -299,7 +313,7 @@ def processmidi():
         if ( duration < minimal_duration ): duration = minimal_duration;
 
         if ( debug_keys == 1 ):
-          print "white keys, note released :" + str(note ) + " de = " + str(notes_de[note]) + "- db =" + str(notes_db[note]);
+          print "keys, note released :" + str(note ) + " de = " + str(notes_de[note]) + "- db =" + str(notes_db[note]);
           print "midi add white keys, note : " +str(note) + " time:" +str(time) + " duration:" + str(duration);
         mf.addNote(track, notes_channel[note] , basenote+ note, time , duration , volume );
 
