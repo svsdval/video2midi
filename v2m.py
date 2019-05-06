@@ -109,10 +109,39 @@ notes_channel=[];
 
 keys_pos=[];
 
-keyp_colors = [ [241,173,64], [216,57,77], [218,52,64], [105,150,192], [39,87,149], [166,250,103], [102,185,43] ];
+keyp_colors = [
+#L.GREEN         D.GREEN
+[166,250,103], [58,146,0],
+#L.BLUE          D.BLUE
+[102,185,43 ], [8,83,174],
+#L.YELLOW        D.YELLOW
+[255,255,85 ], [254,210,0],
+#L.ORANGE        D.ORANGE
+[255,212,85 ], [255,138,0],
+#L.PINK          D.PINK
+[200,136,223], [94,55,100],
+#L.RED           D.RED
+[253,125,114], [255,37,9]
+# .....
+];
+
+"""
+EXAMPLE: Only two channels with  Orange and Red keys... 
+keyp_colors = [
+#L.ORANGE        D.ORANGE
+[249,176,65 ], [245,123,12],
+#L.RED           D.RED
+[238,120,120], [255,70,70]
+# .....
+];
+"""
+
 keyp_delta = 90;
-keyp_colors_channel = [ 0, 1, 2, 3, 4, 5, 6 ];
-#;
+
+keyp_colors_channel = [ 0,0, 1,1, 2,2, 3,3, 4,4, 5,5 ]; # MIDI channel per color
+keyp_colors_channel_prog = [ 0,0, 0,0, 0,0, 0,0, 0,0, 0,0 ]; # MIDI program ID per channel
+
+#
 minimal_duration = 0.6;
 bgImgGL=-1;
 
@@ -193,6 +222,7 @@ def processmidi():
  global notes_de;
  global notes_channel;
  global keyp_colors_channel;
+ global keyp_colors_channel_prog;
 
  global success,image;
  global startframe;
@@ -208,10 +238,13 @@ def processmidi():
 
  mf.addTrackName(track, time, "Sample Track");
  mf.addTempo(track, time, 60 );
+ for i in range(len(keyp_colors_channel)):
+  mf.addProgramChange(track, keyp_colors_channel[i], time, keyp_colors_channel_prog[i]);
 
 # vidcap.set(cv2.CAP_PROP_POS_FRAMES, frame);
 # success,image = vidcap.read();
  getFrame( startframe );
+ notecnt=0
 
  while success:
 
@@ -266,11 +299,18 @@ def processmidi():
     keypressed=0;
     note_channel=0;
 
+    deltaclr = abs( int(key[0]) - keyp_colors[0][0] ) +  abs( int(key[1]) - keyp_colors[0][1] ) + abs( int(key[2]) - keyp_colors[0][2] )
+    deltaid = 0
     for j in range(len(keyp_colors)):
       if ( abs( int(key[0]) - keyp_colors[j][0] ) < keyp_delta ) and ( abs( int(key[1]) - keyp_colors[j][1] ) < keyp_delta ) and ( abs( int(key[2]) - keyp_colors[j][2] ) < keyp_delta ):
+       delta = abs( int(key[0]) - keyp_colors[j][0] ) +  abs( int(key[1]) - keyp_colors[j][1] ) + abs( int(key[2]) - keyp_colors[j][2] )
+       if ( delta < deltaclr ):
+        deltaclr = delta;
+        deltaid = j;
        keypressed=1;
-       note_channel=keyp_colors_channel[j];
 
+    if ( keypressed==1 ):
+       note_channel=keyp_colors_channel[ deltaid ];
 
     if ( debug == 1 ):
       if (keypressed == 1 ):
@@ -300,6 +340,7 @@ def processmidi():
           print "keys (one over other), note released :" + str(note) + " de = " + str(notes_de[note]) + "- db =" + str(notes_db[note]);
           print "midi add white keys, note : " +str(note) + " time:" +str(time) + " duration:" + str(duration);
         mf.addNote(track, notes_channel[note] , basenote+ note, time , duration , volume );
+        notecnt+=1;
 
         notes_db[ note ] = frame;
         notes_channel[ note ] = note_channel;
@@ -316,6 +357,7 @@ def processmidi():
           print "keys, note released :" + str(note ) + " de = " + str(notes_de[note]) + "- db =" + str(notes_db[note]);
           print "midi add white keys, note : " +str(note) + " time:" +str(time) + " duration:" + str(duration);
         mf.addNote(track, notes_channel[note] , basenote+ note, time , duration , volume );
+        notecnt+=1;
 
   xapp=0;
   if ( debug == 1 ):
@@ -325,6 +367,10 @@ def processmidi():
   getFrame();
 
   frame += 1;
+
+  if (frame > endframe ):
+    success = False;
+
   for event in pygame.event.get():
    if event.type == pygame.QUIT: 
      success = False;
@@ -333,7 +379,12 @@ def processmidi():
    elif event.type == pygame.KEYDOWN:
     if event.key == pygame.K_SPACE:
      success = False;
+    if event.key == pygame.K_ESCAPE:
+     running = 0;
+     pygame.quit();
+     quit();
 
+ print "saved notes: " + str(notecnt);
 # write midi to disk;
  with open(outputmid, 'wb') as outf:
   mf.writeFile(outf);
