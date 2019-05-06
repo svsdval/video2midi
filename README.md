@@ -93,6 +93,8 @@ By default, each color key will be recorded in its own channel, so if you want t
 keyp_colors_channel = [ 0,0, 1,1, 2,2, 3,3, 4,4, 5,5 ]; # MIDI channel per color
 ```
 
+![Alt text](docs/multichannel.png?raw=true "main window")
+
 ##### RU:
 Вы можете настроить соотнесение канала к MIDI инструменту. Для этого в файле v2m.py нужно поправить соответствие канала midi инструменту. 
 По умолчанию канал равен 0 midi инструменту
@@ -106,11 +108,11 @@ keyp_colors_channel_prog = [ 0,0, 0,0, 0,0, 0,0, 0,0, 0,0 ]; # MIDI program ID p
 
 ```
 
-![Alt text](docs/multichannel.png?raw=true "main window")
 
 ##### RU:
 Если есть необходимть обработать лижь какой то кусок файла, Вы можете указать начальный и конечные кадры для реконструкции. Только в указанных интервалах будет выполняться обработка.
 Для этого в файле v2m.py необходимо изменить переменные "startframe" и "endframe".
+
 ##### EN:
 If there is a need to process any piece of the file, You can specify the starting and ending frames for the reconstruction. Only at specified intervals will processing be performed.
 To do this, in the v2m.py file, you need to modify variables "startframe" and "endframe"
@@ -123,6 +125,7 @@ endframe = length;
 ##### RU:
 Вы так же можете указать минимальную длительность нот, ноты длительность которых будет меньше указанной будут автоматически приравнены минимальной длительности.
 Для этого в файле v2m.py необходимо изменить переменные "minimal_duration".
+
 ##### EN:
 You can also specify the minimum duration of the notes, the notes whose duration will be less than that specified will be automatically equated to the minimum duration.
 To do this, in the v2m.py file, you need to modify variables "minimal_duration".
