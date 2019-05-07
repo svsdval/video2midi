@@ -71,7 +71,7 @@ keyp_colors = [
 #L.ORANGE        D.ORANGE
 [255,212,85 ], [255,138,0],
 #L.PINK          D.PINK
-[200,136,223], [94,55,100],
+#[200,136,223], [94,55,100],
 #L.RED           D.RED
 [253,125,114], [255,37,9]
 # .....
@@ -108,7 +108,6 @@ keyp_colors_channel_prog = [ 0,0, 0,0, 0,0, 0,0, 0,0, 0,0 ]; # MIDI program ID p
 
 ```
 
-
 ##### RU:
 Если есть необходимть обработать лижь какой то кусок файла, Вы можете указать начальный и конечные кадры для реконструкции. Только в указанных интервалах будет выполняться обработка.
 Для этого в файле v2m.py необходимо изменить переменные "startframe" и "endframe".
@@ -132,6 +131,18 @@ To do this, in the v2m.py file, you need to modify variables "minimal_duration".
 
 ```python
 minimal_duration = 0.6;
+```
+
+##### RU:
+Вы так же можете указать базовую ноту которая добавляется при записи нот в midi файл. По умолчанию basenote = 36 (3 октавы).
+Для этого в файле v2m.py необходимо изменить переменные "basenote".
+
+##### EN:
+You can also specify the base note that is added when writing notes to the midi file. By default, basenote = 36 (3 octaves).
+To do this, in the v2m.py file you need to change the variables "basenote".
+
+```python
+basenote = 36;
 ```
 
 # Экспериментальные возможности / Experimental features:

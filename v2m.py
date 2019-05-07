@@ -17,7 +17,6 @@ from pygame.locals import *;
 from OpenGL.GL import *;
 from OpenGL.GLU import *;
 
-
 width=640;
 height=480;
 
@@ -99,7 +98,7 @@ print "video " + str(width) + "x" + str(height) +" fps: " + str(fps);
 # add some notes;
 channel = 0;
 volume = 100;
-basenote = 35;
+basenote = 36;
 
 
 notes=[];
@@ -119,14 +118,14 @@ keyp_colors = [
 #L.ORANGE        D.ORANGE
 [255,212,85 ], [255,138,0],
 #L.PINK          D.PINK
-[200,136,223], [94,55,100],
+#[200,136,223], [94,55,100],
 #L.RED           D.RED
 [253,125,114], [255,37,9]
 # .....
 ];
 
 """
-EXAMPLE: Only two channels with  Orange and Red keys... 
+#EXAMPLE: Only two channels with  Orange and Red keys... 
 keyp_colors = [
 #L.ORANGE        D.ORANGE
 [249,176,65 ], [245,123,12],
@@ -294,7 +293,7 @@ def processmidi():
     keybgr=image[pixy,pixx];
     key= [ keybgr[2], keybgr[1],keybgr[0] ];
 
-    note=(i+1);
+    note=i;
 
     keypressed=0;
     note_channel=0;
