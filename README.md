@@ -33,7 +33,7 @@ sudo apt install python-opencv python-pygame python-midiutil
   * **h** - показать/спрятать помощь
   * **q** - приступить к воссозданию midi
   * **s** - Установить начальный кадр обработки (модификатор: shift, сброс на начальный кадр видео)
-  * **e** - Установить конечный кадр обработки (модификатор: shift, сброс на конечный кадр видео)
+  * **e** - Установить конечный кадр обработки (модификатор: shift, сброс на конечный кадр видео), на некоторых форматах, не работает корректно, похоже на баг OpenCV
   * **Mouse wheel** - подстройка клавиш
   * **Левая кнопка мыши** - перетаскивание выбранной клавиши / выбор цвета из карты цветов.
   * **CTRL + Левая кнопка мыши** - обновить выбранный цвет к карте цветов.
@@ -50,7 +50,7 @@ sudo apt install python-opencv python-pygame python-midiutil
   * **h** - show/hide this help
   * **q** - begin to recreate midi
   * **s** - set start frame, (mods : shift, set processing start frame to the beginning)
-  * **e** - set end frame, (mods : shift, set processing end frame to the ending)
+  * **e** - set end frame, (mods : shift, set processing end frame to the ending), on some formats, it does not work correctly, it seems like an OpenCV bug
   * **Mouse wheel** - keys adjustment
   * **Left mouse button** - dragging the selected key / select color from the color map
   * **CTRL + Left mouse button** - update selected color in the color map
