@@ -28,16 +28,40 @@ sudo apt install python-opencv python-pygame python-midiutil
   ./v2m.py ./test_video/Not\ Evil\ -\ The\ LEGO\ Movie\ 2\ -\ The\ Second\ Part\ _\ Piano\ Tutorial\ \(Synthesia\)-9mv_hKwCzUo.mkv
   ./v2m.py ./test_video/Gotham\ City\ Guys\ -\ The\ LEGO\ Movie\ 2\ -\ The\ Second\ Part\ _\ Piano\ Tutorial\ \(Synthesia\)-y_aBUQrp5vY.webm
   ```
-
+  RU:
   Управление:
-  * **Стрелки** - подстройка клавиш / keys adjustment
-  * **PageUp/PageDown** - прокрутка видео / scrolling video 
-  * **Q** - приступить к воссозданию midi / begin to recreate midi
+  * **h** - показать/спрятать помощь
+  * **q** - приступить к воссозданию midi
+  * **s** - Установить начальный кадр обработки (модификатор: shift, сброс на начальный кадр видео)
+  * **e** - Установить конечный кадр обработки (модификатор: shift, сброс на конечный кадр видео)
+  * **Mouse wheel** - подстройка клавиш
+  * **Левая кнопка мыши** - перетаскивание выбранной клавиши / выбор цвета из карты цветов.
+  * **CTRL + Левая кнопка мыши** - обновить выбранный цвет к карте цветов.
+  * **Правая кнопка мыши** - перетаскивание всех клавиш, если клавиша выбрана, перенос осуществляется относительно неё 
+  * **CTRL + 0** - Выключить выбранный цвет.
+  * **Стрелки** - подстройка клавиш  (модификатор: shift)
+  * **PageUp/PageDown** - прокрутка видео (модификатор: shift, шаг по кадру)
+  * **Home/End** - переход в начало или конец видео
   * **ESCAPE** - выход / quit
   * **SPACE** - прервать воссоздание и записать midi файл на диск / abort re-creation and save midi file to disk
-  * **Левая кнопка мыши** - перетаскивание выбранной клавиши / dragging the selected key
-  * **Правая кнопка мыши** - перетаскивание всех клавиш, если клавиша выбрана, перенос осуществляется относительно неё / dragging all keys, if the key is selected, the transfer is carried out relative to it.
-
+  
+  EN:
+  Control:
+  * **h** - show/hide this help
+  * **q** - begin to recreate midi
+  * **s** - set start frame, (mods : shift, set processing start frame to the beginning)
+  * **e** - set end frame, (mods : shift, set processing end frame to the ending)
+  * **Mouse wheel** - keys adjustment
+  * **Left mouse button** - dragging the selected key / select color from the color map
+  * **CTRL + Left mouse button** - update selected color in the color map
+  * **CTRL + 0** - disable selected color in the color map
+  * **Right mouse button** - dragging all keys, if the key is selected, the transfer is carried out relative to it.
+  * **Arrows** - keys adjustment (mods : shift)
+  * **PageUp/PageDown** - scrolling video (mods : shift)
+  * **Home/End** - go to the beginning or end of the video
+  * **Escape** - quit
+  * **Space** - abort re-creation and save midi file to disk
+  
 # how it works / как это работает
 
 ##### RU:
@@ -63,20 +87,21 @@ It may also be useful to change the response delta (keyp_delta variable)
 ```python
 keyp_colors = [
 #L.GREEN         D.GREEN
-[166,250,103], [58,146,0],
+[166,250,103], [ 58,146,  0],
 #L.BLUE          D.BLUE
-[102,185,43 ], [8,83,174],
+[102,185,207], [  8,113,174],
 #L.YELLOW        D.YELLOW
-[255,255,85 ], [254,210,0],
+[255,255,85 ], [254,210,  0],
 #L.ORANGE        D.ORANGE
-[255,212,85 ], [255,138,0],
-#L.PINK          D.PINK
-#[200,136,223], [94,55,100],
+[255,212,85 ], [255,138,  0],
 #L.RED           D.RED
-[253,125,114], [255,37,9]
+[253,125,114], [255, 37,  9],
+#EMPTY
+[0  ,  0,  0], [  0,  0,  0]
 # .....
 ];
-keyp_delta = 90
+
+keyp_delta = 90; # sensitivity
 ```
 
 # Дополнительные возможности / Additional features
