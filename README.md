@@ -4,6 +4,8 @@ youtube synthesia video to midi, just for fun )
 Воссоздание midi с видео роликов synthesia и ей подобным..
 ![Alt text](docs/mainwindow.png?raw=true "main window")
 
+[Video example on YouTube](https://youtu.be/AY0wME73Z98)
+
 # dependency / зависимости
 
 - python-opencv
