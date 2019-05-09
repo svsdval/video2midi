@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 # by svsd_val
 # jabber : svsd_val@jabber.ru
@@ -58,6 +58,8 @@ convertCvtColor=0;
 vidcap.set(cv2.CAP_PROP_POS_FRAMES, frame);
 success,image = vidcap.read();
 
+resize_width=1280;
+resize_height=720;
 
 # set start frame;
 def getFrame( framenum =-1 ):
@@ -82,13 +84,14 @@ def getFrame( framenum =-1 ):
     if (curframe != framenum ):
      print "OpenCV bug, Requesting frame " + str(curFrame) + " but get position on " +str(curframe);
 
-  if ( resize == 1 ):
-    image=cv2.resize(image, (width , height));
-
   if ( convertCvtColor == 1 ):
     cv2.cvtColor(image,cv2.COLOR_BGR2RGB)
 
   success,image = vidcap.read();
+#  if ( resize == 1 ):
+#    image = cv2.resize(image, (resize_width , resize_height));
+#    print "resize to "+str(resize_width) + "x"+ str(resize_height);
+  pass
 
 getFrame();
 
@@ -96,9 +99,16 @@ debug = 0;
 debug_keys = 0;
 
 length = int(vidcap.get(cv2.CAP_PROP_FRAME_COUNT));
-width  = int(vidcap.get(cv2.CAP_PROP_FRAME_WIDTH));
-height = int(vidcap.get(cv2.CAP_PROP_FRAME_HEIGHT));
+video_width  = int(vidcap.get(cv2.CAP_PROP_FRAME_WIDTH));
+video_height = int(vidcap.get(cv2.CAP_PROP_FRAME_HEIGHT));
 fps    = float(vidcap.get(cv2.CAP_PROP_FPS));
+
+width = video_width;
+height = video_height;
+
+if ( resize == 1 ):
+  width = resize_width;
+  height = resize_height;
 
 startframe = 0;
 endframe = length;
@@ -109,7 +119,8 @@ print "video " + str(width) + "x" + str(height) +" fps: " + str(fps);
 # add some notes;
 channel = 0;
 volume = 100;
-basenote = 36;
+octave = 3;
+basenote = octave * 12;
 
 
 notes=[];
@@ -160,11 +171,6 @@ for i in range(127):
   notes_de.append(0);
   notes_channel.append(0);
 #;
-resize= 0;
-
-if ( resize == 1 ):
-  width=1280;
-  height=720;
 
 
 def updatekeys( append=0 ):
@@ -199,7 +205,7 @@ def loadImage(idframe=130):
   glPixelStorei(GL_UNPACK_ALIGNMENT,1)
 
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  glTexImage2D(GL_TEXTURE_2D, 0, 3, width, height, 0, GL_BGR, GL_UNSIGNED_BYTE, image );
+  glTexImage2D(GL_TEXTURE_2D, 0, 3, video_width, video_height, 0, GL_BGR, GL_UNSIGNED_BYTE, image );
 #  glTexImage2D(GL_TEXTURE_2D, 0, 3, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image)
   glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
   glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
@@ -248,6 +254,8 @@ def drawframe():
  global keyp_delta_slider_pos;
  global keyp_delta_slider_size;
  global drawhelp;
+ global resize;
+ global octave;
 
  scale=1.0;
  mousex, mousey = pygame.mouse.get_pos();
@@ -283,7 +291,7 @@ def drawframe():
    glColor4f(1.0, 1.0, 1, 0.0);
    drawText( (0,0,1), "h - show/hide this help");
    glTranslatef(0,spaceh,0);
-   drawText( (0,0,1), "q - for process");
+   drawText( (0,0,1), "q - begin to recreate midi");
    glTranslatef(0,spaceh,0);
    drawText( (0,0,1), "s - set start frame, (mods : shift, set processing start frame to the beginning)");
    glTranslatef(0,spaceh,0);
@@ -303,7 +311,9 @@ def drawframe():
    glTranslatef(0,spaceh,0);
    drawText( (0,0,1), "PageUp/PageDown - scrolling video (mods : shift)");
    glTranslatef(0,spaceh,0);
-   drawText( (0,0,1), "Home/End - scrolling video to beginning / ending");
+   drawText( (0,0,1), "Home/End - go to the beginning or end of the video");
+   glTranslatef(0,spaceh,0);
+   drawText( (0,0,1), "[ / ] - change base octave");
    glTranslatef(0,spaceh,0);
    drawText( (0,0,1), "Escape - quit");
    glTranslatef(0,spaceh,0);
@@ -323,9 +333,19 @@ def drawframe():
 
   if ( pixx >= width ) or ( pixy >= height ) or ( pixx < 0 ) or ( pixy < 0 ): continue;
 
+  if ( resize == 1 ):
+    pixx= int(round( pixx * ( video_width / float(resize_width) )))
+    pixy= int(round( pixy * ( video_height / float(resize_height) )))
+    if ( pixx > video_width -1 ): pixx = video_width-1;
+    if ( pixy > video_height-1 ): pixy= video_height-1;
+
   keybgr=image[pixy,pixx];
   key= [ keybgr[2], keybgr[1],keybgr[0] ];
-  note=(i+1);
+
+  note=i;
+  if ( note > 120 ): 
+    print "skip note > 120";
+    continue;
   keypressed=0;
 
   for keyc in keyp_colors:
@@ -389,6 +409,14 @@ def drawframe():
  glPopMatrix();
  glEnable(GL_BLEND);
 
+ glPushMatrix();
+ glTranslatef( keyp_delta_slider_pos[0] , keyp_delta_slider_pos[1]-32 ,0);
+ glBlendFunc(GL_ONE, GL_SRC_ALPHA);
+ glColor4f(1.0, 1.0, 1, 0.0);
+ drawText( (0,0,1), "base octave:" + str(octave));
+ glPopMatrix();
+ glEnable(GL_BLEND);
+
 
  glPushMatrix();
  glTranslatef(mousex,mousey,0);
@@ -418,6 +446,7 @@ def processmidi():
  global success,image;
  global startframe;
  global experimental;
+ global resize;
 
  print "video " + str(width) + "x" + str(height);
 
@@ -440,7 +469,7 @@ def processmidi():
   if (frame % 100 == 0):
    glBindTexture(GL_TEXTURE_2D, bgImgGL);
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-   glTexImage2D(GL_TEXTURE_2D, 0, 3, width, height, 0, GL_BGR, GL_UNSIGNED_BYTE, image );
+   glTexImage2D(GL_TEXTURE_2D, 0, 3, video_width, video_height, 0, GL_BGR, GL_UNSIGNED_BYTE, image );
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
    glEnable(GL_TEXTURE_2D);
    drawframe()
@@ -455,8 +484,8 @@ def processmidi():
 #  if (frame % 100 == 0):
    print "processing frame: " + str(frame) + " / " + str(length) + " % " + str( math.trunc(p * 100));
 
-  if ( resize == 1 ):
-    image=cv2.resize(image, (width , height));
+#  if ( resize == 1 ):
+#    image=cv2.resize(image, (width , height));
 
   # processing white keys;
   for i in range( len(keys_pos) ):
@@ -464,11 +493,24 @@ def processmidi():
     pixy=int(yoffset_whitekeys + keys_pos[i][1]);
 
     if ( pixx >= width ) or ( pixy >= height ) or ( pixx < 0 ) or ( pixy < 0 ): continue;
+    if ( resize == 1 ):
+      pixxo=pixx;
+      pixyo=pixy;
+
+      pixx= int(round( pixx * ( video_width / float(resize_width) )))
+      pixy= int(round( pixy * ( video_height / float(resize_height) )))
+      if ( pixx > video_width -1 ): pixx = video_width-1;
+      if ( pixy > video_height-1 ): pixy= video_height-1;
+#      print "original x:"+str(pixxo) + "x" +str(pixyo) + " mapped :" +str(pixx) +"x"+str(pixy);
 
     keybgr=image[pixy,pixx];
     key= [ keybgr[2], keybgr[1],keybgr[0] ];
 
     note=i;
+    if ( note > 120 ): 
+      print "skip note > 120";
+      continue;
+
 
     keypressed=0;
     note_channel=0;
@@ -491,9 +533,9 @@ def processmidi():
       if (keypressed == 1 ):
         cv2.rectangle(image, (pixx-5,pixy-5), (pixx+5,pixy+5), (128,128,255), -1 );
         cv2.putText(image, str(note_channel), (pixx-5,pixy-10), 0, 0.3, (64,128,255));
-      cv2.rectangle(image, (pixx-5,pixy-5), (pixx+5,pixy+5), (255,0,255));
+#      cv2.rectangle(image, (pixx-5,pixy-5), (pixx+5,pixy+5), (255,0,255));
       cv2.rectangle(image, (pixx-1,pixy-1), (pixx+1,pixy+1), (255,0,255));
-      cv2.putText(image, str(note), (pixx-5,pixy+20), 0, 0.5, (255,0,255));
+#      cv2.putText(image, str(note), (pixx-5,pixy+20), 0, 0.5, (255,0,255));
 
     # reg pressed key;
     if keypressed==1:
@@ -584,6 +626,8 @@ def main():
   global drawhelp;
   global startframe;
   global endframe;
+  global basenote;
+  global octave;
 
   running=1;
   keygrab=0;
@@ -639,6 +683,17 @@ def main():
        running = 0;
        pygame.quit();
        quit();
+
+      if event.key == pygame.K_RIGHTBRACKET:
+        octave += 1;
+        if (octave > 7): octave = 7;
+        basenote = octave * 12;
+
+      if event.key == pygame.K_LEFTBRACKET:
+        octave -= 1;
+        if (octave < 0): octave = 0;
+        basenote = octave * 12;
+
       if event.key == pygame.K_UP:
        if mods & pygame.KMOD_SHIFT:
         yoffset_blackkeys -= 1;
@@ -727,6 +782,13 @@ def main():
          pixx = int(mousex);
          pixy = int(mousey);
          if not (( pixx >= width ) or ( pixy >= height ) or ( pixx < 0 ) or ( pixy < 0 )):
+           if ( resize == 1 ):
+             pixx= int(round( pixx * ( video_width / float(resize_width) )))
+             pixy= int(round( pixy * ( video_height / float(resize_height) )))
+             if ( pixx > video_width -1 ): pixx = video_width-1;
+             if ( pixy > video_height-1 ): pixy= video_height-1;
+             print "original mouse x:"+str(mousex) + "x" +str(mousey) + " mapped :" +str(pixx) +"x"+str(pixy);
+
            keybgr=image[pixy,pixx];
            keyp_colors[keyp_colormap_id][0] = keybgr[2];
            keyp_colors[keyp_colormap_id][1] = keybgr[1];
