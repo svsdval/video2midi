@@ -17,6 +17,14 @@ from pygame.locals import *;
 from OpenGL.GL import *;
 from OpenGL.GLU import *;
 
+try:
+    from configparser import ConfigParser
+except ImportError:
+    from ConfigParser import ConfigParser  # ver. < 3.0
+
+from os.path import expanduser
+
+
 width=640;
 height=480;
 
@@ -106,9 +114,6 @@ fps    = float(vidcap.get(cv2.CAP_PROP_FPS));
 width = video_width;
 height = video_height;
 
-if ( resize == 1 ):
-  width = resize_width;
-  height = resize_height;
 
 startframe = 0;
 endframe = length;
@@ -158,12 +163,51 @@ drawhelp=1;
 
 experimental = 0;
 
+
 keyp_colormap_colors_pos=[];
 keyp_colormap_pos=[100,100];
 keyp_colormap_id=-1;
 
 keyp_delta_slider_pos=[200,132];
 keyp_delta_slider_size=[100,20];
+
+miditrackname="Sample Track";
+#
+
+#cfg
+home = expanduser("~")
+inifile = os.path.join( home, '.v2m.ini');
+if os.path.exists( 'v2m.ini' ):
+  inifile="v2m.ini";
+  print "local config file exists."
+
+
+if os.path.exists( inifile ):
+  print "Loading config from:"+inifile;
+  config = ConfigParser()
+  config.read( inifile )
+  miditrackname = config.get('options', 'midi_track_name')
+  debug = config.getboolean('options', 'debug')
+  experimental = config.getboolean('options', 'experimental')
+  resize = config.getboolean('options', 'resize')
+  resize_width = config.getint('options', 'resize_width')
+  resize_height = config.getint('options', 'resize_height')
+  minimal_duration = config.getfloat('options', 'minimal_note_duration')
+  clr_chnls = config.get('options', 'color_channel_accordance')
+  clr_chnls_prog = config.get('options', 'channel_prog_accordance')
+
+  if ( clr_chnls != "" ):
+    keyp_colors_channel = map(int, clr_chnls.split(","))
+    print "readed color = channel", keyp_colors_channel;
+
+  if ( clr_chnls_prog != "" ):
+    keyp_colors_channel_prog = map(int, clr_chnls_prog.split(","))
+    print "readed color channel = prog ", keyp_colors_channel_prog;
+
+if ( resize == 1 ):
+  width = resize_width;
+  height = resize_height;
+
 
 for i in range(127):
   notes.append(0);
@@ -447,6 +491,7 @@ def processmidi():
  global startframe;
  global experimental;
  global resize;
+ global miditrackname;
 
  print "video " + str(width) + "x" + str(height);
 
@@ -455,7 +500,7 @@ def processmidi():
  track = 0 # the only track;
  time = 0 # start at the beginning;
 
- mf.addTrackName(track, time, "Sample Track");
+ mf.addTrackName(track, time, miditrackname);
  mf.addTempo(track, time, 60 );
  for i in range(len(keyp_colors_channel)):
   mf.addProgramChange(track, keyp_colors_channel[i], time, keyp_colors_channel_prog[i]);

@@ -78,53 +78,59 @@ Frame by frame we scan the virtual keyboard and write the keys to the midi file.
 
 # Дополнительные возможности / Additional features
 
+
 ##### RU:
-Вы можете настроить разбиение на каналы в зависимости от цвета клавиши. Для этого в файле v2m.py нужно поправить соответствие цвета каналу midi трека. 
+Все настройки вынесены в файл ini файл который может использоваться как общий для всех каталогов если находится в домашнем каталоге ~/.v2m.ini либо отдельный локальный для каталога ./v2m.ini.
+
+Вы можете настроить разбиение на каналы в зависимости от цвета клавиши. Для этого в файле v2m.ini нужно поправить соответствие цвета каналу midi трека. 
 По умолчанию каждый цвет активирующий клавишу будет записан в собственный канал, таким образом если хотите объединить каналы просто укажите для разных цветов одинаковые номера.
 
 ##### EN:
-You can also customize the separation into channels depending on the color of the key. To do this, in the v2m.py file, you need to modify the color matching to the midi channel of the track.
+All settings are moved to an ini file which can be used as common for all directories if it is located in the home directory (~/.v2m.ini) or as a separate for local directory (./v2m.ini).
+
+You can also customize the separation into channels depending on the color of the key. To do this, in the v2m.ini file, you need to modify the color matching to the midi channel of the track.
 By default, each color key will be recorded in its own channel, so if you want to combine the channels, simply specify the same numbers for different colors.
 
 ```python
-keyp_colors_channel = [ 0,0, 1,1, 2,2, 3,3, 4,4, 5,5 ]; # MIDI channel per color
+color_channel_accordance = 0,0, 1,1, 2,2, 3,3, 4,4, 5,5
 ```
+
 
 ![Alt text](docs/multichannel.png?raw=true "multi channel midi export")
 
 ##### RU:
-Вы можете настроить соотнесение канала к MIDI инструменту. Для этого в файле v2m.py нужно поправить соответствие канала midi инструменту. 
+Вы можете настроить соотнесение канала к MIDI инструменту. Для этого в файле v2m.ini нужно поправить соответствие канала midi инструменту. 
 По умолчанию канал равен 0 midi инструменту
 
 ##### EN:
-You can customize the channel mapping to a MIDI instrument. To do this, in the v2m.py file, you need to modify the correspondence of the midi channel to the instrument.
+You can customize the channel mapping to a MIDI instrument. To do this, in the v2m.ini file, you need to modify the correspondence of the midi channel to the instrument.
 The default all channels is 0 midi instrument.
 
 ```python
-keyp_colors_channel_prog = [ 0,0, 0,0, 0,0, 0,0, 0,0, 0,0 ]; # MIDI program ID per channel
+channel_prog_accordance = 0,0, 0,0, 0,0, 0,0, 0,0, 0,0 
 
 ```
 
 ##### RU:
 Вы так же можете указать минимальную длительность нот, ноты длительность которых будет меньше указанной будут автоматически приравнены минимальной длительности.
-Для этого в файле v2m.py необходимо изменить переменные "minimal_duration".
+Для этого в файле v2m.ini необходимо изменить переменные "minimal_duration".
 
 ##### EN:
 You can also specify the minimum duration of the notes, the notes whose duration will be less than that specified will be automatically equated to the minimum duration.
-To do this, in the v2m.py file, you need to modify variables "minimal_duration".
+To do this, in the v2m.ini file, you need to modify variables "minimal_duration".
 
 ```python
-minimal_duration = 0.6;
+minimal_note_duration = 0.6
 ```
 
 # Экспериментальные возможности / Experimental features:
 
 ##### RU:
-Добавил возможность распознавать перекрытие клавиш друг другом. В данном случае в момент перекрытия будет создано окончание одной ноты и начало другой. По умолчанию данная функция выключена, в файле v2m.py можно включить её, изменив состояние переменной experimental в 1
+Добавил возможность распознавать перекрытие клавиш друг другом. В данном случае в момент перекрытия будет создано окончание одной ноты и начало другой. По умолчанию данная функция выключена, в файле v2m.ini можно включить её, изменив состояние переменной experimental в 1
 
 ##### EN:
-Added the ability to recognize the overlap of keys with each other. In this case, at the moment of overlapping, the end of one note and the beginning of another will be created. By default, this function is disabled; in the v2m.py file, you can enable it by changing the state of the experimental variable "experimental" to 1
+Added the ability to recognize the overlap of keys with each other. In this case, at the moment of overlapping, the end of one note and the beginning of another will be created. By default, this function is disabled; in the v2m.ini file, you can enable it by changing the state of the experimental variable "experimental" to 1
 
 ```python
-experimental = 0;
+experimental = 0
 ```
