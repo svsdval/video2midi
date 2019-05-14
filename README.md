@@ -35,6 +35,7 @@ sudo apt install python-opencv python-pygame python-midiutil
   * **q** - приступить к воссозданию midi
   * **s** - Установить начальный кадр обработки (модификатор: shift, сброс на начальный кадр видео)
   * **e** - Установить конечный кадр обработки (модификатор: shift, сброс на конечный кадр видео), на некоторых форматах, не работает корректно, похоже на баг OpenCV
+  * **p** - Если клавиша указана, принудительно разделит вывод на 2 канала не зависимо от настроек. Раздиление будет проведено в зависимости от положения клавиши относительно указаной клавиши. Используется на видео с одним цветом клавиш.
   * **Mouse wheel** - подстройка клавиш
   * **Левая кнопка мыши** - перетаскивание выбранной клавиши / выбор цвета из карты цветов.
   * **CTRL + Левая кнопка мыши** - обновить выбранный цвет к карте цветов.
@@ -53,6 +54,7 @@ sudo apt install python-opencv python-pygame python-midiutil
   * **q** - begin to recreate midi
   * **s** - set start frame, (mods : shift, set processing start frame to the beginning)
   * **e** - set end frame, (mods : shift, set processing end frame to the ending), on some formats, it does not work correctly, it seems like an OpenCV bug
+  * **p** - if the key is specified, it will forcibly divide the output into 2 channels regardless of the settings. Splitting will be carried out depending on the position of the key relative to the specified key. Used on video with one key color.
   * **Mouse wheel** - keys adjustment
   * **Left mouse button** - dragging the selected key / select color from the color map
   * **CTRL + Left mouse button** - update selected color in the color map

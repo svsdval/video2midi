@@ -46,7 +46,7 @@ if ( len(sys.argv) < 2 ):
 
 filepath = sys.argv[1];
 if not os.path.exists( filepath ):
-  print "file not exists " + filepath;
+  print "file not exists [" + filepath +"]";
   sys.exit( 0 ) ;
 
 print "open file " + filepath;
@@ -165,11 +165,13 @@ experimental = 0;
 
 
 keyp_colormap_colors_pos=[];
-keyp_colormap_pos=[100,100];
+keyp_colormap_pos=[32,16];
 keyp_colormap_id=-1;
 
-keyp_delta_slider_pos=[200,132];
-keyp_delta_slider_size=[100,20];
+keyp_delta_slider_pos=[132,16];
+keyp_delta_slider_size=[120,20];
+
+separate_note_id=-1;
 
 miditrackname="Sample Track";
 #
@@ -235,7 +237,7 @@ def updatekeys( append=0 ):
 def update_colormap():
  global keyp_colormap_colors_pos;
  for i in range( len( keyp_colors ) ):
-  keyp_colormap_colors_pos.append ([ (i % 2) * 32,  ( i // 2 ) * 32  ]);
+  keyp_colormap_colors_pos.append ([ (i % 2) * 32,  ( i // 2 ) * 20  ]);
 
 
 updatekeys( 1 );
@@ -276,12 +278,128 @@ def DrawRect(x,y,x2,y2,w=1):
    glVertex2f(x, y2);
    glEnd();
 
+def DrawTriangle(x,y, s,r=0):
+  glBegin(GL_TRIANGLES);
+  if ( r == 0 ):
+   glVertex2f(x , y-s);
+   glVertex2f(x + s, y-s);
+   glVertex2f(x + s*0.5, y);
+  else:
+   glVertex2f(x , y);
+   glVertex2f(x + s,y);
+   glVertex2f(x + s*0.5, y-s);
+  pass
+  glEnd();
+
 def drawText(position, textString, size=24):
   font = pygame.font.Font (None, size)
   textSurface = font.render(textString, True, (255,255,255,255), (0,0,0,255))
   textData = pygame.image.tostring(textSurface, "RGBA", True)
   glRasterPos3d(*position)
   glDrawPixels(textSurface.get_width(), textSurface.get_height(), GL_RGBA, GL_UNSIGNED_BYTE, textData)
+
+class GLWindow:
+  def __init__(self,x,y,w,h,title):
+    self.w = w;
+    self.h = h;
+    self.x = x;
+    self.y = y;
+    self.borderwidth=2;
+    self.title = title;
+    self.titleheight = 25;
+    self.titlewidth = self.w;
+    self.clientrect=[0,0,0,0];
+    self.mousegrab = 0;
+    self.mousepos = [0,0];
+    self.mouseclickpos = [0,0];
+    self.hidden = 0;
+      
+  def draw(self):
+    self.update();
+    glDisable(GL_TEXTURE_2D);
+    glEnable(GL_BLEND);
+    glPushMatrix()
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glColor4f(0.2, 0.2, 0.2, 0.9);
+    DrawQuad(self.x,self.y,self.x+self.w,self.y+self.titleheight);
+    if ( not self.hidden ):
+      glColor4f(0.1, 0.1, 0.1, 0.9);
+      DrawQuad(self.x,self.y+self.titleheight,self.x+self.titlewidth,self.y+self.h-self.titleheight);
+    glColor4f(1.0, 1.0, 1.0, 0.9);
+    DrawTriangle(self.x+self.titlewidth-16,self.y+18,10, self.hidden);
+
+    glColor4f(0.0, 0.0, 0.0, 0.9);
+    DrawRect(self.x,self.y,self.x+self.w,self.y+self.titleheight);
+    if ( not self.hidden ):
+      glColor4f(0.1, 0.1, 0.1, 0.9);
+      DrawRect(self.x,self.y+self.titleheight,self.x+self.w,self.y+self.h-self.titleheight);
+      
+    glBlendFunc(GL_ONE, GL_SRC_ALPHA);
+    drawText( (self.x+4,self.y+self.titleheight-2,1), self.title );
+
+    glPopMatrix();
+    glDisable(GL_BLEND);
+    pass;
+    
+  def update(self):
+    self.titlewidth = self.w;
+
+    self.clientrect[0] = self.x + self.borderwidth;
+    self.clientrect[1] = self.y + self.borderwidth + self.titleheight;
+    self.clientrect[2] = self.x + self.w - self.borderwidth;
+    self.clientrect[3] = self.y + self.h - self.titleheight - self.borderwidth;
+    pass;
+    
+  def getclientrect(self):
+    self.update()
+    return self.clientrect;
+    pass;
+  def update_mouse_move(self, mpx, mpy ):
+    self.mousepos[0] = mpx;
+    self.mousepos[1] = mpy;
+
+    if (self.mousegrab == 1):
+      self.x = mpx - self.mouseclickpos[0];
+      self.y = mpy - self.mouseclickpos[1];
+    pass;
+  def update_mouse_down(self,mpx,mpy,btn):
+    self.mouseclickpos[0] = mpx - self.x;
+    self.mouseclickpos[1] = mpy - self.y;
+    
+    if (( mpx > self.x ) and ( mpx < self.x + self.titlewidth ) and
+        ( mpy > self.y ) and ( mpy < self.y + self.titleheight )):
+        self.mousegrab = 1;
+    self.update();
+    pass;
+  def update_mouse_up(self,mpx,mpy,btn):
+    self.mousegrab = 0;
+    self.mouseclickpos[0] = mpx - self.x;
+    self.mouseclickpos[1] = mpy - self.y;
+    pass;
+  def update_key_down(self, keycode ):
+    mpx = self.mousepos[0];
+    mpy = self.mousepos[1];
+    
+    if (( mpx > self.x ) and ( mpx < self.x + self.titlewidth ) and
+        ( mpy > self.y ) and ( mpy < self.y + self.titleheight )):
+      if keycode == pygame.K_h:
+        self.hidden = not self.hidden;
+      
+    pass;
+  def update_key_up(self, keycode ):
+    pass;
+      
+
+colorWindow = GLWindow(keyp_colormap_pos[0],keyp_colormap_pos[1],100, ( (len(keyp_colors) // 2)+2 ) * 24, "color map")
+sensWindow = GLWindow(keyp_delta_slider_pos[0], keyp_delta_slider_pos[1],170, 130, "sensitivity & octave");
+helpWindow = GLWindow(303,16,750,460, "help");
+
+glwindows = [];
+glwindows.append(colorWindow);
+glwindows.append(sensWindow);
+glwindows.append(helpWindow);
+
+    
 
 def drawframe():
  global xoffset_whitekeys;
@@ -319,51 +437,8 @@ def drawframe():
  glEnable(GL_TEXTURE_2D);
  DrawQuad(0,0,width,height);
 
- if (drawhelp == 1):
-   glEnable(GL_BLEND);
 
-   glDisable(GL_TEXTURE_2D);
-   glPushMatrix()
-   glTranslatef(400,32,0);
-   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-   glColor4f(0.0, 0.0, 0.0, 0.9);
-   DrawRect(0,-24,800,14*24);
-   glColor4f(0.1, 0.1, 0.1, 0.5);
-   DrawQuad(0,-24,800,14*24);
-   glBlendFunc(GL_ONE, GL_SRC_ALPHA);
-   spaceh=25;
-   glColor4f(1.0, 1.0, 1, 0.0);
-   drawText( (0,0,1), "h - show/hide this help");
-   glTranslatef(0,spaceh,0);
-   drawText( (0,0,1), "q - begin to recreate midi");
-   glTranslatef(0,spaceh,0);
-   drawText( (0,0,1), "s - set start frame, (mods : shift, set processing start frame to the beginning)");
-   glTranslatef(0,spaceh,0);
-   drawText( (0,0,1), "e - set end frame, (mods : shift, set processing end frame to the ending)");
-   glTranslatef(0,spaceh,0);
-   drawText( (0,0,1), "Mouse wheel - keys adjustment");
-   glTranslatef(0,spaceh,0);
-   drawText( (0,0,1), "Left mouse button - dragging the selected key / select color from the color map");
-   glTranslatef(0,spaceh,0);
-   drawText( (0,0,1), "CTRL + Left mouse button - update selected color in the color map");
-   glTranslatef(0,spaceh,0);
-   drawText( (0,0,1), "CTRL + 0 - disable selected color in the color map");
-   glTranslatef(0,spaceh,0);
-   drawText( (0,0,1), "Right mouse button - dragging all keys, if the key is selected, the transfer is carried out relative to it.");
-   glTranslatef(0,spaceh,0);
-   drawText( (0,0,1), "Arrows - keys adjustment (mods : shift)");
-   glTranslatef(0,spaceh,0);
-   drawText( (0,0,1), "PageUp/PageDown - scrolling video (mods : shift)");
-   glTranslatef(0,spaceh,0);
-   drawText( (0,0,1), "Home/End - go to the beginning or end of the video");
-   glTranslatef(0,spaceh,0);
-   drawText( (0,0,1), "[ / ] - change base octave");
-   glTranslatef(0,spaceh,0);
-   drawText( (0,0,1), "Escape - quit");
-   glTranslatef(0,spaceh,0);
-   drawText( (0,0,1), "Space - abort re-creation and save midi file to disk");
-   glPopMatrix()
-
+ glEnable(GL_BLEND);
  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
  glColor4f(1.0, 0.5, 1.0, 0.5);
@@ -410,6 +485,9 @@ def drawframe():
     DrawRect(-7,-7,7,7,1);
     glColor4f(0.5, 1, 1.0, 0.7);
     DrawQuad(-5,-5,5,5);
+  if ( separate_note_id == i ): 
+    glColor4f(0,1,0,1);
+    DrawRect(-7,-12,7,12,2);
   DrawQuad(-1,-1,1,1);
   glPopMatrix();
   glColor4f(0.0, 1.0, 1.0, 0.7);
@@ -417,55 +495,114 @@ def drawframe():
 
  glDisable(GL_BLEND);
  glDisable(GL_TEXTURE_2D);
- glPushMatrix();
- glTranslatef( keyp_colormap_pos[0] , keyp_colormap_pos[1] ,0);
- glBlendFunc(GL_ONE, GL_SRC_ALPHA);
- drawText( (-10,-10,1), "color map");
- glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
- for i in range( len( keyp_colormap_colors_pos ) ):
+
+ helpWindow.draw(); 
+  
+ if ( not helpWindow.hidden ):
+   rect = helpWindow.getclientrect();
+
+ #if (drawhelp == 1):
+   glEnable(GL_BLEND);
+   glBlendFunc(GL_ONE, GL_SRC_ALPHA);
+   glDisable(GL_TEXTURE_2D);
+   glPushMatrix()
+   glTranslatef(rect[0],rect[1],0);
+   spaceh=25;
+   glColor4f(1.0, 1.0, 1, 0.0);
+   glTranslatef(0,spaceh,0);
+   drawText( (0,0,1), "h - on window title, show/hide the window");
+   glTranslatef(0,spaceh,0);
+   drawText( (0,0,1), "q - begin to recreate midi");
+   glTranslatef(0,spaceh,0);
+   drawText( (0,0,1), "s - set start frame, (mods : shift, set processing start frame to the beginning)");
+   glTranslatef(0,spaceh,0);
+   drawText( (0,0,1), "e - set end frame, (mods : shift, set processing end frame to the ending)");
+   glTranslatef(0,spaceh,0);
+   drawText( (0,0,1), "p - if key is set, force separate to 2 channels (on single color video)");
+   glTranslatef(0,spaceh,0);
+   drawText( (0,0,1), "Mouse wheel - keys adjustment");
+   glTranslatef(0,spaceh,0);
+   drawText( (0,0,1), "Left mouse button - dragging the selected key / select color from the color map");
+   glTranslatef(0,spaceh,0);
+   drawText( (0,0,1), "CTRL + Left mouse button - update selected color in the color map");
+   glTranslatef(0,spaceh,0);
+   drawText( (0,0,1), "CTRL + 0 - disable selected color in the color map");
+   glTranslatef(0,spaceh,0);
+   drawText( (0,0,1), "Right mouse button - dragging all keys, if the key is selected, the transfer is carried out relative to it.");
+   glTranslatef(0,spaceh,0);
+   drawText( (0,0,1), "Arrows - keys adjustment (mods : shift)");
+   glTranslatef(0,spaceh,0);
+   drawText( (0,0,1), "PageUp/PageDown - scrolling video (mods : shift)");
+   glTranslatef(0,spaceh,0);
+   drawText( (0,0,1), "Home/End - go to the beginning or end of the video");
+   glTranslatef(0,spaceh,0);
+   drawText( (0,0,1), "[ / ] - change base octave");
+   glTranslatef(0,spaceh,0);
+   drawText( (0,0,1), "Escape - quit");
+   glTranslatef(0,spaceh,0);
+   drawText( (0,0,1), "Space - abort re-creation and save midi file to disk");
+   glPopMatrix()
+
+ #for wnd in glwindows:
+ colorWindow.draw(); 
+  
+ if ( not colorWindow.hidden ):
+  rect = colorWindow.getclientrect();
   glPushMatrix();
-  glTranslatef(keyp_colormap_colors_pos[i][0],keyp_colormap_colors_pos[i][1],0);
-  if ( keyp_colormap_id == i ):
-   glColor4f(1.0, 1.0, 1.0, 1);
-   DrawQuad(-9,-9,9,9);
-  else:
-   glColor4f(0.5, 0.5, 0.5, 1);
-   DrawQuad(-8,-8,8,8);
-
-  glColor4f(0.0, 0.0, 0.0, 1);
-  DrawQuad(-7,-7,7,7);
-  glColor4ub(keyp_colors[i][0], keyp_colors[i][1], keyp_colors[i][2], 255);
-  DrawQuad(-5,-5,5,5);
+  keyp_colormap_pos[0] = rect[0]+26;
+  keyp_colormap_pos[1] = rect[1]+20;
+  glTranslatef( keyp_colormap_pos[0] , keyp_colormap_pos[1] ,0);
+  glBlendFunc(GL_ONE, GL_SRC_ALPHA);
+  #drawText( (-10,-10,1), "color map");
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  for i in range( len( keyp_colormap_colors_pos ) ):
+   glPushMatrix();
+   glTranslatef(keyp_colormap_colors_pos[i][0],keyp_colormap_colors_pos[i][1],0);
+   if ( keyp_colormap_id == i ):
+    glColor4f(1.0, 1.0, 1.0, 1);
+    DrawQuad(-9,-9,9,9);
+   else:
+    glColor4f(0.5, 0.5, 0.5, 1);
+    DrawQuad(-8,-8,8,8);
+ 
+   glColor4f(0.0, 0.0, 0.0, 1);
+   DrawQuad(-7,-7,7,7);
+   glColor4ub(keyp_colors[i][0], keyp_colors[i][1], keyp_colors[i][2], 255);
+   DrawQuad(-5,-5,5,5);
+   glPopMatrix();
+   glColor4f(0.0, 1.0, 1.0, 0.5);
   glPopMatrix();
-  glColor4f(0.0, 1.0, 1.0, 0.5);
- glPopMatrix();
- glEnable(GL_BLEND);
+  glEnable(GL_BLEND);
+ sensWindow.draw();
+ if ( not sensWindow.hidden ):
+  rect = sensWindow.getclientrect();
+  keyp_delta_slider_pos[0] = rect[0]+10;
+  keyp_delta_slider_pos[1] = rect[1]+10;
+  glPushMatrix();
+  glTranslatef( keyp_delta_slider_pos[0] , keyp_delta_slider_pos[1] ,0);
+  glBlendFunc(GL_ONE, GL_SRC_ALPHA);
+  drawText( (keyp_delta_slider_size[0]+10 ,20,1), str(keyp_delta));
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  glColor4f(1.0, 1.0, 1.0, 1);
+  DrawQuad(0,0,keyp_delta_slider_size[0]+2,keyp_delta_slider_size[1]+2);
+  glColor4f(0.5, 0.5, 1.0, 1);
+  DrawQuad(2,2,keyp_delta_slider_size[0] * ( keyp_delta / float(keyp_delta_slider_size[0])), keyp_delta_slider_size[1] );
+  glPopMatrix();
+  glEnable(GL_BLEND);
 
- glPushMatrix();
- glTranslatef( keyp_delta_slider_pos[0] , keyp_delta_slider_pos[1] ,0);
- glBlendFunc(GL_ONE, GL_SRC_ALPHA);
- drawText( (-5,-10,1), "sensitivity");
- glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
- glColor4f(1.0, 1.0, 1.0, 1);
- DrawQuad(-2,-2,keyp_delta_slider_size[0]+2,keyp_delta_slider_size[1]+2);
- glColor4f(0.5, 0.5, 1.0, 1);
- DrawQuad(0,0,keyp_delta_slider_size[0] * keyp_delta * 0.01, keyp_delta_slider_size[1] );
- glPopMatrix();
- glEnable(GL_BLEND);
-
- glPushMatrix();
- glTranslatef( keyp_delta_slider_pos[0] , keyp_delta_slider_pos[1]-32 ,0);
- glBlendFunc(GL_ONE, GL_SRC_ALPHA);
- glColor4f(1.0, 1.0, 1, 0.0);
- drawText( (0,0,1), "base octave:" + str(octave));
- glPopMatrix();
- glEnable(GL_BLEND);
+  glPushMatrix();
+  glTranslatef( keyp_delta_slider_pos[0] , keyp_delta_slider_pos[1]+50 ,0);
+  glBlendFunc(GL_ONE, GL_SRC_ALPHA);
+  glColor4f(1.0, 1.0, 1, 0.0);
+  drawText( (0,0,1), "base octave:" + str(octave));
+  glPopMatrix();
+  glEnable(GL_BLEND);
 
 
  glPushMatrix();
  glTranslatef(mousex,mousey,0);
- glScalef(0.5,0.5,0.5);
- DrawQuad(-5,-5,5,5);
+ glColor4f(0.2, 0.5, 1, 0.9);
+ DrawQuad(-1,-1,1,1);
  glPopMatrix();
 
 
@@ -492,6 +629,7 @@ def processmidi():
  global experimental;
  global resize;
  global miditrackname;
+ global separate_note_id;
 
  print "video " + str(width) + "x" + str(height);
 
@@ -591,6 +729,12 @@ def processmidi():
         notes[ note ] = 1;
         notes_db[ note ] = frame;
         notes_channel[ note ] = note_channel;
+        if ( separate_note_id != -1 ):
+          if ( separate_note_id < note ):
+            notes_channel[ note ] = 0
+          else:
+            notes_channel[ note ] = 1
+        
       if ( notes[note] == 1 ) and ( notes_channel[ note ] != note_channel ) and ( experimental == 1 ):
         # case if one key over other
         time = notes_db[note] / fps;
@@ -600,6 +744,7 @@ def processmidi():
         if ( debug_keys == 1 ):
           print "keys (one over other), note released :" + str(note) + " de = " + str(notes_de[note]) + "- db =" + str(notes_db[note]);
           print "midi add white keys, note : " +str(note) + " time:" +str(time) + " duration:" + str(duration);
+                 
         mf.addNote(track, notes_channel[note] , basenote+ note, time , duration , volume );
         notecnt+=1;
 
@@ -673,7 +818,8 @@ def main():
   global endframe;
   global basenote;
   global octave;
-
+  global glwindows;
+  global separate_note_id;
   running=1;
   keygrab=0;
   keygrabid=-1;
@@ -704,7 +850,13 @@ def main():
       running = 0;
       pygame.quit();
       quit();
+     elif event.type == pygame.KEYUP:
+      for wnd in glwindows:
+       wnd.update_key_up(event.key);
      elif event.type == pygame.KEYDOWN:
+      for wnd in glwindows:
+       wnd.update_key_down(event.key);
+         
 #      print event.key;
       if event.key == pygame.K_q:
        running = 0;
@@ -800,7 +952,18 @@ def main():
        glBindTexture(GL_TEXTURE_2D, bgImgGL);
        loadImage(frame);
 
+      if event.key == pygame.K_p:
+        size=5;
+        separate_note_id=-1;
+        for i in range( len( keys_pos) ):
+         if (abs( mousex - (keys_pos[i][0] + xoffset_whitekeys) )< size) and (abs( mousey - (keys_pos[i][1] + yoffset_whitekeys) )< size):
+           separate_note_id=i;
+           pass
+
+
      elif event.type == pygame.MOUSEBUTTONUP:
+      for wnd in glwindows:
+        wnd.update_mouse_up(mousex,mousey,event.button)
       if ( event.button == 1 ):
         keygrab = 0;
         keygrabid = -1;
@@ -808,6 +971,9 @@ def main():
         keygrab = 0;
 
      elif event.type == pygame.MOUSEBUTTONDOWN:
+      for wnd in glwindows:
+        wnd.update_mouse_down(mousex,mousey,event.button);
+         
 #      print event.button;
       if ( event.button == 4 ):
         whitekey_width+=0.05;
@@ -842,16 +1008,18 @@ def main():
 #        if not (mods & pygame.KMOD_CTRL):
          keyp_colormap_id = -1;
         #
-        if (( mousex > keyp_delta_slider_pos[0] ) and ( mousex < keyp_delta_slider_pos[0] + keyp_delta_slider_size[0] ) and
-            ( mousey > keyp_delta_slider_pos[1] ) and ( mousey < keyp_delta_slider_pos[1] + keyp_delta_slider_size[1] )):
+        if ( not sensWindow.hidden ):
+         if (( mousex > keyp_delta_slider_pos[0] ) and ( mousex < keyp_delta_slider_pos[0] + keyp_delta_slider_size[0] ) and
+             ( mousey > keyp_delta_slider_pos[1] ) and ( mousey < keyp_delta_slider_pos[1] + keyp_delta_slider_size[1] )):
           keyp_delta = (mousex - keyp_delta_slider_pos[0] );
-          if (keyp_delta > 100): keyp_delta = 100;
+          if (keyp_delta > keyp_delta_slider_size[0] ): keyp_delta = keyp_delta_slider_size[0];
           if (keyp_delta <   1): keyp_delta = 1;
           print "click on slider " + str(keyp_delta)
         #
         size=7;
-        for i in range( len( keyp_colormap_colors_pos  ) ):
-         if (abs( mousex - ( keyp_colormap_colors_pos[i][0] + keyp_colormap_pos[0] ) )< size) and (abs( mousey - ( keyp_colormap_colors_pos[i][1] + keyp_colormap_pos[0]) )< size):
+        if ( not colorWindow.hidden ):
+         for i in range( len( keyp_colormap_colors_pos  ) ):
+          if (abs( mousex - ( keyp_colormap_colors_pos[i][0] + keyp_colormap_pos[0] ) )< size) and (abs( mousey - ( keyp_colormap_colors_pos[i][1] + keyp_colormap_pos[1]) )< size):
            keyp_colormap_id = i;
 #        print "x offset " + str(xoffset_whitekeys) + " y offset: " +str(yoffset_whitekeys);
         size=5;
@@ -882,6 +1050,8 @@ def main():
 #      print "moving offsets : "+ str(mousex) + " x " + str(mousey);
       xoffset_whitekeys = mousex - keygrabaddx;
       yoffset_whitekeys = mousey;
+    for wnd in glwindows:
+      wnd.update_mouse_move(mousex,mousey)
 
     pygame.display.flip();
 
