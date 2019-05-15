@@ -820,6 +820,8 @@ def main():
   global octave;
   global glwindows;
   global separate_note_id;
+  global frame;
+
   running=1;
   keygrab=0;
   keygrabid=-1;
@@ -835,12 +837,9 @@ def main():
   glBindTexture(GL_TEXTURE_2D, bgImgGL);
   loadImage();
   #
-  frame= 0;
   # set start frame;
   vidcap.set(cv2.CAP_PROP_POS_FRAMES, frame);
 
-  display = (width,height);
-  pygame.display.set_mode(display, DOUBLEBUF|OPENGL);
   while running==1:
 #    mousex, mousey = pygame.mouse.get_pos();
     drawframe();

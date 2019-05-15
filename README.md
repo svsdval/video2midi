@@ -14,8 +14,16 @@ youtube synthesia video to midi, just for fun )
 
 # install dependency / установка зависимостей.
 
+#### GNU/Linux:
 ```bash
 sudo apt install python-opencv python-pygame python-midiutil
+```
+
+#### Windows + Anaconda2 (python 2.7):
+ - Anaconda2 (pyton 2.7) (https://www.anaconda.com/distribution/#download-section)
+ in start menu search and open Anaconda command prompt
+```bash
+ pip install opencv-python midiutil pygame pyopengl
 ```
 
 # usage / использование
@@ -26,9 +34,18 @@ sudo apt install python-opencv python-pygame python-midiutil
 ##### EN:
  Download the video with your favorite melody (I recommend 720p), launch the program, adjust the keys in it, press Q and after the completion of the work a midi file will be created.
 
-  ```
+##### GNU/Linux:
+  ```bash
   ./v2m.py ./synthesia_video.mkv
   ```
+
+##### Windows+Anaconda2 (python 2.7):
+ in start menu search and open Anaconda command prompt:
+  ```bash
+  cd path to v2m.py
+  python v2m.py synthesia_video.mkv
+  ```
+
   RU:
   Управление:
   * **h** - показать/спрятать помощь
