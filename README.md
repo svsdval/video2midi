@@ -16,7 +16,7 @@ youtube synthesia video to midi, just for fun )
 
 #### GNU/Linux:
 ```bash
-sudo apt install python-opencv python-pygame python-midiutil
+sudo apt install python-opencv python-pygame python-midiutil python-opengl
 ```
 
 #### Windows + Anaconda2 (python 2.7):
@@ -62,6 +62,7 @@ sudo apt install python-opencv python-pygame python-midiutil
   * **PageUp/PageDown** - прокрутка видео (модификатор: shift, шаг по кадру)
   * **Home/End** - переход в начало или конец видео
   * **[ / ]** - изменить базовую октаву
+  * **F2/F3** - записать / загрузить настройки.
   * **ESCAPE** - выход / quit
   * **SPACE** - прервать воссоздание и записать midi файл на диск / abort re-creation and save midi file to disk
   
@@ -80,6 +81,7 @@ sudo apt install python-opencv python-pygame python-midiutil
   * **Arrows** - keys adjustment (mods : shift)
   * **PageUp/PageDown** - scrolling video (mods : shift)
   * **Home/End** - go to the beginning or end of the video
+  * **F2/F3** - save / load settings.
   * **[ / ]** - change base octave
   * **Escape** - quit
   * **Space** - abort re-creation and save midi file to disk

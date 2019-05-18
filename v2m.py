@@ -58,7 +58,9 @@ while os.path.exists( outputmid ):
  outputmid = ntpath.basename( filepath ) + "_"+str(fileid)+ "_output.mid";
  fileid+=1;
  if ( fileid > 99 ): break;
-
+#
+settingsfile= ntpath.basename( filepath ) + ".ini";
+#
 frame= 0;
 resize= 0;
 convertCvtColor=0;
@@ -153,13 +155,14 @@ keyp_colors = [
 
 keyp_delta = 90; # sensitivity
 #
-keyp_colors_channel = [ 0,0, 1,1, 2,2, 3,3, 4,4, 5,5 ]; # MIDI channel per color
-keyp_colors_channel_prog = [ 0,0, 0,0, 0,0, 0,0, 0,0, 0,0 ]; # MIDI program ID per channel
+keyp_colors_channel = [ 0,0, 1,1, 2,2, 3,3, 4,4, 5,5, 6,6 ]; # MIDI channel per color
+keyp_colors_channel_prog = [ 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0 ]; # MIDI program ID per channel
 
 #
-minimal_duration = 0.6;
+minimal_duration = 0.1;
+ignore_minimal_duration = 0
+
 bgImgGL=-1;
-drawhelp=1;
 
 experimental = 0;
 
@@ -183,20 +186,35 @@ if os.path.exists( 'v2m.ini' ):
   inifile="v2m.ini";
   print "local config file exists."
 
+def loadsettings( cfgfile ):
+ global miditrackname,debug,experimental,resize,resize_width,resize_height,minimal_duration,keyp_colors_channel,keyp_colors_channel_prog,xoffset_whitekeys,yoffset_whitekeys,keyp_colors,keys_pos;
 
-if os.path.exists( inifile ):
-  print "Loading config from:"+inifile;
+ if os.path.exists( cfgfile ):
+  print "reading settings from file:"+cfgfile;
   config = ConfigParser()
-  config.read( inifile )
-  miditrackname = config.get('options', 'midi_track_name')
-  debug = config.getboolean('options', 'debug')
-  experimental = config.getboolean('options', 'experimental')
-  resize = config.getboolean('options', 'resize')
-  resize_width = config.getint('options', 'resize_width')
-  resize_height = config.getint('options', 'resize_height')
-  minimal_duration = config.getfloat('options', 'minimal_note_duration')
-  clr_chnls = config.get('options', 'color_channel_accordance')
-  clr_chnls_prog = config.get('options', 'channel_prog_accordance')
+  config.read( cfgfile )
+  section = 'options';
+  if config.has_option(section, 'midi_track_name'):
+   miditrackname = config.get(section, 'midi_track_name')
+  if config.has_option(section, 'debug'):
+   debug = config.getboolean(section, 'debug')
+  if config.has_option(section, 'experimental'):
+   experimental = config.getboolean(section, 'experimental')
+  if config.has_option(section, 'resize'):
+   resize = config.getboolean(section, 'resize')
+  if config.has_option(section, 'resize_width'):
+   resize_width = config.getint(section, 'resize_width')
+  if config.has_option(section, 'resize_height'):
+   resize_height = config.getint(section, 'resize_height')
+  if config.has_option(section, 'minimal_note_duration'):
+   minimal_duration = config.getfloat(section, 'minimal_note_duration')
+  if config.has_option(section, 'color_channel_accordance'):
+   clr_chnls = config.get(section, 'color_channel_accordance')
+  if config.has_option(section, 'channel_prog_accordance'):
+   clr_chnls_prog = config.get(section, 'channel_prog_accordance')
+  if config.has_option(section, 'ignore_notes_with_minimal_duration'):
+   ignore_minimal_duration = config.get(section, 'ignore_notes_with_minimal_duration')
+
 
   if ( clr_chnls != "" ):
     keyp_colors_channel = map(int, clr_chnls.split(","))
@@ -205,6 +223,30 @@ if os.path.exists( inifile ):
   if ( clr_chnls_prog != "" ):
     keyp_colors_channel_prog = map(int, clr_chnls_prog.split(","))
     print "readed color channel = prog ", keyp_colors_channel_prog;
+    
+  if config.has_option(section, 'xoffset_whitekeys'):
+   xoffset_whitekeys = config.getint(section, 'xoffset_whitekeys')
+  if config.has_option(section, 'yoffset_whitekeys'):
+   yoffset_whitekeys = config.getint(section, 'yoffset_whitekeys')
+
+  if config.has_option(section, 'keyp_colors'):
+   skeyp_colors = config.get(section, 'keyp_colors')
+   if ( skeyp_colors.strip() != "" ):
+    keyp_colors = [];
+    for cur in skeyp_colors.split(","):
+     c = cur.split(":")
+     keyp_colors.append( [ int(c[0]), int(c[1]),int(c[2]) ]);
+    
+  if config.has_option(section, 'keys_pos'):
+   skeys_pos = config.get(section, 'keys_pos')
+   if ( skeys_pos.strip() != "" ):
+    keys_pos = [];
+    for cur in skeys_pos.split(","):
+     c = cur.split(":")
+     keys_pos.append( [ int(c[0]), int(c[1])  ]);
+  pass;
+   
+
 
 if ( resize == 1 ):
   width = resize_width;
@@ -240,8 +282,50 @@ def update_colormap():
   keyp_colormap_colors_pos.append ([ (i % 2) * 32,  ( i // 2 ) * 20  ]);
 
 
+def savesettings():
+ print "save settings to file"
+ config = ConfigParser()
+ #config = configparser.RawConfigParser()
+ section='options'
+ config.add_section(section)
+ config.set(section, 'midi_track_name', miditrackname)
+ config.set(section, 'debug', str(int(debug)))
+ config.set(section, 'experimental', str(int(experimental)))
+ config.set(section, 'resize', str(int(resize)))
+ config.set(section, 'resize_width', str(resize_width))
+ config.set(section, 'resize_height', str(resize_height))
+ config.set(section, 'minimal_note_duration', str(minimal_duration))
+ config.set(section, 'ignore_notes_with_minimal_duration', str(int(ignore_minimal_duration)))
+ 
+ skeyp_colors_channel = "";
+ for i in keyp_colors_channel:
+  skeyp_colors_channel+= str(i)+",";
+ skeyp_colors_channel_prog = "";
+ for i in keyp_colors_channel_prog:
+  skeyp_colors_channel_prog+= str(i)+",";
+ config.set(section, 'color_channel_accordance',skeyp_colors_channel[0:-1])
+ config.set(section, 'channel_prog_accordance', skeyp_colors_channel_prog[0:-1])
+
+ config.set(section, 'xoffset_whitekeys',str(int(xoffset_whitekeys)))
+ config.set(section, 'yoffset_whitekeys',str(int(yoffset_whitekeys)))
+
+ skeyp_colors="";
+ for i in keyp_colors:
+  skeyp_colors+= str(int(i[0]))+":"+str(int(i[1]))+":"+str(int(i[2]))+",";
+  config.set(section, 'keyp_colors', skeyp_colors[0:-1])
+
+ skeys_pos="";
+ for i in keys_pos:
+  skeys_pos+= str(int(i[0]))+":"+str(int(i[1]))+",";
+  config.set(section, 'keys_pos', skeys_pos[0:-1])
+ 
+ with open(settingsfile, 'w') as configfile:
+    config.write(configfile)
+
 updatekeys( 1 );
 update_colormap();
+
+loadsettings(inifile);
 
 def loadImage(idframe=130):
   global image;
@@ -392,15 +476,16 @@ class GLWindow:
 
 colorWindow = GLWindow(keyp_colormap_pos[0],keyp_colormap_pos[1],100, ( (len(keyp_colors) // 2)+2 ) * 24, "color map")
 sensWindow = GLWindow(keyp_delta_slider_pos[0], keyp_delta_slider_pos[1],170, 130, "sensitivity & octave");
-helpWindow = GLWindow(303,16,750,460, "help");
+helpWindow = GLWindow(303,16,750,480, "help");
 
 glwindows = [];
 glwindows.append(colorWindow);
 glwindows.append(sensWindow);
 glwindows.append(helpWindow);
 
-    
-
+#loadsettings( settingsfile );    
+#frame=801
+ 
 def drawframe():
  global xoffset_whitekeys;
  global yoffset_whitekeys;
@@ -415,10 +500,9 @@ def drawframe():
  global keyp_colormap_id;
  global keyp_delta_slider_pos;
  global keyp_delta_slider_size;
- global drawhelp;
  global resize;
  global octave;
-
+ 
  scale=1.0;
  mousex, mousey = pygame.mouse.get_pos();
 
@@ -462,13 +546,13 @@ def drawframe():
   key= [ keybgr[2], keybgr[1],keybgr[0] ];
 
   note=i;
-  if ( note > 120 ): 
+  if ( note > 120 ):
     print "skip note > 120";
     continue;
   keypressed=0;
 
   for keyc in keyp_colors:
-   if (keyc[0] != 0 ) and (keyc[1] != 0 ) and (keyc[2] != 0 ) :
+   if (keyc[0] != 0 ) or (keyc[1] != 0 ) or (keyc[2] != 0 ) :
      if ( abs( int(key[0]) - keyc[0] ) < keyp_delta ) and ( abs( int(key[1]) - keyc[1] ) < keyp_delta ) and ( abs( int(key[2]) - keyc[2] ) < keyp_delta ):
       keypressed=1;
 
@@ -485,7 +569,7 @@ def drawframe():
     DrawRect(-7,-7,7,7,1);
     glColor4f(0.5, 1, 1.0, 0.7);
     DrawQuad(-5,-5,5,5);
-  if ( separate_note_id == i ): 
+  if ( separate_note_id == i ):
     glColor4f(0,1,0,1);
     DrawRect(-7,-12,7,12,2);
   DrawQuad(-1,-1,1,1);
@@ -496,7 +580,7 @@ def drawframe():
  glDisable(GL_BLEND);
  glDisable(GL_TEXTURE_2D);
 
- helpWindow.draw(); 
+ helpWindow.draw();
   
  if ( not helpWindow.hidden ):
    rect = helpWindow.getclientrect();
@@ -537,6 +621,8 @@ def drawframe():
    drawText( (0,0,1), "Home/End - go to the beginning or end of the video");
    glTranslatef(0,spaceh,0);
    drawText( (0,0,1), "[ / ] - change base octave");
+   glTranslatef(0,spaceh,0);
+   drawText( (0,0,1), "F2 / F3 - save / load settings");
    glTranslatef(0,spaceh,0);
    drawText( (0,0,1), "Escape - quit");
    glTranslatef(0,spaceh,0);
@@ -687,7 +773,7 @@ def processmidi():
 #      print "original x:"+str(pixxo) + "x" +str(pixyo) + " mapped :" +str(pixx) +"x"+str(pixy);
 
     keybgr=image[pixy,pixx];
-    key= [ keybgr[2], keybgr[1],keybgr[0] ];
+    key=[ keybgr[2], keybgr[1],keybgr[0] ];
 
     note=i;
     if ( note > 120 ): 
@@ -698,10 +784,12 @@ def processmidi():
     keypressed=0;
     note_channel=0;
 
-    deltaclr = abs( int(key[0]) - keyp_colors[0][0] ) +  abs( int(key[1]) - keyp_colors[0][1] ) + abs( int(key[2]) - keyp_colors[0][2] )
+#    deltaclr = abs( int(key[0]) - keyp_colors[0][0] ) +  abs( int(key[1]) - keyp_colors[0][1] ) + abs( int(key[2]) - keyp_colors[0][2] )
+    deltaclr = keyp_delta*keyp_delta*keyp_delta;
+
     deltaid = 0
     for j in range(len(keyp_colors)):
-     if (keyp_colors[j][0] != 0 ) and ( keyp_colors[j][1] != 0 ) and ( keyp_colors[j][2] != 0 ):
+     if (keyp_colors[j][0] != 0 ) or ( keyp_colors[j][1] != 0 ) or ( keyp_colors[j][2] != 0 ):
       if ( abs( int(key[0]) - keyp_colors[j][0] ) < keyp_delta ) and ( abs( int(key[1]) - keyp_colors[j][1] ) < keyp_delta ) and ( abs( int(key[2]) - keyp_colors[j][2] ) < keyp_delta ):
        delta = abs( int(key[0]) - keyp_colors[j][0] ) +  abs( int(key[1]) - keyp_colors[j][1] ) + abs( int(key[2]) - keyp_colors[j][2] )
        if ( delta < deltaclr ):
@@ -734,19 +822,24 @@ def processmidi():
             notes_channel[ note ] = 0
           else:
             notes_channel[ note ] = 1
-        
+
       if ( notes[note] == 1 ) and ( notes_channel[ note ] != note_channel ) and ( experimental == 1 ):
         # case if one key over other
         time = notes_db[note] / fps;
         duration = ( frame - notes_db[note] ) / fps;
-        if ( duration < minimal_duration ): duration = minimal_duration;
+        ignore = 0
+        if ( duration < minimal_duration ):
+          duration = minimal_duration;
+          if ( ignore_minimal_duration == 1 ):
+            ignore=1;
 
         if ( debug_keys == 1 ):
           print "keys (one over other), note released :" + str(note) + " de = " + str(notes_de[note]) + "- db =" + str(notes_db[note]);
           print "midi add white keys, note : " +str(note) + " time:" +str(time) + " duration:" + str(duration);
-                 
-        mf.addNote(track, notes_channel[note] , basenote+ note, time , duration , volume );
-        notecnt+=1;
+
+        if ( not ignore ):
+          mf.addNote(track, notes_channel[note] , basenote+ note, time , duration , volume );
+          notecnt+=1;
 
         notes_db[ note ] = frame;
         notes_channel[ note ] = note_channel;
@@ -757,13 +850,20 @@ def processmidi():
         notes_de[ note ] = frame;
         time = notes_db[note] / fps;
         duration = ( notes_de[note] - notes_db[note] ) / fps;
-        if ( duration < minimal_duration ): duration = minimal_duration;
+        ignore=0
+        if ( duration < minimal_duration ):
+          if ( debug_keys == 1 ):
+            print " duration:" + str(duration) + " < minimal_duration:" + str(minimal_duration);
+          duration = minimal_duration;
+          if ( ignore_minimal_duration == 1 ):
+            ignore=1;
 
         if ( debug_keys == 1 ):
           print "keys, note released :" + str(note ) + " de = " + str(notes_de[note]) + "- db =" + str(notes_db[note]);
           print "midi add white keys, note : " +str(note) + " time:" +str(time) + " duration:" + str(duration);
-        mf.addNote(track, notes_channel[note] , basenote+ note, time , duration , volume );
-        notecnt+=1;
+        if ( not ignore ):
+          mf.addNote(track, notes_channel[note] , basenote+ note, time , duration , volume );
+          notecnt+=1;
 
   xapp=0;
   if ( debug == 1 ):
@@ -778,7 +878,7 @@ def processmidi():
     success = False;
 
   for event in pygame.event.get():
-   if event.type == pygame.QUIT: 
+   if event.type == pygame.QUIT:
      success = False;
      pygame.quit();
      quit();
@@ -813,7 +913,6 @@ def main():
   global keyp_delta;
   global keyp_delta_slider_pos;
   global keyp_delta_slider_size;
-  global drawhelp;
   global startframe;
   global endframe;
   global basenote;
@@ -855,7 +954,7 @@ def main():
      elif event.type == pygame.KEYDOWN:
       for wnd in glwindows:
        wnd.update_key_down(event.key);
-         
+
 #      print event.key;
       if event.key == pygame.K_q:
        running = 0;
@@ -872,13 +971,17 @@ def main():
        else:
         endframe = int(round(vidcap.get(1)));
        print "set end frame = "+ str(endframe);
-      if event.key == pygame.K_h:
-       drawhelp = not drawhelp;
 
       if event.key == pygame.K_ESCAPE:
        running = 0;
        pygame.quit();
        quit();
+
+      if event.key == pygame.K_F2:
+       savesettings()
+
+      if event.key == pygame.K_F3:
+       loadsettings( settingsfile )
 
       if event.key == pygame.K_RIGHTBRACKET:
         octave += 1;
@@ -896,18 +999,21 @@ def main():
        else:
         yoffset_blackkeys -= 2;
        updatekeys( );
+
       if event.key == pygame.K_DOWN:
        if mods & pygame.KMOD_SHIFT:
         yoffset_blackkeys += 1;
        else:
         yoffset_blackkeys += 2;
        updatekeys( );
+
       if event.key == pygame.K_LEFT:
        if mods & pygame.KMOD_SHIFT:
         whitekey_width-=0.1;
        else:
         whitekey_width-=1.0;
        updatekeys( );
+
       if event.key == pygame.K_RIGHT:
        if mods & pygame.KMOD_SHIFT:
         whitekey_width+=0.1;
@@ -941,6 +1047,7 @@ def main():
 
        glBindTexture(GL_TEXTURE_2D, bgImgGL);
        loadImage(frame);
+
       if event.key == pygame.K_PAGEDOWN:
        if mods & pygame.KMOD_SHIFT:
         frame-=1;
@@ -958,8 +1065,7 @@ def main():
          if (abs( mousex - (keys_pos[i][0] + xoffset_whitekeys) )< size) and (abs( mousey - (keys_pos[i][1] + yoffset_whitekeys) )< size):
            separate_note_id=i;
            pass
-
-
+     #
      elif event.type == pygame.MOUSEBUTTONUP:
       for wnd in glwindows:
         wnd.update_mouse_up(mousex,mousey,event.button)
@@ -968,11 +1074,11 @@ def main():
         keygrabid = -1;
       if ( event.button == 3 ):
         keygrab = 0;
-
+     #
      elif event.type == pygame.MOUSEBUTTONDOWN:
       for wnd in glwindows:
         wnd.update_mouse_down(mousex,mousey,event.button);
-         
+
 #      print event.button;
       if ( event.button == 4 ):
         whitekey_width+=0.05;
@@ -983,10 +1089,7 @@ def main():
         whitekey_width-=0.05;
 #        print "whitekey_width="+str(whitekey_width);
         updatekeys( );
-#        scale-=0.1;
-#      if (scale >2): scale=2;
-#      if (scale <1): scale=1;
-
+#
       if ( event.button == 1 ):
         if mods & pygame.KMOD_CTRL and keyp_colormap_id != -1:
          pixx = int(mousex);
@@ -1055,9 +1158,8 @@ def main():
     pygame.display.flip();
 
 main();
-
+helpWindow.hidden=1;
 frame=startframe;
-drawhelp=0;
 processmidi();
 
 print "done...";
