@@ -59,7 +59,7 @@ while os.path.exists( outputmid ):
  fileid+=1;
  if ( fileid > 99 ): break;
 #
-settingsfile= ntpath.basename( filepath ) + ".ini";
+settingsfile= filepath + ".ini";
 #
 frame= 0;
 resize= 0;
@@ -164,7 +164,7 @@ ignore_minimal_duration = 0
 
 bgImgGL=-1;
 
-experimental = 0;
+notes_overlap = False;
 
 
 keyp_colormap_colors_pos=[];
@@ -187,10 +187,12 @@ if os.path.exists( 'v2m.ini' ):
   print "local config file exists."
 
 def loadsettings( cfgfile ):
- global miditrackname,debug,experimental,resize,resize_width,resize_height,minimal_duration,keyp_colors_channel,keyp_colors_channel_prog,xoffset_whitekeys,yoffset_whitekeys,keyp_colors,keys_pos;
+ global miditrackname,debug,notes_overlap,resize,resize_width,resize_height,minimal_duration,keyp_colors_channel,keyp_colors_channel_prog,xoffset_whitekeys,yoffset_whitekeys,keyp_colors,keys_pos;
 
- if os.path.exists( cfgfile ):
-  print "reading settings from file:"+cfgfile;
+ if not os.path.exists( cfgfile ):
+  print "cannot find setings file: "+cfgfile;
+ else:  
+  print "reading settings from file: "+cfgfile;
   config = ConfigParser()
   config.read( cfgfile )
   section = 'options';
@@ -198,8 +200,8 @@ def loadsettings( cfgfile ):
    miditrackname = config.get(section, 'midi_track_name')
   if config.has_option(section, 'debug'):
    debug = config.getboolean(section, 'debug')
-  if config.has_option(section, 'experimental'):
-   experimental = config.getboolean(section, 'experimental')
+  if config.has_option(section, 'notes_overlap'):
+   notes_overlap = config.getboolean(section, 'notes_overlap')
   if config.has_option(section, 'resize'):
    resize = config.getboolean(section, 'resize')
   if config.has_option(section, 'resize_width'):
@@ -214,6 +216,10 @@ def loadsettings( cfgfile ):
    clr_chnls_prog = config.get(section, 'channel_prog_accordance')
   if config.has_option(section, 'ignore_notes_with_minimal_duration'):
    ignore_minimal_duration = config.get(section, 'ignore_notes_with_minimal_duration')
+  if config.has_option(section, 'notes_overlap'):
+   notes_overlap = config.getint(section, 'notes_overlap')
+  if config.has_option(section, 'sensitivity'):
+   keyp_delta = config.getint(section, 'sensitivity')
 
 
   if ( clr_chnls != "" ):
@@ -244,7 +250,9 @@ def loadsettings( cfgfile ):
     for cur in skeys_pos.split(","):
      c = cur.split(":")
      keys_pos.append( [ int(c[0]), int(c[1])  ]);
-  pass;
+ while ( len(keyp_colors_channel) > len(keyp_colors) ):  keyp_colors_channel.append(0); 
+ while ( len(keyp_colors_channel_prog) > len(keyp_colors) ):  keyp_colors_channel_prog.append(0);      
+ pass;
    
 
 
@@ -290,12 +298,14 @@ def savesettings():
  config.add_section(section)
  config.set(section, 'midi_track_name', miditrackname)
  config.set(section, 'debug', str(int(debug)))
- config.set(section, 'experimental', str(int(experimental)))
+ config.set(section, 'notes_overlap', str(int(notes_overlap)))
  config.set(section, 'resize', str(int(resize)))
  config.set(section, 'resize_width', str(resize_width))
  config.set(section, 'resize_height', str(resize_height))
  config.set(section, 'minimal_note_duration', str(minimal_duration))
  config.set(section, 'ignore_notes_with_minimal_duration', str(int(ignore_minimal_duration)))
+ config.set(section, 'notes_overlap', str(int(notes_overlap)))
+ config.set(section, 'sensitivity', str(int(keyp_delta)))
  
  skeyp_colors_channel = "";
  for i in keyp_colors_channel:
@@ -475,8 +485,8 @@ class GLWindow:
       
 
 colorWindow = GLWindow(keyp_colormap_pos[0],keyp_colormap_pos[1],100, ( (len(keyp_colors) // 2)+2 ) * 24, "color map")
-sensWindow = GLWindow(keyp_delta_slider_pos[0], keyp_delta_slider_pos[1],170, 130, "sensitivity & octave");
-helpWindow = GLWindow(303,16,750,480, "help");
+sensWindow = GLWindow(keyp_delta_slider_pos[0], keyp_delta_slider_pos[1],170, 150, "sensitivity & octave");
+helpWindow = GLWindow(303,16,750,510, "help");
 
 glwindows = [];
 glwindows.append(colorWindow);
@@ -581,6 +591,7 @@ def drawframe():
  glDisable(GL_TEXTURE_2D);
 
  helpWindow.draw();
+ spaceh=25;
   
  if ( not helpWindow.hidden ):
    rect = helpWindow.getclientrect();
@@ -591,7 +602,6 @@ def drawframe():
    glDisable(GL_TEXTURE_2D);
    glPushMatrix()
    glTranslatef(rect[0],rect[1],0);
-   spaceh=25;
    glColor4f(1.0, 1.0, 1, 0.0);
    glTranslatef(0,spaceh,0);
    drawText( (0,0,1), "h - on window title, show/hide the window");
@@ -603,6 +613,8 @@ def drawframe():
    drawText( (0,0,1), "e - set end frame, (mods : shift, set processing end frame to the ending)");
    glTranslatef(0,spaceh,0);
    drawText( (0,0,1), "p - if key is set, force separate to 2 channels (on single color video)");
+   glTranslatef(0,spaceh,0);
+   drawText( (0,0,1), "o - enable/disable overlap notes");
    glTranslatef(0,spaceh,0);
    drawText( (0,0,1), "Mouse wheel - keys adjustment");
    glTranslatef(0,spaceh,0);
@@ -680,7 +692,9 @@ def drawframe():
   glTranslatef( keyp_delta_slider_pos[0] , keyp_delta_slider_pos[1]+50 ,0);
   glBlendFunc(GL_ONE, GL_SRC_ALPHA);
   glColor4f(1.0, 1.0, 1, 0.0);
-  drawText( (0,0,1), "base octave:" + str(octave));
+  drawText( (0,0,1), "base octave: " + str(octave));
+  glTranslatef(0,spaceh,0);
+  drawText( (0,0,1), "notes overlap: " + str(notes_overlap));
   glPopMatrix();
   glEnable(GL_BLEND);
 
@@ -712,7 +726,7 @@ def processmidi():
 
  global success,image;
  global startframe;
- global experimental;
+ global notes_overlap;
  global resize;
  global miditrackname;
  global separate_note_id;
@@ -813,7 +827,7 @@ def processmidi():
       # if key is not pressed;
       if ( notes[note] == 0 ):
         if ( debug_keys == 1 ):
-          print "white keys, note pressed on :" + str( note );
+          print "note pressed on :" + str( note );
         notes[ note ] = 1;
         notes_db[ note ] = frame;
         notes_channel[ note ] = note_channel;
@@ -823,7 +837,7 @@ def processmidi():
           else:
             notes_channel[ note ] = 1
 
-      if ( notes[note] == 1 ) and ( notes_channel[ note ] != note_channel ) and ( experimental == 1 ):
+      if ( notes[note] == 1 ) and ( notes_channel[ note ] != note_channel ) and ( notes_overlap == 1 ):
         # case if one key over other
         time = notes_db[note] / fps;
         duration = ( frame - notes_db[note] ) / fps;
@@ -920,6 +934,7 @@ def main():
   global glwindows;
   global separate_note_id;
   global frame;
+  global notes_overlap;
 
   running=1;
   keygrab=0;
@@ -930,6 +945,7 @@ def main():
   pyfont = pygame.font.SysFont('Sans', 20)
   display = (width,height);
   screen = pygame.display.set_mode(display, DOUBLEBUF|OPENGL);
+  pygame.display.set_caption(filepath)
 
   glPixelStorei(GL_UNPACK_ALIGNMENT,1)
   bgImgGL = glGenTextures(1);
@@ -958,6 +974,9 @@ def main():
 #      print event.key;
       if event.key == pygame.K_q:
        running = 0;
+      if event.key == pygame.K_o:
+       notes_overlap = not notes_overlap;
+   
       if event.key == pygame.K_s:
        if mods & pygame.KMOD_SHIFT:
         startframe = 0;
