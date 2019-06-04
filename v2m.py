@@ -250,8 +250,13 @@ def loadsettings( cfgfile ):
     for cur in skeys_pos.split(","):
      c = cur.split(":")
      keys_pos.append( [ int(c[0]), int(c[1])  ]);
- while ( len(keyp_colors_channel) > len(keyp_colors) ):  keyp_colors_channel.append(0); 
- while ( len(keyp_colors_channel_prog) > len(keyp_colors) ):  keyp_colors_channel_prog.append(0);      
+
+ while ( len(keyp_colors_channel) < len(keyp_colors) ):  
+    print "Warning, append array keyp_colors_channel", len(keyp_colors_channel);
+    keyp_colors_channel.append(0); 
+ while ( len(keyp_colors_channel_prog) < len(keyp_colors) ):  
+    print "Warning, append array keyp_colors_channel_prog", len(keyp_colors_channel_prog);
+    keyp_colors_channel_prog.append(0);      
  pass;
    
 
@@ -746,7 +751,6 @@ def processmidi():
  print "starting from frame:" + str(startframe);
  getFrame( startframe );
  notecnt=0
-
  while success:
 
   if (frame % 100 == 0):
