@@ -54,6 +54,8 @@ sudo apt install python-opencv python-pygame python-midiutil python-opengl
   * **e** - Установить конечный кадр обработки (модификатор: shift, сброс на конечный кадр видео), на некоторых форматах, не работает корректно, похоже на баг OpenCV
   * **p** - Если клавиша указана, принудительно разделит вывод на 2 канала не зависимо от настроек. Раздиление будет проведено в зависимости от положения клавиши относительно указаной клавиши. Используется на видео с одним цветом клавиш.
   * **o** - Включить/выключить возможность распознавать перекрытие клавиш друг другом. В данном случае в момент перекрытия будет создано окончание одной ноты и начало другой.
+  * **i** - Включить/выключить игнорирование/удлинение нот меньше минимальной длительности ноты ( Если включено данные ноты не будут записаны в midi. Если выключено ноты длительность которых будет меньше указанной будут автоматически приравнены минимальной длительности. )
+  * **r** - Включить/выключить функцию масштабирования
   * **Mouse wheel** - подстройка клавиш
   * **Левая кнопка мыши** - перетаскивание выбранной клавиши / выбор цвета из карты цветов.
   * **CTRL + Левая кнопка мыши** - обновить выбранный цвет к карте цветов.
@@ -74,7 +76,9 @@ sudo apt install python-opencv python-pygame python-midiutil python-opengl
   * **s** - set start frame, (mods : shift, set processing start frame to the beginning)
   * **e** - set end frame, (mods : shift, set processing end frame to the ending), on some formats, it does not work correctly, it seems like an OpenCV bug
   * **p** - if the key is specified, it will forcibly divide the output into 2 channels regardless of the settings. Splitting will be carried out depending on the position of the key relative to the specified key. Used on video with one key color.
-  * **o** - enable/disable the ability to recognize the overlap of keys with each other. In this case, at the moment of overlapping, the end of one note and the beginning of another will be created.
+  * **o** - enable or disable the ability to recognize the overlap of keys with each other. In this case, at the moment of overlapping, the end of one note and the beginning of another will be created.
+  * **i** - enable or disable ignore/lengthening of notes with minimal duration ( if enabled the notes whose duration will be less than that specified will be ignored. If disabled the notes whose duration will be less than that specified will be automatically equated to the minimum duration.)
+  * **r** - enable or disable resize function
   * **Mouse wheel** - keys adjustment
   * **Left mouse button** - dragging the selected key / select color from the color map
   * **CTRL + Left mouse button** - update selected color in the color map
@@ -132,16 +136,4 @@ The default all channels is 0 midi instrument.
 ```python
 channel_prog_accordance = 0,0, 0,0, 0,0, 0,0, 0,0, 0,0 
 
-```
-
-##### RU:
-Вы так же можете указать минимальную длительность нот, ноты длительность которых будет меньше указанной будут автоматически приравнены минимальной длительности.
-Для этого в файле v2m.ini необходимо изменить переменные "minimal_duration".
-
-##### EN:
-You can also specify the minimum duration of the notes, the notes whose duration will be less than that specified will be automatically equated to the minimum duration.
-To do this, in the v2m.ini file, you need to modify variables "minimal_duration".
-
-```python
-minimal_note_duration = 0.6
 ```
