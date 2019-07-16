@@ -39,7 +39,7 @@ sudo apt install python-opencv python-pygame python-midiutil python-opengl
   ./v2m.py ./synthesia_video.mkv
   ```
 
-##### Windows+Anaconda2 (python 2.7):
+##### Windows+Anaconda2 (python 2.7)/Anaconda3 (python 3.7):
  in start menu search and open Anaconda command prompt:
   ```bash
   cd path to v2m.py
