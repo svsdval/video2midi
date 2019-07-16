@@ -19,8 +19,8 @@ youtube synthesia video to midi, just for fun )
 sudo apt install python-opencv python-pygame python-midiutil python-opengl
 ```
 
-#### Windows + Anaconda2 (python 2.7):
- - Anaconda2 (pyton 2.7) (https://www.anaconda.com/distribution/#download-section)
+#### Windows + Anaconda2 (python 2.7)/Anaconda3 (python 3.7):
+ - Anaconda2 (pyton 2.7) / Anaconda3 (pyton 3.7)  (https://www.anaconda.com/distribution/#download-section)
  in start menu search and open Anaconda command prompt
 ```bash
  pip install opencv-python midiutil pygame pyopengl
