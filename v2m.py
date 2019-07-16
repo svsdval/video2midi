@@ -43,15 +43,15 @@ keygrabid=-1;
 whitekey_width=24.6;
 
 if ( len(sys.argv) < 2 ):
-  print "halt, no args";
+  print("halt, no args");
   sys.exit( 0 ) ;
 
 filepath = sys.argv[1];
 if not os.path.exists( filepath ):
-  print "file not exists [" + filepath +"]";
+  print("file not exists [" + filepath +"]");
   sys.exit( 0 ) ;
 
-print "open file " + filepath;
+print("open file " + filepath);
 vidcap = cv2.VideoCapture( filepath );
 
 outputmid= ntpath.basename( filepath ) + "_output.mid";
@@ -74,6 +74,20 @@ resize_width=1280;
 resize_height=720;
 tempo = 120;
 
+debug = 0;
+debug_keys = 0;
+
+length = int(vidcap.get(cv2.CAP_PROP_FRAME_COUNT));
+video_width  = int(vidcap.get(cv2.CAP_PROP_FRAME_WIDTH));
+video_height = int(vidcap.get(cv2.CAP_PROP_FRAME_HEIGHT));
+fps    = float(vidcap.get(cv2.CAP_PROP_FPS));
+
+width = video_width;
+height = video_height;
+
+startframe = 1;
+endframe = length;
+
 # set start frame;
 def getFrame( framenum =-1 ):
   global resize;
@@ -82,20 +96,26 @@ def getFrame( framenum =-1 ):
   global width;
   global height;
   global convertCvtColor;
+  global fps;
+
+
+  if ( fps == 0 ):
+   return;
 
   if ( framenum != -1 ):
     #vidcap.set(cv2.CAP_PROP_POS_FRAMES, int(framenum) );
     # problems with mpeg formats ...
     oldframenum = int(round(vidcap.get(1)));
+
     frametime =  framenum * 1000.0 / fps;
-    print "go to frame time :" + str(frametime);
+    print("go to frame time :" + str(frametime));
     success = vidcap.set(cv2.CAP_PROP_POS_MSEC, frametime);
     if not success:
-      print "Cannot set frame position from video file at " + str(framenum)
+      print("Cannot set frame position from video file at " + str(framenum));
       success = vidcap.set(cv2.CAP_PROP_POS_FRAMES, int(oldframenum) );
     curframe = vidcap.get(cv2.CAP_PROP_POS_FRAMES);
     if (curframe != framenum ):
-     print "OpenCV bug, Requesting frame " + str(curFrame) + " but get position on " +str(curframe);
+     print("OpenCV bug, Requesting frame " + str(curFrame) + " but get position on " +str(curframe));
 
   if ( convertCvtColor == 1 ):
     cv2.cvtColor(image,cv2.COLOR_BGR2RGB)
@@ -108,23 +128,9 @@ def getFrame( framenum =-1 ):
 
 getFrame();
 
-debug = 0;
-debug_keys = 0;
-
-length = int(vidcap.get(cv2.CAP_PROP_FRAME_COUNT));
-video_width  = int(vidcap.get(cv2.CAP_PROP_FRAME_WIDTH));
-video_height = int(vidcap.get(cv2.CAP_PROP_FRAME_HEIGHT));
-fps    = float(vidcap.get(cv2.CAP_PROP_FPS));
-
-width = video_width;
-height = video_height;
-
-
-startframe = 0;
-endframe = length;
 
 #;
-print "video " + str(width) + "x" + str(height) +" fps: " + str(fps);
+print("video " + str(width) + "x" + str(height) +" fps: " + str(fps));
 
 # add some notes;
 channel = 0;
@@ -184,7 +190,7 @@ miditrackname="Sample Track";
 Label_v_spacer=21;
 fontSize=24;
 glDrawPixelsText = 0;
-fontTexture = 0;
+fontTexture = -1;
 fontChars = u''' !"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz'''
 
 screen=0;
@@ -195,16 +201,16 @@ home = expanduser("~")
 inifile = os.path.join( home, '.v2m.ini');
 if os.path.exists( 'v2m.ini' ):
   inifile="v2m.ini";
-  print "local config file exists."
+  print("local config file exists.")
 
 def loadsettings( cfgfile ):
  global miditrackname,debug,notes_overlap,resize,resize_width,resize_height,minimal_duration,keyp_colors_channel,keyp_colors_channel_prog,xoffset_whitekeys,yoffset_whitekeys,keyp_colors,keys_pos,ignore_minimal_duration,keyp_delta,screen,tempo,width,height;
  global colorBtns;
 
  if not os.path.exists( cfgfile ):
-  print "cannot find setings file: "+cfgfile;
+  print("cannot find setings file: "+cfgfile);
  else:  
-  print "reading settings from file: "+cfgfile;
+  print("reading settings from file: "+cfgfile);
   config = ConfigParser()
   config.read( cfgfile )
   section = 'options';
@@ -237,12 +243,15 @@ def loadsettings( cfgfile ):
 
 
   if ( clr_chnls != "" ):
-    keyp_colors_channel = map(int, clr_chnls.split(","))
-    print "readed color = channel", keyp_colors_channel;
+#    keyp_colors_channel = map(int, clr_chnls.split(","))
+    keyp_colors_channel = [ int(x) for x in clr_chnls.split(",") ]
+    print("readed color = channel", keyp_colors_channel);
 
   if ( clr_chnls_prog != "" ):
-    keyp_colors_channel_prog = map(int, clr_chnls_prog.split(","))
-    print "readed color channel = prog ", keyp_colors_channel_prog;
+#    keyp_colors_channel_prog = map(int, clr_chnls_prog.split(","))
+    keyp_colors_channel_prog = [ int(x) for x in clr_chnls_prog.split(",") ]
+
+    print("readed color channel = prog ", keyp_colors_channel_prog);
     
   if config.has_option(section, 'xoffset_whitekeys'):
    xoffset_whitekeys = config.getint(section, 'xoffset_whitekeys')
@@ -258,7 +267,7 @@ def loadsettings( cfgfile ):
      keyp_colors.append( [ int(c[0]), int(c[1]),int(c[2]) ]);
 
   while ( len(keyp_colors) < len(colorBtns) ):  
-    print "Warning, append array keyp_colors", len(keyp_colors);
+    print("Warning, append array keyp_colors", len(keyp_colors));
     keyp_colors.append( [0,0,0] );
     
   if config.has_option(section, 'keys_pos'):
@@ -268,21 +277,14 @@ def loadsettings( cfgfile ):
     for cur in skeys_pos.split(","):
      c = cur.split(":")
      keys_pos.append( [ int(c[0]), int(c[1])  ]);
- 
+    print( len(keyp_colors) );
+    print( len(keyp_colors_channel));
  while ( len(keyp_colors_channel) < len(keyp_colors) ):  
-    print "Warning, append array keyp_colors_channel", len(keyp_colors_channel);
+    print("Warning, append array keyp_colors_channel", len(keyp_colors_channel));
     keyp_colors_channel.append( len(keyp_colors_channel) // 2 ); 
  while ( len(keyp_colors_channel_prog) < len(keyp_colors) ):  
-    print "Warning, append array keyp_colors_channel_prog", len(keyp_colors_channel_prog);
+    print("Warning, append array keyp_colors_channel_prog", len(keyp_colors_channel_prog));
     keyp_colors_channel_prog.append(0);      
-
- if resize:
-    width = resize_width;
-    height = resize_height;
- else:
-    width = video_width
-    height = video_height;
- screen = pygame.display.set_mode((width,height), DOUBLEBUF|OPENGL);
  pass;
  
 ###
@@ -322,7 +324,7 @@ def update_colormap():
   pass;
 
 def savesettings():
- print "save settings to file"
+ print("save settings to file")
  config = ConfigParser();
  #config = configparser.RawConfigParser()
  section='options';
@@ -374,7 +376,7 @@ loadsettings(inifile);
 glListQuad1=-1;
 glListRect1=-1;
 
-tStart = t0 = time.time();
+tStart = t0 = time.time()-1;
 frames = 0;
 
 def framerate():
@@ -383,8 +385,9 @@ def framerate():
     frames += 1
     if t - t0 >= 1.0:
         seconds = t - t0
-        fps = frames/seconds
-        print "%.0f frames in %3.1f seconds = %6.3f FPS" % (frames,seconds,fps)
+        if ( seconds != 0) :
+          fps = frames / seconds
+          print("%.0f frames in %3.1f seconds = %6.3f FPS" % (frames,seconds,fps))
         t0 = t
         frames = 0
 
@@ -393,7 +396,7 @@ def loadImage(idframe=130):
   global image;
   getFrame(idframe);
 
-  print "load image from video " + str(width) + "x" + str(height) + " frame: "+ str(idframe) ;
+  print("load image from video " + str(width) + "x" + str(height) + " frame: "+ str(idframe));
   glPixelStorei(GL_UNPACK_ALIGNMENT,1)
 
   glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
@@ -541,7 +544,7 @@ def RenderText(x,y, text):
 
   #glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   glBlendFunc(GL_ONE, GL_SRC_ALPHA);
-
+  #
   glBindTexture(GL_TEXTURE_2D,fontTexture);
   
   glPushMatrix();
@@ -598,6 +601,7 @@ def GenFontTexture():
   global fontChars;
   global fonts;
   global fontSize;
+  global fontTexture;
   
   #surface
   texture_buffer_surf = pygame.Surface((512, 512))
@@ -623,16 +627,18 @@ def GenFontTexture():
   tex_data = pygame.image.tostring(texture_buffer_surf, "RGBA", 1)
   
   # fix alpha ...
-  l = list(tex_data);
+  l = list( tex_data );
   #
   for y in range(512):
    for x in range(512):
-       l[ (y*512+x) * 4 +3 ] =  l[ (y*512+x) * 4 +0 ] 
-  
-  tex_data4 = "".join( l );
+       l[ (y*512+x) * 4 +3 ] =  l[ (y*512+x) * 4 +0 ]
+       
+  if sys.version_info >= (3, 0):
+    tex_data4 = l;
+  else:
+    tex_data4 = ''.join(l);
   #
-  i = glGenTextures(1)
-  glBindTexture(GL_TEXTURE_2D, i)
+  glBindTexture(GL_TEXTURE_2D, fontTexture)
     
   glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
   glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
@@ -641,10 +647,28 @@ def GenFontTexture():
   glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL)
 
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 512, 512, 0, GL_RGBA, GL_UNSIGNED_BYTE, tex_data4 );
+  pass;
+
+
+def resize_window():
+  global resize, screen,  width, height, bgImgGL, fontTexture;
+
+  if resize:
+    width = resize_width;
+    height = resize_height;
+  else:
+    width = video_width
+    height = video_height;
+  screen = pygame.display.set_mode((width,height), DOUBLEBUF|OPENGL);
+  #
+  bgImgGL = glGenTextures(1);
+  glBindTexture(GL_TEXTURE_2D, bgImgGL)
+  loadImage();
+  #
+  fontTexture = glGenTextures(1);
+  GenFontTexture();
   
-  texture_id=i;
-  fontTexture = texture_id
-  return texture_id;
+  
 
 def drawText(position, color, textString, size=24):
   global glDrawPixelsText;
@@ -696,12 +720,11 @@ class GLSlider:
 
     glPopMatrix();
     pass;
-    
-	 
+#
   def update(self):
     pass;
   def setvalue(self,value):
-      
+#
     self.value = value;
     if (self.vmax - self.vmin) != 0:
       self.percent = (value / float(self.vmax - self.vmin)) * 100;
@@ -789,11 +812,11 @@ class GLColorButton:
     DrawQuad(5,5,self.w-5,self.h-5);
     glPopMatrix();
     pass;
-    
-	 
+
+
   def update(self):
     pass;
-    
+
   def update_mouse_move(self, mpx, mpy ):
     self.mousepos[0] = mpx;
     self.mousepos[1] = mpy;
@@ -852,11 +875,11 @@ class GLLabel:
       glTranslatef(0,Label_v_spacer,0);
     glPopMatrix()
     pass;
-	 
+
   def update(self):
     pass;
   def update_mouse_move(self, mpx, mpy ):
-	pass;
+    pass;
   def update_mouse_down(self,mpx, mpy, btn):
     pass;
   def update_mouse_up(self, mpx, mpy, btn):
@@ -884,16 +907,15 @@ class GLWindow:
     self.child = [];
     self.level = 0;
     self.active = 0;
-	#
+    #
     self.clientrect[0] = self.x + self.borderwidth;
     self.clientrect[1] = self.y + self.borderwidth + self.titleheight;
     self.clientrect[2] = self.x + self.w - self.borderwidth;
     self.clientrect[3] = self.y + self.h - self.titleheight - self.borderwidth;
-    
-    
+    #
   def appendChild(self,child):
     self.child.append(child);
-    
+
   def draw(self):
     self.update();
     glDisable(GL_TEXTURE_2D);
@@ -957,7 +979,7 @@ class GLWindow:
     if (self.mousegrab == 1):
       self.x = mpx - self.mouseclickpos[0];
       self.y = mpy - self.mouseclickpos[1];
-      
+    
     if ( not self.hidden ):
       for i in self.child:
         if hasattr(i, 'update_mouse_move'):
@@ -1165,7 +1187,7 @@ def drawframe():
 
   note=i;
   if ( note > 120 ):
-    print "skip note > 120";
+    print("skip note > 120");
     continue;
   keypressed=0;
 
@@ -1245,7 +1267,7 @@ def processmidi():
  global separate_note_id;
  global tempo;
 
- print "video " + str(width) + "x" + str(height);
+ print("video " + str(width) + "x" + str(height));
 
  # create  MIDI object;
  mf = MIDIFile(1) # only 1 track;
@@ -1260,7 +1282,7 @@ def processmidi():
  for i in range(len(keyp_colors_channel)):
   mf.addProgramChange(track, keyp_colors_channel[i], time, keyp_colors_channel_prog[i]);
 
- print "starting from frame:" + str(startframe);
+ print("starting from frame:" + str(startframe));
  getFrame( startframe );
  notecnt=0
  while success:
@@ -1281,7 +1303,7 @@ def processmidi():
    pygame.display.flip();
 
 #  if (frame % 100 == 0):
-   print "processing frame: " + str(frame) + " / " + str(length) + " % " + str( math.trunc(p * 100));
+   print("processing frame: " + str(frame) + " / " + str(length) + " % " + str( math.trunc(p * 100)));
 
 #  if ( resize == 1 ):
 #    image=cv2.resize(image, (width , height));
@@ -1307,7 +1329,7 @@ def processmidi():
 
     note=i;
     if ( note > 120 ): 
-      print "skip note > 120";
+      print("skip note > 120");
       continue;
 
 
@@ -1343,7 +1365,7 @@ def processmidi():
       # if key is not pressed;
       if ( notes[note] == 0 ):
         if ( debug_keys == 1 ):
-          print "note pressed on :" + str( note );
+          print("note pressed on :" + str( note ));
         notes[ note ] = 1;
         notes_db[ note ] = frame;
         notes_channel[ note ] = note_channel;
@@ -1360,15 +1382,15 @@ def processmidi():
         ignore = 0
         if ( duration < minimal_duration ):
           if ( debug_keys == 1 ):
-            print " duration:" + str(duration) + " < minimal_duration:" + str(minimal_duration);
+            print(" duration:" + str(duration) + " < minimal_duration:" + str(minimal_duration));
           duration = minimal_duration;
           if ( ignore_minimal_duration == 1 ):
             ignore=1;
             
 
         if ( debug_keys == 1 ):
-          print "keys (one over other), note released :" + str(note) + " de = " + str(notes_de[note]) + "- db =" + str(notes_db[note]);
-          print "midi add white keys, note : " +str(note) + " time:" +str(time) + " duration:" + str(duration);
+          print("keys (one over other), note released :" + str(note) + " de = " + str(notes_de[note]) + "- db =" + str(notes_db[note]));
+          print("midi add white keys, note : " +str(note) + " time:" +str(time) + " duration:" + str(duration));
 
         if ( not ignore ):
           mf.addNote(track, notes_channel[note] , basenote + note, time * tempo / 60.0 , duration * tempo / 60.0 , volume );
@@ -1386,14 +1408,14 @@ def processmidi():
         ignore=0
         if ( duration < minimal_duration ):
           if ( debug_keys == 1 ):
-            print " duration:" + str(duration) + " < minimal_duration:" + str(minimal_duration);
+            print(" duration:" + str(duration) + " < minimal_duration:" + str(minimal_duration));
           duration = minimal_duration;
           if ( ignore_minimal_duration == 1 ):
             ignore=1;
 
         if ( debug_keys == 1 ):
-          print "keys, note released :" + str(note ) + " de = " + str(notes_de[note]) + "- db =" + str(notes_db[note]);
-          print "midi add white keys, note : " +str(note) + " time:" +str(time) + " duration:" + str(duration);
+          print("keys, note released :" + str(note ) + " de = " + str(notes_de[note]) + "- db =" + str(notes_db[note]));
+          print("midi add white keys, note : " +str(note) + " time:" +str(time) + " duration:" + str(duration));
         if ( not ignore ):
           mf.addNote(track, notes_channel[note] , basenote+ note, time * tempo / 60.0 , duration * tempo / 60.0 , volume );
           notecnt+=1;
@@ -1423,7 +1445,7 @@ def processmidi():
      pygame.quit();
      quit();
 
- print "saved notes: " + str(notecnt);
+ print("saved notes: " + str(notecnt));
 # write midi to disk;
  with open(outputmid, 'wb') as outf:
   mf.writeFile(outf);
@@ -1472,9 +1494,10 @@ def main():
 
   glPixelStorei(GL_UNPACK_ALIGNMENT,1)
   bgImgGL = glGenTextures(1);
+  fontTexture = glGenTextures(1);
   glBindTexture(GL_TEXTURE_2D, bgImgGL);
   loadImage();
-  fontTexture = GenFontTexture();
+  GenFontTexture();
 
   clock = pygame.time.Clock()
   #
@@ -1518,41 +1541,34 @@ def main():
         startframe = 0;
        else:
         startframe = int(round(vidcap.get(1)));
-       print "set start frame = "+ str(startframe);
+       print("set start frame = "+ str(startframe));
 
       if event.key == pygame.K_e:
        if mods & pygame.KMOD_SHIFT:
         endframe = length;
        else:
         endframe = int(round(vidcap.get(1)));
-       print "set end frame = "+ str(endframe);
+       print("set end frame = "+ str(endframe));
 
       if event.key == pygame.K_ESCAPE:
-       running = 0;
-       pygame.quit();
-       quit();
+        running = 0;
+        pygame.quit();
+        quit();
 
       if event.key == pygame.K_F2:
-       savesettings()
+        savesettings()
 
       if event.key == pygame.K_F3:
-       loadsettings( settingsfile )
-       settingsWindow_slider1.setvalue(keyp_delta);
-       settingsWindow_slider2.setvalue(minimal_duration * 100);
-       settingsWindow_slider3.setvalue(tempo);
+        loadsettings( settingsfile )
+        settingsWindow_slider1.setvalue(keyp_delta);
+        settingsWindow_slider2.setvalue(minimal_duration * 100);
+        settingsWindow_slider3.setvalue(tempo);
+        resize_window();
        
 
       if event.key == pygame.K_r:
-       resize = not resize;
-       if resize:
-         width = resize_width;
-         height = resize_height;
-       else:
-         width = video_width
-         height = video_height;
-       pygame.display.set_mode((width,height), DOUBLEBUF|OPENGL);
-       
-       print "resize:", resize  ;
+        resize = not resize;
+        resize_window();
 
       if event.key == pygame.K_RIGHTBRACKET:
         octave += 1;
@@ -1672,7 +1688,7 @@ def main():
              pixy= int(round( pixy * ( video_height / float(resize_height) )))
              if ( pixx > video_width -1 ): pixx = video_width-1;
              if ( pixy > video_height-1 ): pixy = video_height-1;
-             print "original mouse x:"+str(mousex) + "x" +str(mousey) + " mapped :" +str(pixx) +"x"+str(pixy);
+             print("original mouse x:"+str(mousex) + "x" +str(mousey) + " mapped :" +str(pixx) +"x"+str(pixy));
 
            keybgr=image[pixy,pixx];
            keyp_colors[keyp_colormap_id][0] = keybgr[2];
@@ -1690,19 +1706,19 @@ def main():
          if (abs( mousex - (keys_pos[i][0] + xoffset_whitekeys) )< size) and (abs( mousey - (keys_pos[i][1] + yoffset_whitekeys) )< size):
           keygrab=1;
           keygrabid=i;
-          print "ok click found on : "+str(keygrabid);
+          print("ok click found on : "+str(keygrabid));
           break;
         pass;
       if ( event.button == 3 ):
         keygrab = 2;
         size=5;
-        print "x offset " + str(xoffset_whitekeys) + " y offset: " +str(yoffset_whitekeys);
+        print("x offset " + str(xoffset_whitekeys) + " y offset: " +str(yoffset_whitekeys));
         keygrabaddx=0
         for i in range( len( keys_pos) ):
          if (abs( mousex - (keys_pos[i][0] + xoffset_whitekeys) )< size) and (abs( mousey - (keys_pos[i][1] + yoffset_whitekeys) )< size):
           keygrab=2;
           keygrabaddx=keys_pos[i][0];
-          print "ok click found on : "+str(keygrabid);
+          print("ok click found on : "+str(keygrabid));
           break;
 
     if ( keygrab == 1) and ( keygrabid >-1 ):
@@ -1727,5 +1743,5 @@ helpWindow.hidden=1;
 frame=startframe;
 processmidi();
 
-print "done...";
+print ("done...");
 
