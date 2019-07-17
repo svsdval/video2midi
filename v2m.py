@@ -1099,7 +1099,7 @@ helpWindow.appendChild(helpWindow_label1);
 settingsWindow_label1 = GLLabel(0,0, "base octave: " + str(octave) + "\nnotes overlap: " + str(notes_overlap) + "\nignore minimal duration: " + str(ignore_minimal_duration));
 settingsWindow.appendChild(settingsWindow_label1);
 
-settingsWindow_label2 = GLLabel(0,67,  "Sensetivity:"+str(keyp_delta)+"\n\nMinimal note duration (sec):"+str(minimal_duration) +   "\n\nOutput tempo for midi:" + str(tempo)  );
+settingsWindow_label2 = GLLabel(0,67,  "Sensitivity:"+str(keyp_delta)+"\n\nMinimal note duration (sec):"+str(minimal_duration) +   "\n\nOutput tempo for midi:" + str(tempo)  );
 settingsWindow.appendChild(settingsWindow_label2);
 
 settingsWindow_slider1 = GLSlider(1,90, 240,18, 0,130,keyp_delta);
@@ -1230,7 +1230,7 @@ def drawframe():
  tempo = int(settingsWindow_slider3.value);
 
  settingsWindow_label1.text = "base octave: " + str(octave) + "\nnotes overlap: " + str(notes_overlap) + "\nignore minimal duration: " + str(ignore_minimal_duration);
- settingsWindow_label2.text = "Sensetivity:"+str(keyp_delta)+"\n\nMinimal note duration (sec):"+format(minimal_duration,'.2f' ) +   "\n\nOutput tempo for midi:" + str(tempo);
+ settingsWindow_label2.text = "Sensitivity:"+str(keyp_delta)+"\n\nMinimal note duration (sec):"+format(minimal_duration,'.2f' ) +   "\n\nOutput tempo for midi:" + str(tempo);
  for i in range(len(keyp_colors)):
      colorBtns[i].color = keyp_colors[i];
 
