@@ -5,7 +5,9 @@ youtube synthesia video to midi, just for fun )
 ![Alt text](docs/mainwindow.png?raw=true "main window")
 
 [Video example on YouTube, creating 2 channels midi, version video2midi 0.3.9.1](https://www.youtube.com/watch?v=NkAPkb7i2Ec)
+
 [Video example on YouTube, creating 6 channels midi, version video2midi 0.3.9.1](https://www.youtube.com/watch?v=seJz35iDKVY)
+
 [Video example on YouTube, creating 2 channels midi, version video2midi 0.3.0](https://youtu.be/AY0wME73Z98)
 
 # dependency / зависимости
