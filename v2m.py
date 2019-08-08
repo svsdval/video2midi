@@ -194,6 +194,8 @@ fontTexture = -1;
 fontChars = u''' !"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz'''
 
 screen=0;
+colorBtns = []
+
 #
 
 #cfg
@@ -1111,7 +1113,6 @@ settingsWindow.appendChild(settingsWindow_slider2);
 settingsWindow_slider3 = GLSlider(1,173, 240,18, 30,200,tempo);
 settingsWindow.appendChild(settingsWindow_slider3);
 
-colorBtns = []
 
 for i in range( len( keyp_colormap_colors_pos ) ):
  colorBtns.append( GLColorButton(20+keyp_colormap_colors_pos[i][0],10+keyp_colormap_colors_pos[i][1] ,20,20,i, keyp_colors[i] ) );
