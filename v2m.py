@@ -65,9 +65,38 @@ settingsfile= filepath + ".ini";
 #
 frame= 0;
 resize= 0;
-convertCvtColor=0;
+convertCvtColor=1;
+# For OpenCV 2.X ..
+CAP_PROP_FRAME_COUNT =0;
+CAP_PROP_POS_FRAMES  =0;
+CAP_PROP_POS_MSEC    =0;
+CAP_PROP_FRAME_WIDTH =0;
+CAP_PROP_FRAME_HEIGHT=0;
+CAP_PROP_FPS         =0;
+COLOR_BGR2RGB        =0;
+print("OpenCV version:" + cv2.__version__ );
 
-vidcap.set(cv2.CAP_PROP_POS_FRAMES, frame);
+if cv2.__version__.startswith('2.'):
+ CAP_PROP_FRAME_COUNT  = cv2.cv.CV_CAP_PROP_FRAME_COUNT;
+ CAP_PROP_POS_FRAMES   = cv2.cv.CV_CAP_PROP_POS_FRAMES;
+ CAP_PROP_POS_MSEC     = cv2.cv.CV_CAP_PROP_POS_MSEC;
+ CAP_PROP_FRAME_WIDTH  = cv2.cv.CV_CAP_PROP_FRAME_WIDTH;
+ CAP_PROP_FRAME_HEIGHT = cv2.cv.CV_CAP_PROP_FRAME_HEIGHT;
+ CAP_PROP_FPS          = cv2.cv.CV_CAP_PROP_FPS;
+else:
+ # 3, 4 , etc ...
+ CAP_PROP_FRAME_COUNT  = cv2.CAP_PROP_FRAME_COUNT;
+ CAP_PROP_POS_FRAMES   = cv2.CAP_PROP_POS_FRAMES;
+ CAP_PROP_POS_MSEC     = cv2.CAP_PROP_POS_MSEC;
+ CAP_PROP_FRAME_WIDTH  = cv2.CAP_PROP_FRAME_WIDTH;
+ CAP_PROP_FRAME_HEIGHT = cv2.CAP_PROP_FRAME_HEIGHT;
+ CAP_PROP_FPS          = cv2.CAP_PROP_FPS;
+ 
+COLOR_BGR2RGB         = cv2.COLOR_BGR2RGB;
+
+#
+
+vidcap.set(CAP_PROP_POS_FRAMES, frame);
 success,image = vidcap.read();
 
 resize_width=1280;
@@ -77,10 +106,10 @@ tempo = 120;
 debug = 0;
 debug_keys = 0;
 
-length = int(vidcap.get(cv2.CAP_PROP_FRAME_COUNT));
-video_width  = int(vidcap.get(cv2.CAP_PROP_FRAME_WIDTH));
-video_height = int(vidcap.get(cv2.CAP_PROP_FRAME_HEIGHT));
-fps    = float(vidcap.get(cv2.CAP_PROP_FPS));
+length = int(vidcap.get(CAP_PROP_FRAME_COUNT));
+video_width  = int(vidcap.get(CAP_PROP_FRAME_WIDTH));
+video_height = int(vidcap.get(CAP_PROP_FRAME_HEIGHT));
+fps    = float(vidcap.get(CAP_PROP_FPS));
 
 width = video_width;
 height = video_height;
@@ -103,22 +132,20 @@ def getFrame( framenum =-1 ):
    return;
 
   if ( framenum != -1 ):
-    #vidcap.set(cv2.CAP_PROP_POS_FRAMES, int(framenum) );
+    #vidcap.set(CAP_PROP_POS_FRAMES, int(framenum) );
     # problems with mpeg formats ...
     oldframenum = int(round(vidcap.get(1)));
 
     frametime =  framenum * 1000.0 / fps;
     print("go to frame time :" + str(frametime));
-    success = vidcap.set(cv2.CAP_PROP_POS_MSEC, frametime);
+    success = vidcap.set(CAP_PROP_POS_MSEC, frametime);
     if not success:
       print("Cannot set frame position from video file at " + str(framenum));
-      success = vidcap.set(cv2.CAP_PROP_POS_FRAMES, int(oldframenum) );
-    curframe = vidcap.get(cv2.CAP_PROP_POS_FRAMES);
+      success = vidcap.set(CAP_PROP_POS_FRAMES, int(oldframenum) );
+    curframe = vidcap.get(CAP_PROP_POS_FRAMES);
     if (curframe != framenum ):
      print("OpenCV bug, Requesting frame " + str(curFrame) + " but get position on " +str(curframe));
 
-  if ( convertCvtColor == 1 ):
-    cv2.cvtColor(image,cv2.COLOR_BGR2RGB)
 
   success,image = vidcap.read();
 #  if ( resize == 1 ):
@@ -396,6 +423,7 @@ def framerate():
 
 def loadImage(idframe=130):
   global image;
+  global convertCvtColor;
   getFrame(idframe);
 
   print("load image from video " + str(width) + "x" + str(height) + " frame: "+ str(idframe));
@@ -404,29 +432,30 @@ def loadImage(idframe=130):
   glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
   glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
   glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL)
-  glTexImage2D(GL_TEXTURE_2D, 0, 3, video_width, video_height, 0, GL_BGR, GL_UNSIGNED_BYTE, image );
+  if ( convertCvtColor == 1 ):
+    #print ("Loading RGB texture");
+    glTexImage2D(GL_TEXTURE_2D, 0, 3, video_width, video_height, 0, GL_RGB, GL_UNSIGNED_BYTE, cv2.cvtColor(image,COLOR_BGR2RGB) );
+  else:
+    #print ("Loading BGR texture");
+    glTexImage2D(GL_TEXTURE_2D, 0, 3, video_width, video_height, 0, GL_BGR, GL_UNSIGNED_BYTE, image );
   pass;
 
-def DrawQuad(vx,vy,vx2,vy2, texx=1, texy=-1):
+def DrawQuad(vx,vy,vx2,vy2,):
   global glListQuad1;
   if glListQuad1 == -1 :
     glListQuad1 = glGenLists(1)
     glNewList(glListQuad1, GL_COMPILE)
-    x=0;
-    y=0;
-    x2=1;
-    y2=1;
     #
-    glBegin(GL_QUADS);
-    glTexCoord2f(0, texy);
-    glVertex2f(x, y);
-    glTexCoord2f(texx, texy);
-    glVertex2f(x2, y);
-    glTexCoord2f(texx, 0);
-    glVertex2f(x2, y2);
-    glTexCoord2f(0, 0);
-    glVertex2f(x, y2);
-    glEnd();
+    glBegin(GL_QUADS)
+    glTexCoord2f(0, 0)
+    glVertex2f(0, 0)
+    glTexCoord2f(1, 0)
+    glVertex2f(1, 0)
+    glTexCoord2f(1, 1)
+    glVertex2f(1, 1)
+    glTexCoord2f(0, 1)
+    glVertex2f(0, 1)
+    glEnd()
     #
     glEndList()
     glCallList(glListQuad1);
@@ -1290,9 +1319,10 @@ def processmidi():
 
   if (frame % 100 == 0):
    glBindTexture(GL_TEXTURE_2D, bgImgGL);
-   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-   glTexImage2D(GL_TEXTURE_2D, 0, 3, video_width, video_height, 0, GL_BGR, GL_UNSIGNED_BYTE, image );
-   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+   loadImage(frame)
+   #glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+   #glTexImage2D(GL_TEXTURE_2D, 0, 3, video_width, video_height, 0, GL_BGR, GL_UNSIGNED_BYTE, image );
+   #glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
    glEnable(GL_TEXTURE_2D);
    drawframe()
 
@@ -1503,7 +1533,7 @@ def main():
   clock = pygame.time.Clock()
   #
   # set start frame;
-  vidcap.set(cv2.CAP_PROP_POS_FRAMES, frame);
+  vidcap.set(CAP_PROP_POS_FRAMES, frame);
 
   while running==1:
 #    mousex, mousey = pygame.mouse.get_pos();
