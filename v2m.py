@@ -314,6 +314,10 @@ def loadsettings( cfgfile ):
  while ( len(keyp_colors_channel_prog) < len(keyp_colors) ):  
     print("Warning, append array keyp_colors_channel_prog", len(keyp_colors_channel_prog));
     keyp_colors_channel_prog.append(0);      
+ if ( resize == 1 ):
+    width = resize_width;
+    height = resize_height;
+
  pass;
  
 ###
