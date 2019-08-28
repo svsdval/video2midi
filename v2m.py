@@ -1598,11 +1598,13 @@ def main():
         savesettings()
 
       if event.key == pygame.K_F3:
+        old_resize = resize;
         loadsettings( settingsfile )
         settingsWindow_slider1.setvalue(keyp_delta);
         settingsWindow_slider2.setvalue(minimal_duration * 100);
         settingsWindow_slider3.setvalue(tempo);
-        resize_window();
+        if (resize != old_resize):
+          resize_window();
        
 
       if event.key == pygame.K_r:
