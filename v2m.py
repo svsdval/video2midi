@@ -314,6 +314,7 @@ def loadsettings( cfgfile ):
  while ( len(keyp_colors_channel_prog) < len(keyp_colors) ):  
     print("Warning, append array keyp_colors_channel_prog", len(keyp_colors_channel_prog));
     keyp_colors_channel_prog.append(0);      
+
  if ( resize == 1 ):
     width = resize_width;
     height = resize_height;
@@ -696,12 +697,7 @@ def resize_window():
     height = video_height;
   screen = pygame.display.set_mode((width,height), DOUBLEBUF|OPENGL);
   #
-  bgImgGL = glGenTextures(1);
-  glBindTexture(GL_TEXTURE_2D, bgImgGL)
-  loadImage();
-  #
-  fontTexture = glGenTextures(1);
-  GenFontTexture();
+  doinit();
   
   
 
@@ -1485,6 +1481,19 @@ def processmidi():
  with open(outputmid, 'wb') as outf:
   mf.writeFile(outf);
 
+def doinit():
+  global bgImgGL,glListQuad1,glListRect1;
+  glListQuad1=-1;
+  glListRect1=-1;
+  for fnt in  fonts:
+    fnt.gllistid = -1;
+  glPixelStorei(GL_UNPACK_ALIGNMENT,1)
+  bgImgGL = glGenTextures(1);
+  fontTexture = glGenTextures(1);
+  glBindTexture(GL_TEXTURE_2D, bgImgGL);
+  loadImage();
+  GenFontTexture();
+
 
 
 def main():
@@ -1527,13 +1536,8 @@ def main():
   screen = pygame.display.set_mode( (width,height) , DOUBLEBUF|OPENGL);
   pygame.display.set_caption(filepath)
 
-  glPixelStorei(GL_UNPACK_ALIGNMENT,1)
-  bgImgGL = glGenTextures(1);
-  fontTexture = glGenTextures(1);
-  glBindTexture(GL_TEXTURE_2D, bgImgGL);
-  loadImage();
-  GenFontTexture();
-
+  doinit();
+  
   clock = pygame.time.Clock()
   #
   # set start frame;
