@@ -144,7 +144,7 @@ def getFrame( framenum =-1 ):
       success = vidcap.set(CAP_PROP_POS_FRAMES, int(oldframenum) );
     curframe = vidcap.get(CAP_PROP_POS_FRAMES);
     if (curframe != framenum ):
-     print("OpenCV bug, Requesting frame " + str(curFrame) + " but get position on " +str(curframe));
+     print("OpenCV bug, Requesting frame " + str(framenum) + " but get position on " +str(curframe));
 
 
   success,image = vidcap.read();
