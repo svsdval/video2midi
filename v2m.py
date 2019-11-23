@@ -187,14 +187,18 @@ keyp_colors = [
 #EMPTY 
 [0  ,  0,  0], [  0,  0,  0],
 [0  ,  0,  0], [  0,  0,  0],
+[0  ,  0,  0], [  0,  0,  0],
 [0  ,  0,  0], [  0,  0,  0]
 # .....
 ];
 
 keyp_delta = 90; # sensitivity
 #
-keyp_colors_channel = [ 0,0, 1,1, 2,2, 3,3, 4,4, 5,5, 6,6, 7,7, 8,8 ]; # MIDI channel per color
-keyp_colors_channel_prog = [ 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0,0,0,0,0 ]; # MIDI program ID per channel
+keyp_colors_channel =      [ 0,0, 1,1, 2,2, 3,3, 4,4, 5,5, 6,6, 7,7, 8,8 ]; # MIDI channel per color
+keyp_colors_channel_prog = [ 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0 ]; # MIDI program ID per channel
+
+colorWindow_colorBtns_channel_labels=[];
+colorWindow_colorBtns_channel_btns=[];
 
 
 #
@@ -204,10 +208,6 @@ ignore_minimal_duration = False;
 bgImgGL=-1;
 
 notes_overlap = False;
-
-
-keyp_colormap_colors_pos=[];
-keyp_colormap_pos=[32,16];
 keyp_colormap_id=-1;
 
 separate_note_id=-1;
@@ -234,7 +234,7 @@ if os.path.exists( 'v2m.ini' ):
 
 def loadsettings( cfgfile ):
  global miditrackname,debug,notes_overlap,resize,resize_width,resize_height,minimal_duration,keyp_colors_channel,keyp_colors_channel_prog,xoffset_whitekeys,yoffset_whitekeys,keyp_colors,keys_pos,ignore_minimal_duration,keyp_delta,screen,tempo,width,height;
- global colorBtns;
+ global colorBtns,colorWindow_colorBtns_channel_labels;
 
  if not os.path.exists( cfgfile ):
   print("cannot find setings file: "+cfgfile);
@@ -313,7 +313,11 @@ def loadsettings( cfgfile ):
     keyp_colors_channel.append( len(keyp_colors_channel) // 2 ); 
  while ( len(keyp_colors_channel_prog) < len(keyp_colors) ):  
     print("Warning, append array keyp_colors_channel_prog", len(keyp_colors_channel_prog));
-    keyp_colors_channel_prog.append(0);      
+    keyp_colors_channel_prog.append(0);
+
+ if len(colorWindow_colorBtns_channel_labels) > 0:
+   for i in range(len(colorBtns)):
+     colorWindow_colorBtns_channel_labels[i].text = "Ch:" + str(keyp_colors_channel[i]+1);
 
  if ( resize == 1 ):
     width = resize_width;
@@ -351,11 +355,6 @@ def updatekeys( append=0 ):
    xx += whitekey_width;
   pass;
 
-def update_colormap():
- global keyp_colormap_colors_pos;
- for i in range( len( keyp_colors ) ):
-  keyp_colormap_colors_pos.append ([ (i % 2) * 32,  ( i // 2 ) * 20  ]);
-  pass;
 
 def savesettings():
  print("save settings to file")
@@ -403,7 +402,6 @@ def savesettings():
  pass;
 
 updatekeys( 1 );
-update_colormap();
 
 loadsettings(inifile);
 
@@ -888,6 +886,100 @@ class GLColorButton:
   def update_key_up(self, keycode ):
     pass;
 
+
+class GLButton:
+  def __init__(self,x,y,w,h, index, color, text, procedure):
+    self.w = float(w);
+    self.h = float(h);
+    self.x = float(x);
+    self.y = float(y);
+    self.color = color;
+    self.index = index;
+    self.text = text;
+    self.procedure = procedure;
+    self.mousegrab = 0;
+    self.mousepos = [0,0];
+    self.mouseclickpos = [0,0];
+    pass;
+
+  def draw(self):
+    self.update();
+    glDisable(GL_TEXTURE_2D);
+    glEnable(GL_BLEND);
+    glPushMatrix()
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glColor4f(0.2, 0.2, 0.2, 0.9);
+
+    glTranslatef( self.x, self.y ,0);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+ 
+    glColor4f(0.5, 0.5, 0.5, 1);
+    DrawQuad(1,1,self.w-1,self.h-1);
+
+    glColor4f(1.0, 1.0, 1.0, 1);
+    DrawQuad(2,2,self.w-2,self.h-2);
+
+    glColor4ub(self.color[0],self.color[1],self.color[2], 255);
+    DrawQuad(3,3,self.w-3,self.h-3);
+    glPopMatrix();
+    
+    glPushMatrix()
+    glTranslatef( self.x+5, self.y ,0);
+    glColor4f(1.0, 1.0, 1, 0.0);
+    #glScalef(0.7,0.7,0.7);
+    r = self.text.splitlines();
+    for i in r:
+      drawText( (0,Label_v_spacer,1),(255,255,255), i);
+      glTranslatef(0,Label_v_spacer,0);
+    glPopMatrix()
+    
+    pass;
+
+
+  def update(self):
+    pass;
+
+  def update_mouse_move(self, mpx, mpy ):
+    self.mousepos[0] = mpx;
+    self.mousepos[1] = mpy;
+    if (self.mousegrab == 1):
+      pass;
+    pass;
+    
+  def update_mouse_down(self,mpx,mpy,btn):
+    global keyp_colormap_id
+    self.mouseclickpos[0] = mpx - self.x;
+    self.mouseclickpos[1] = mpy - self.y;
+#    if (( mpx > self.x ) and ( mpx < self.x+self.w ) and
+#        ( mpy > self.y ) and ( mpy < self.y+self.h )):
+#        keyp_colormap_id = self.index
+#        print "color button: update_mouse_down set index = " + str(keyp_colormap_id);
+    
+    if (( mpx > self.x ) and ( mpx < self.x+self.w ) and
+        ( mpy > self.y ) and ( mpy < self.y+self.h )):
+        self.mousegrab = 1;
+    self.update();
+    pass;
+
+  def update_mouse_up(self,mpx,mpy,btn):
+    global keyp_colormap_id
+    self.mousegrab = 0;
+    self.mouseclickpos[0] = mpx - self.x;
+    self.mouseclickpos[1] = mpy - self.y;
+
+    if (( mpx > self.x ) and ( mpx < self.x+self.w ) and
+        ( mpy > self.y ) and ( mpy < self.y+self.h )):
+        self.procedure(self);
+        #keyp_colormap_id = self.index
+ #       print "color button: update_mouse_up set index = " + str(keyp_colormap_id);
+    pass;
+
+  def update_key_down(self, keycode ):
+    pass;
+
+  def update_key_up(self, keycode ):
+    pass;
+
 class GLLabel:
   def __init__(self,x,y,text):
     self.x = x;
@@ -1072,7 +1164,7 @@ class GLWindow:
             
     if not self.hidden:
       if (( mpx > self.x ) and ( mpx < self.x + self.w ) and
-          ( mpy > self.y ) and ( mpy < self.y + self.h )):
+          ( mpy > self.y ) and ( mpy < self.y + self.h - self.titleheight)):
         if keycode == pygame.K_h:
           self.hidden = not self.hidden;
     else:
@@ -1093,11 +1185,25 @@ class GLWindow:
         if hasattr(i, 'update_key_up'):
           i.update_key_up(keycode);
     pass;
-      
 
-colorWindow = GLWindow(keyp_colormap_pos[0], keyp_colormap_pos[1], 100, ( (len(keyp_colors) // 2)+2 ) * 24, "color map")
-settingsWindow = GLWindow(132, 16, 250, 250, "Settings");
-helpWindow = GLWindow(382, 16, 750, 475, "help");
+def update_channels(sender):
+ print( 'update_channels...' +str(sender.index));
+ i=abs(sender.index) -1;
+ if (sender.index > 0):
+   keyp_colors_channel[i]= keyp_colors_channel[i] + 1;
+ else:
+   keyp_colors_channel[i]= keyp_colors_channel[i] - 1;
+ if (keyp_colors_channel[i] > 15):
+   keyp_colors_channel[i] = 15;
+ if (keyp_colors_channel[i] < 0):
+   keyp_colors_channel[i] = 0;
+ colorWindow_colorBtns_channel_labels[i].text = "Ch:" + str(keyp_colors_channel[i]+1);
+ 
+# 
+wh = ( (len(keyp_colors) // 2)+2 ) * 24;
+colorWindow = GLWindow(32, 16, 264, wh, "color map")
+settingsWindow = GLWindow(32, wh, 250, 250, "Settings");
+helpWindow = GLWindow(32+270, 16, 750, 475, "help");
 
 glwindows = [];
 glwindows.append(colorWindow);
@@ -1142,10 +1248,26 @@ settingsWindow.appendChild(settingsWindow_slider2);
 settingsWindow_slider3 = GLSlider(1,173, 240,18, 30,200,tempo);
 settingsWindow.appendChild(settingsWindow_slider3);
 
+# for i in range( len( keyp_colors ) ):
+  #keyp_colormap_colors_pos.append ([ (i % 2) * 32,  ( i // 2 ) * 20  ]);
+print ('creating new colors '+str(len( keyp_colors )));
 
-for i in range( len( keyp_colormap_colors_pos ) ):
- colorBtns.append( GLColorButton(20+keyp_colormap_colors_pos[i][0],10+keyp_colormap_colors_pos[i][1] ,20,20,i, keyp_colors[i] ) );
+for i in range( len( keyp_colors ) ):
+ cx,cy = (i % 2) * 130,  ( i // 2 ) * 20;
+ offsetx,offsety=4,4;
+ colorBtns.append( GLColorButton(offsetx+cx,offsety+cy ,20,20,i, keyp_colors[i] ) );
  colorWindow.appendChild(colorBtns[i]);
+ colorWindow_label1 = GLLabel(offsetx+25+cx,offsety+cy , "Ch:" + str(keyp_colors_channel[i]+1) );
+ 
+ colorWindow_colorBtns_channel_labels.append( colorWindow_label1 );
+ colorWindow.appendChild(colorWindow_label1);
+ #
+ colorWindow_colorBtns_channel_btns.append( GLButton(offsetx+cx+80,offsety+cy ,20,20,(i+1), [128,128,128], "+" ,update_channels) );
+ colorWindow.appendChild( colorWindow_colorBtns_channel_btns[i*2] );
+ #
+ colorWindow_colorBtns_channel_btns.append( GLButton(offsetx+cx+80+20,offsety+cy ,20,20,-(i+1), [128,128,128], "-" ,update_channels) );
+ colorWindow.appendChild( colorWindow_colorBtns_channel_btns[i*2+1] );
+
 
 #loadsettings( settingsfile );    
 #frame=801
@@ -1308,10 +1430,10 @@ def processmidi():
  mf.addTrackName(track, time, miditrackname);
  mf.addTempo(track, time, tempo );
  
- 
+ channel_has_note = [ 0 for x in range(16) ];
  for i in range(len(keyp_colors_channel)):
-  mf.addProgramChange(track, keyp_colors_channel[i], time, keyp_colors_channel_prog[i]);
-
+  mf.addProgramChange(track, keyp_colors_channel[i], 0, keyp_colors_channel_prog[i]);
+  
  print("starting from frame:" + str(startframe));
  getFrame( startframe );
  notecnt=0
@@ -1425,6 +1547,7 @@ def processmidi():
 
         if ( not ignore ):
           mf.addNote(track, notes_channel[note] , basenote + note, time * tempo / 60.0 , duration * tempo / 60.0 , volume );
+          channel_has_note[ note_channel ] = 1;
           notecnt+=1;
 
         notes_db[ note ] = frame;
@@ -1449,6 +1572,7 @@ def processmidi():
           print("midi add white keys, note : " +str(note) + " time:" +str(time) + " duration:" + str(duration));
         if ( not ignore ):
           mf.addNote(track, notes_channel[note] , basenote+ note, time * tempo / 60.0 , duration * tempo / 60.0 , volume );
+          channel_has_note[ note_channel ] = 1;
           notecnt+=1;
 
   xapp=0;
@@ -1477,6 +1601,7 @@ def processmidi():
      quit();
 
  print("saved notes: " + str(notecnt));
+ 
 # write midi to disk;
  with open(outputmid, 'wb') as outf:
   mf.writeFile(outf);
