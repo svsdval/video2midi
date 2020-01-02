@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 # by svsd_val
@@ -39,6 +39,7 @@ yoffset_blackkeys = -30;
 
 keygrab=0;
 keygrabid=-1;
+lastkeygrabid=-1;
 
 whitekey_width=24.6;
 
@@ -172,6 +173,8 @@ notes_de=[];
 notes_channel=[];
 
 keys_pos=[];
+keyp_colors_alternate = []
+keyp_colors_alternate_sensetivity = []
 
 keyp_colors = [
 #L.GREEN         D.GREEN
@@ -192,6 +195,8 @@ keyp_colors = [
 # .....
 ];
 
+
+
 keyp_delta = 90; # sensitivity
 #
 keyp_colors_channel =      [ 0,0, 1,1, 2,2, 3,3, 4,4, 5,5, 6,6, 7,7, 8,8 ]; # MIDI channel per color
@@ -201,6 +206,7 @@ colorWindow_colorBtns_channel_labels=[];
 colorWindow_colorBtns_channel_btns=[];
 
 
+use_alternate_keys = False;
 #
 minimal_duration = 0.1;
 ignore_minimal_duration = False;
@@ -235,7 +241,8 @@ if os.path.exists( 'v2m.ini' ):
 def loadsettings( cfgfile ):
  global miditrackname,debug,notes_overlap,resize,resize_width,resize_height,minimal_duration,keyp_colors_channel,keyp_colors_channel_prog,xoffset_whitekeys,yoffset_whitekeys,keyp_colors,keys_pos,ignore_minimal_duration,keyp_delta,screen,tempo,width,height;
  global colorBtns,colorWindow_colorBtns_channel_labels;
-
+ global keyp_colors_alternate_sensetivity, keyp_colors_alternate;
+ 
  if not os.path.exists( cfgfile ):
   print("cannot find setings file: "+cfgfile);
  else:  
@@ -308,6 +315,28 @@ def loadsettings( cfgfile ):
      keys_pos.append( [ int(c[0]), int(c[1])  ]);
     print( len(keyp_colors) );
     print( len(keyp_colors_channel));
+
+  if len(colorWindow_colorBtns_channel_labels) > 0:
+   for i in range(len(colorBtns)):
+     colorWindow_colorBtns_channel_labels[i].text = "Ch:" + str(keyp_colors_channel[i]+1);
+
+  if config.has_option(section, 'keyp_colors_alternate'):
+   s = config.get(section, 'keyp_colors_alternate');
+   if ( s.strip() != "" ):
+    keyp_colors_alternate[:] = [];
+    for cur in s.split(","):
+     
+     c = cur.split(":")
+     print(" Append :" + str(cur));
+     keyp_colors_alternate.append( [ int(c[0]), int(c[1]),int(c[2]) ]);
+  #
+  if config.has_option(section, 'keyp_colors_alternate_sensetivity'):
+   s = config.get(section, 'keyp_colors_alternate_sensetivity');
+   if ( s.strip() != "" ):
+    keyp_colors_alternate_sensetivity[:] = [];
+    for cur in s.split(","):
+     keyp_colors_alternate_sensetivity.append( int(cur) );
+    
  while ( len(keyp_colors_channel) < len(keyp_colors) ):  
     print("Warning, append array keyp_colors_channel", len(keyp_colors_channel));
     keyp_colors_channel.append( len(keyp_colors_channel) // 2 ); 
@@ -315,9 +344,8 @@ def loadsettings( cfgfile ):
     print("Warning, append array keyp_colors_channel_prog", len(keyp_colors_channel_prog));
     keyp_colors_channel_prog.append(0);
 
- if len(colorWindow_colorBtns_channel_labels) > 0:
-   for i in range(len(colorBtns)):
-     colorWindow_colorBtns_channel_labels[i].text = "Ch:" + str(keyp_colors_channel[i]+1);
+     
+     
 
  if ( resize == 1 ):
     width = resize_width;
@@ -336,6 +364,9 @@ for i in range(127):
   notes_db.append(0);
   notes_de.append(0);
   notes_channel.append(0);
+  #
+  keyp_colors_alternate.append([0,0,0]);
+  keyp_colors_alternate_sensetivity.append(0);
 #;
 
 
@@ -390,13 +421,23 @@ def savesettings():
  skeyp_colors="";
  for i in keyp_colors:
   skeyp_colors+= str(int(i[0]))+":"+str(int(i[1]))+":"+str(int(i[2]))+",";
-  config.set(section, 'keyp_colors', skeyp_colors[0:-1]);
+ config.set(section, 'keyp_colors', skeyp_colors[0:-1]);
 
  skeys_pos="";
  for i in keys_pos:
   skeys_pos+= str(int(i[0]))+":"+str(int(i[1]))+",";
-  config.set(section, 'keys_pos', skeys_pos[0:-1]);
- 
+ config.set(section, 'keys_pos', skeys_pos[0:-1]);
+  
+ s="";
+ for i in keyp_colors_alternate:
+  s+= str(int(i[0]))+":"+str(int(i[1]))+":"+str(int(i[2]))+",";
+ config.set(section, 'keyp_colors_alternate', s[0:-1]);
+ # 
+ s="";
+ for i in keyp_colors_alternate_sensetivity:
+  s+= str(int(i))+",";
+ config.set(section, 'keyp_colors_alternate_sensetivity', s[0:-1]);
+  
  with open(settingsfile, 'w') as configfile:
     config.write(configfile);
  pass;
@@ -714,7 +755,7 @@ def drawText(position, color, textString, size=24):
   pass
 
 class GLSlider:
-  def __init__(self,x,y,w,h, vmin,vmax, value):
+  def __init__(self,x,y,w,h, vmin,vmax, value, update_func = None ):
     self.w = float(w);
     self.h = float(h);
     self.x = float(x);
@@ -722,12 +763,16 @@ class GLSlider:
     self.vmin = vmin;
     self.vmax = vmax;
     self.value = value;
+    self.update_func = update_func;
 
-    if (vmax - vmin) != 0:
-      self.percent = (value / float(vmax - vmin)) * 100;
+#    if ( (vmax+ abs(vmin)) - vmin) != 0:
+    if ((vmax - vmin) != 0):
+      self.percent = ( (value + abs(vmin)) / float(vmax - vmin)) * 100;
+
     self.mousegrab = 0;
     self.mousepos = [0,0];
     self.mouseclickpos = [0,0];
+    self.showvalue= False;
     pass;
 
   def draw(self):
@@ -744,8 +789,9 @@ class GLSlider:
     glColor4f(0.5, 0.5, 1.0, 1);
     DrawQuad(2,2,self.percent * self.w * 0.01, self.h );
 
-#    glTranslatef(self.w *0.5 , self.h *0.5 + Label_v_spacer *0.5 ,0);
-#    drawText( (0,0,1), (128,0,255), str(int(self.value)));
+    if (self.showvalue):
+      glTranslatef(self.w *0.5 , self.h *0.5 + Label_v_spacer *0.5 ,0);
+      drawText( (0,0,1), (128,0,255), str(round(self.value,2)));
 
     glPopMatrix();
     pass;
@@ -756,7 +802,7 @@ class GLSlider:
 #
     self.value = value;
     if (self.vmax - self.vmin) != 0:
-      self.percent = (value / float(self.vmax - self.vmin)) * 100;
+      self.percent = ((self.value + abs(self.vmin)) / float(self.vmax - self.vmin)) * 100;
     pass;
     
   def update_mouse_move(self, mpx, mpy ):
@@ -771,6 +817,8 @@ class GLSlider:
         selv.value = 0;
       else:
         self.value = self.percent * (self.vmax-self.vmin) * 0.01 + self.vmin
+    if ( self.update_func != None ):
+      self.update_func(self, self.value);
 #      print "update_mouse_move on slider x:" + str( mpx ) + " y:" + str(mpy) + " self.x:" + str( self.x ) + " self.y:" + str(self.y) + " value : " +str(self.value) ;
 #      if ( self.value > self.vmax ) : self.value = self.vmax;
 #      if ( self.value < self.vmin ) : self.value = self.vmin;
@@ -1187,17 +1235,59 @@ class GLWindow:
     pass;
 
 def update_channels(sender):
- print( 'update_channels...' +str(sender.index));
- i=abs(sender.index) -1;
- if (sender.index > 0):
-   keyp_colors_channel[i]= keyp_colors_channel[i] + 1;
- else:
-   keyp_colors_channel[i]= keyp_colors_channel[i] - 1;
- if (keyp_colors_channel[i] > 15):
-   keyp_colors_channel[i] = 15;
- if (keyp_colors_channel[i] < 0):
-   keyp_colors_channel[i] = 0;
- colorWindow_colorBtns_channel_labels[i].text = "Ch:" + str(keyp_colors_channel[i]+1);
+   print( 'update_channels...' +str(sender.index));
+   i=abs(sender.index) -1;
+   if (sender.index > 0):
+     keyp_colors_channel[i]= keyp_colors_channel[i] + 1;
+   else:
+     keyp_colors_channel[i]= keyp_colors_channel[i] - 1;
+   if (keyp_colors_channel[i] > 15):
+     keyp_colors_channel[i] = 15;
+   if (keyp_colors_channel[i] < 0):
+     keyp_colors_channel[i] = 0;
+   colorWindow_colorBtns_channel_labels[i].text = "Ch:" + str(keyp_colors_channel[i]+1);
+
+def readkeycolor(i):
+   global use_alternate_keys;
+   pixx=int(xoffset_whitekeys + keys_pos[i][0]);
+   pixy=int(yoffset_whitekeys + keys_pos[i][1]);
+
+   if ( pixx >= width ) or ( pixy >= height ) or ( pixx < 0 ) or ( pixy < 0 ): return;
+   if ( resize == 1 ):
+     pixxo=pixx;
+     pixyo=pixy;
+
+     pixx= int(round( pixx * ( video_width / float(resize_width) )))
+     pixy= int(round( pixy * ( video_height / float(resize_height) )))
+     if ( pixx > video_width -1 ): pixx = video_width-1;
+     if ( pixy > video_height-1 ): pixy= video_height-1;
+    #      print "original x:"+str(pixxo) + "x" +str(pixyo) + " mapped :" +str(pixx) +"x"+str(pixy);
+
+   keybgr=image[pixy,pixx];
+   key=[ keybgr[2], keybgr[1],keybgr[0] ];
+
+   keyp_colors_alternate[i] = key;
+    
+
+def readcolors(sender):
+   for i in range( len(keys_pos) ):
+    readkeycolor(i);
+
+def update_alternate_sensetivity(sender,value):
+   global lastkeygrabid;
+   global keyp_colors_alternate_sensetivity;
+   if ( lastkeygrabid != -1 ):
+     keyp_colors_alternate_sensetivity[ lastkeygrabid ] = value;
+
+def change_use_alternate_keys(sender):
+   global use_alternate_keys,extra_label1;
+   use_alternate_keys = not use_alternate_keys;  
+   extra_label1.text = "Use alternate:"+str(use_alternate_keys);
+
+def updatecolor(sender):
+   if (lastkeygrabid != -1):
+    readkeycolor(lastkeygrabid);
+
  
 # 
 wh = ( (len(keyp_colors) // 2)+2 ) * 24;
@@ -1205,11 +1295,16 @@ colorWindow = GLWindow(32, 16, 264, wh, "color map")
 settingsWindow = GLWindow(32, wh, 250, 250, "Settings");
 helpWindow = GLWindow(32+270, 16, 750, 475, "help");
 
+extra = GLWindow(32+270+750+6, 16, 510, 224, "extra/experimental");
+
 glwindows = [];
 glwindows.append(colorWindow);
 glwindows.append(settingsWindow);
 glwindows.append(helpWindow);
 
+glwindows.append(extra);
+
+#helpWindow.hidden=1;
 helpWindow_label1 = GLLabel(0,0, """h - on window title, show/hide the window
 q - begin to recreate midi
 s - set start frame, (mods : shift, set processing start frame to the beginning)
@@ -1268,6 +1363,22 @@ for i in range( len( keyp_colors ) ):
  colorWindow_colorBtns_channel_btns.append( GLButton(offsetx+cx+80+20,offsety+cy ,20,20,-(i+1), [128,128,128], "-" ,update_channels) );
  colorWindow.appendChild( colorWindow_colorBtns_channel_btns[i*2+1] );
 
+extra.appendChild( GLButton(10,20 ,128,25,1, [128,128,128], "read colors" ,readcolors) );
+extra.appendChild( GLButton(140,20 ,128,25,1, [128,128,128], "enable/disable" ,change_use_alternate_keys) );
+extra.appendChild( GLButton(10,45 ,128,25,1, [128,128,128], "update color" ,updatecolor) );
+
+extra_label1 = GLLabel(0,0,  "Use alternate:"+str(use_alternate_keys)  );
+extra.appendChild( extra_label1 );
+extra_label2 = GLLabel(0,67,  "Selected key sensitivity:"+str(0) );
+extra_slider1 = GLSlider(1,90, 240,18, -100,30,0,update_alternate_sensetivity);
+extra_slider1.showvalue=True;
+extra_label3 = GLLabel(0,130,  """to select the key press ctrl + left mouse button on the key rect.
+to deselect the key press ctrl + left mouse button on empty space.""" );
+
+extra.appendChild(extra_slider1);
+extra.appendChild(extra_label2);
+extra.appendChild(extra_label3);
+ 
 
 #loadsettings( settingsfile );    
 #frame=801
@@ -1291,8 +1402,6 @@ def drawframe():
  global keyp_delta;
  global minimal_duration;
  global tempo;
-
-
  
  scale=1.0;
  mousex, mousey = pygame.mouse.get_pos();
@@ -1344,11 +1453,17 @@ def drawframe():
   keypressed=0;
 
   pressedcolor=[0,0,0];
-  for keyc in keyp_colors:
-   if (keyc[0] != 0 ) or (keyc[1] != 0 ) or (keyc[2] != 0 ) :
-     if ( abs( int(key[0]) - keyc[0] ) < keyp_delta ) and ( abs( int(key[1]) - keyc[1] ) < keyp_delta ) and ( abs( int(key[2]) - keyc[2] ) < keyp_delta ):
+  if use_alternate_keys:
+    delta = keyp_delta + keyp_colors_alternate_sensetivity[i];  
+    if ( abs( int(key[0]) - keyp_colors_alternate[i][0] ) > delta ) and ( abs( int(key[1]) - keyp_colors_alternate[i][1] ) > delta ) and ( abs( int(key[2]) - keyp_colors_alternate[i][2] ) > delta ):
       keypressed=1;
-      pressedcolor=keyc;
+      pressedcolor=keyp_colors_alternate[i];
+  else: 
+      for keyc in keyp_colors:
+       if (keyc[0] != 0 ) or (keyc[1] != 0 ) or (keyc[2] != 0 ) :
+         if ( abs( int(key[0]) - keyc[0] ) < keyp_delta ) and ( abs( int(key[1]) - keyc[1] ) < keyp_delta ) and ( abs( int(key[2]) - keyc[2] ) < keyp_delta ):
+          keypressed=1;
+          pressedcolor=keyc;
 
   glPushMatrix();
   glTranslatef(keys_pos[i][0],keys_pos[i][1],0);
@@ -1363,6 +1478,10 @@ def drawframe():
     DrawRect(-7,-7,7,7,1);
     glColor4f(0.5, 1, 1.0, 0.7);
     DrawQuad(-5,-5,5,5);
+  if ( lastkeygrabid == i ):
+    glColor4f(0.0, 0.5, 1.0, 0.7);
+    DrawQuad(-4,-4,4,4);
+  
   if ( separate_note_id == i ):
     glColor4f(0,1,0,1);
     DrawRect(-7,-12,7,12,2);
@@ -1493,15 +1612,21 @@ def processmidi():
     deltaclr = keyp_delta*keyp_delta*keyp_delta;
 
     deltaid = 0
-    for j in range(len(keyp_colors)):
-     if (keyp_colors[j][0] != 0 ) or ( keyp_colors[j][1] != 0 ) or ( keyp_colors[j][2] != 0 ):
-      if ( abs( int(key[0]) - keyp_colors[j][0] ) < keyp_delta ) and ( abs( int(key[1]) - keyp_colors[j][1] ) < keyp_delta ) and ( abs( int(key[2]) - keyp_colors[j][2] ) < keyp_delta ):
-       delta = abs( int(key[0]) - keyp_colors[j][0] ) +  abs( int(key[1]) - keyp_colors[j][1] ) + abs( int(key[2]) - keyp_colors[j][2] )
-       if ( delta < deltaclr ):
-        deltaclr = delta;
-        deltaid = j;
-       keypressed=1;
-
+    if use_alternate_keys:
+      delta = keyp_delta + keyp_colors_alternate_sensetivity[i];  
+      if ( abs( int(key[0]) - keyp_colors_alternate[i][0] ) > delta ) and ( abs( int(key[1]) - keyp_colors_alternate[i][1] ) > delta ) and ( abs( int(key[2]) - keyp_colors_alternate[i][2] ) > delta ):
+        keypressed = 1;
+        pressedcolor = keyp_colors_alternate[i];
+    else: 
+      for j in range(len(keyp_colors)):
+       if (keyp_colors[j][0] != 0 ) or ( keyp_colors[j][1] != 0 ) or ( keyp_colors[j][2] != 0 ):
+        if ( abs( int(key[0]) - keyp_colors[j][0] ) < keyp_delta ) and ( abs( int(key[1]) - keyp_colors[j][1] ) < keyp_delta ) and ( abs( int(key[2]) - keyp_colors[j][2] ) < keyp_delta ):
+         delta = abs( int(key[0]) - keyp_colors[j][0] ) +  abs( int(key[1]) - keyp_colors[j][1] ) + abs( int(key[2]) - keyp_colors[j][2] )
+         if ( delta < deltaclr ):
+          deltaclr = delta;
+          deltaid = j;
+         keypressed=1;
+    #
     if ( keypressed==1 ):
        note_channel=keyp_colors_channel[ deltaid ];
 
@@ -1650,11 +1775,13 @@ def main():
   global resize;
   global width,height;
   global screen;
+  global lastkeygrabid;
 
   running=1;
   keygrab=0;
   keygrabid=-1;
   keygrabaddx=0;
+  lastkeygrabid=-1;
 
   pygame.init();
   pyfont = pygame.font.SysFont('Sans', 20)
@@ -1868,13 +1995,21 @@ def main():
          pass
         #
         size=5;
+        if (mods & pygame.KMOD_CTRL):
+          lastkeygrabid=-1;
+            
         for i in range( len( keys_pos) ):
          if (abs( mousex - (keys_pos[i][0] + xoffset_whitekeys) )< size) and (abs( mousey - (keys_pos[i][1] + yoffset_whitekeys) )< size):
           keygrab=1;
-          keygrabid=i;
+          if not ( mods & pygame.KMOD_CTRL ):
+            keygrabid=i;
+          lastkeygrabid=i;
+          extra_slider1.setvalue( keyp_colors_alternate_sensetivity[i] );
           print("ok click found on : "+str(keygrabid));
           break;
         pass;
+#      if ( event.button == 2 ):
+#        lastkeygrabid=-1;
       if ( event.button == 3 ):
         keygrab = 2;
         size=5;
