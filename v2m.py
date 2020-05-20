@@ -1370,7 +1370,7 @@ extra.appendChild( GLButton(10,45 ,128,25,1, [128,128,128], "update color" ,upda
 extra_label1 = GLLabel(0,0,  "Use alternate:"+str(use_alternate_keys)  );
 extra.appendChild( extra_label1 );
 extra_label2 = GLLabel(0,67,  "Selected key sensitivity:"+str(0) );
-extra_slider1 = GLSlider(1,90, 240,18, -100,30,0,update_alternate_sensetivity);
+extra_slider1 = GLSlider(1,90, 240,18, -100,100,0,update_alternate_sensetivity);
 extra_slider1.showvalue=True;
 extra_label3 = GLLabel(0,130,  """to select the key press ctrl + left mouse button on the key rect.
 to deselect the key press ctrl + left mouse button on empty space.""" );
@@ -1467,6 +1467,9 @@ def drawframe():
 
   glPushMatrix();
   glTranslatef(keys_pos[i][0],keys_pos[i][1],0);
+
+  glColor4f(1,1,1,0.5);
+  DrawQuad(-0.5,-20,0.5,7);
   if ( keypressed == 1 ):
     #glColor4f(1.0, 0.5, 1.0, 0.9);
     glColor4f(pressedcolor[0]/255.0,pressedcolor[1]/255.0,pressedcolor[2]/255.0,0.9);
