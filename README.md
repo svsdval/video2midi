@@ -20,9 +20,15 @@ youtube synthesia video to midi, just for fun )
 
 # install dependency
 
-#### GNU/Linux:
+#### Debian based Linux:
 ```bash
 sudo apt install python-opencv python-pygame python-midiutil python-opengl
+```
+
+#### Arch Linux:
+```bash
+sudo pacman -S hdf5 opencv python-pygame python-opengl
+sudo pip install midiutil
 ```
 
 #### Windows + Anaconda2 (python 2.7)/Anaconda3 (python 3.7):
@@ -107,9 +113,15 @@ channel_prog_accordance = 0,0, 0,0, 0,0, 0,0, 0,0, 0,0
 
 ## установка зависимостей.
 
-#### GNU/Linux:
+#### Debian based Linux:
 ```bash
 sudo apt install python-opencv python-pygame python-midiutil python-opengl
+```
+
+#### Arch Linux:
+```bash
+sudo pacman -S hdf5 opencv python-pygame python-opengl
+sudo pip install midiutil
 ```
 
 #### Windows + Anaconda2 (python 2.7)/Anaconda3 (python 3.7):
