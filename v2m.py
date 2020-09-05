@@ -198,6 +198,11 @@ keyp_colors = [
 
 
 keyp_delta = 90; # sensitivity
+
+keyp_spark_y_pos = -110; 
+keyp_spark_delta = 60;
+use_sparks= False;
+
 #
 keyp_colors_channel =      [ 0,0, 1,1, 2,2, 3,3, 4,4, 5,5, 6,6, 7,7, 8,8 ]; # MIDI channel per color
 keyp_colors_channel_prog = [ 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0 ]; # MIDI program ID per channel
@@ -241,7 +246,7 @@ if os.path.exists( 'v2m.ini' ):
 def loadsettings( cfgfile ):
  global miditrackname,debug,notes_overlap,resize,resize_width,resize_height,minimal_duration,keyp_colors_channel,keyp_colors_channel_prog,xoffset_whitekeys,yoffset_whitekeys,keyp_colors,keys_pos,ignore_minimal_duration,keyp_delta,screen,tempo,width,height;
  global colorBtns,colorWindow_colorBtns_channel_labels;
- global keyp_colors_alternate_sensetivity, keyp_colors_alternate;
+ global keyp_colors_alternate_sensetivity, keyp_colors_alternate,keyp_spark_y_pos,keyp_spark_delta,use_sparks;
  
  if not os.path.exists( cfgfile ):
   print("cannot find setings file: "+cfgfile);
@@ -276,6 +281,14 @@ def loadsettings( cfgfile ):
    keyp_delta = config.getint(section, 'sensitivity')
   if config.has_option(section, 'output_midi_tempo'):
    tempo = config.getint(section, 'output_midi_tempo')
+  # Sparks 
+  if config.has_option(section, 'keyp_spark_y_pos'):
+   keyp_spark_y_pos = config.getint(section, 'keyp_spark_y_pos')
+  if config.has_option(section, 'keyp_spark_delta'):
+   keyp_spark_delta = config.getint(section, 'keyp_spark_delta')
+   extra_slider2.value = keyp_spark_delta;
+  if config.has_option(section, 'use_sparks'):
+   use_sparks = config.getint(section, 'use_sparks')
 
 
   if ( clr_chnls != "" ):
@@ -404,6 +417,10 @@ def savesettings():
  config.set(section, 'notes_overlap', str(int(notes_overlap)));
  config.set(section, 'sensitivity', str(int(keyp_delta)));
  config.set(section, 'output_midi_tempo', str(int(tempo)));
+ #Sparks 
+ config.set(section, 'keyp_spark_y_pos', str(int(keyp_spark_y_pos)));
+ config.set(section, 'keyp_spark_delta', str(int(keyp_spark_delta)));
+ config.set(section, 'use_sparks', str(int(use_sparks)));
  
  
  skeyp_colors_channel = "";
@@ -806,10 +823,10 @@ class GLSlider:
     pass;
     
   def update_mouse_move(self, mpx, mpy ):
-    self.mousepos[0] = mpx;
+    self.mousepos[0] = mpx - self.x;
     self.mousepos[1] = mpy;
     if (self.mousegrab == 1):
-      self.percent = (mpx / self.w) * 100.0;
+      self.percent = (self.mousepos[0] / self.w) * 100.0;
 
       if ( self.percent > 100.0 ) : self.percent = 100;
       if ( self.percent < 0 ) : self.percent = 0;
@@ -1278,11 +1295,23 @@ def update_alternate_sensetivity(sender,value):
    global keyp_colors_alternate_sensetivity;
    if ( lastkeygrabid != -1 ):
      keyp_colors_alternate_sensetivity[ lastkeygrabid ] = value;
+     
+def update_sparks_delta(sender,value):
+   global keyp_spark_delta;
+   keyp_spark_delta = value;
+     
+
 
 def change_use_alternate_keys(sender):
    global use_alternate_keys,extra_label1;
    use_alternate_keys = not use_alternate_keys;  
    extra_label1.text = "Use alternate:"+str(use_alternate_keys);
+
+def change_use_sparks(sender):
+   global use_sparks;
+   use_sparks = not use_sparks;  
+   sender.text = "use sparks:"+str(use_sparks);
+
 
 def updatecolor(sender):
    if (lastkeygrabid != -1):
@@ -1295,7 +1324,7 @@ colorWindow = GLWindow(32, 16, 264, wh, "color map")
 settingsWindow = GLWindow(32, wh, 250, 250, "Settings");
 helpWindow = GLWindow(32+270, 16, 750, 475, "help");
 
-extra = GLWindow(32+270+750+6, 16, 510, 224, "extra/experimental");
+extra = GLWindow(32+270+750+6, 16, 510, 254, "extra/experimental");
 
 glwindows = [];
 glwindows.append(colorWindow);
@@ -1318,7 +1347,7 @@ Left mouse button - dragging the selected key / select color from the color map
 CTRL + Left mouse button - update selected color in the color map
 CTRL + 0 - disable selected color in the color map
 Right mouse button - dragging all keys, if the key is selected, the transfer is carried out relative to it.
-Arrows - keys adjustment (mods : shift)
+Arrows - keys adjustment (mods : shift) ( Atl+Arrows UP/Down - sparks position adjustment )
 PageUp/PageDown - scrolling video (mods : shift)
 Home/End - go to the beginning or end of the video
 [ / ] - change base octave
@@ -1364,24 +1393,47 @@ for i in range( len( keyp_colors ) ):
  colorWindow.appendChild( colorWindow_colorBtns_channel_btns[i*2+1] );
 
 extra.appendChild( GLButton(10,20 ,128,25,1, [128,128,128], "read colors" ,readcolors) );
-extra.appendChild( GLButton(140,20 ,128,25,1, [128,128,128], "enable/disable" ,change_use_alternate_keys) );
+extra.appendChild( GLButton(140,20 ,138,25,1, [128,128,128], "enable/disable" ,change_use_alternate_keys) );
 extra.appendChild( GLButton(10,45 ,128,25,1, [128,128,128], "update color" ,updatecolor) );
+
+extra.appendChild( GLButton(140,45 ,138,25,1, [128,128,128], "use sparks" ,change_use_sparks ) );
 
 extra_label1 = GLLabel(0,0,  "Use alternate:"+str(use_alternate_keys)  );
 extra.appendChild( extra_label1 );
 extra_label2 = GLLabel(0,67,  "Selected key sensitivity:"+str(0) );
 extra_slider1 = GLSlider(1,90, 240,18, -100,100,0,update_alternate_sensetivity);
 extra_slider1.showvalue=True;
+
+extra_slider2 = GLSlider(140+138+5,45, 150,18, -50,100,keyp_spark_delta,update_sparks_delta);
+extra_slider2.showvalue=True;
+
 extra_label3 = GLLabel(0,130,  """to select the key press ctrl + left mouse button on the key rect.
 to deselect the key press ctrl + left mouse button on empty space.""" );
 
 extra.appendChild(extra_slider1);
+extra.appendChild(extra_slider2);
 extra.appendChild(extra_label2);
 extra.appendChild(extra_label3);
  
 
 #loadsettings( settingsfile );    
 #frame=801
+
+def getkeyp_pixel_pos( x, y ):
+  pixx=int(xoffset_whitekeys + x);
+  pixy=int(yoffset_whitekeys + y);
+
+  if ( pixx >= width ) or ( pixy >= height ) or ( pixx < 0 ) or ( pixy < 0 ): 
+    return [-1,-1];
+
+  if ( resize == 1 ):
+    pixx= int(round( pixx * ( video_width / float(resize_width) )))
+    pixy= int(round( pixy * ( video_height / float(resize_height) )))
+    if ( pixx > video_width -1 ): pixx = video_width-1;
+    if ( pixy > video_height-1 ): pixy= video_height-1;
+  return [pixx,pixy];
+
+
  
 def drawframe():
  global xoffset_whitekeys;
@@ -1431,20 +1483,23 @@ def drawframe():
  glTranslatef(xoffset_whitekeys,yoffset_whitekeys,0);
  glDisable(GL_TEXTURE_2D);
  for i in range( len( keys_pos) ):
+  pixpos = getkeyp_pixel_pos(keys_pos[i][0],keys_pos[i][1]);
 
-  pixx=int(xoffset_whitekeys + keys_pos[i][0]);
-  pixy=int(yoffset_whitekeys + keys_pos[i][1]);
-
-  if ( pixx >= width ) or ( pixy >= height ) or ( pixx < 0 ) or ( pixy < 0 ): continue;
-
-  if ( resize == 1 ):
-    pixx= int(round( pixx * ( video_width / float(resize_width) )))
-    pixy= int(round( pixy * ( video_height / float(resize_height) )))
-    if ( pixx > video_width -1 ): pixx = video_width-1;
-    if ( pixy > video_height-1 ): pixy= video_height-1;
-
-  keybgr=image[pixy,pixx];
+  if (pixpos[0] == -1) and (pixpos[1] == -1):
+     continue;
+  
+  keybgr=image[ pixpos[1], pixpos[0] ];
   key= [ keybgr[2], keybgr[1],keybgr[0] ];
+
+  keybgr=[0,0,0];
+  sparkkey=[0,0,0];
+  if ( use_sparks ):
+    sparkpixpos = getkeyp_pixel_pos(keys_pos[i][0],keyp_spark_y_pos);
+    if not ((sparkpixpos[0] == -1) and (sparkpixpos[1] == -1)):
+      keybgr   = image[ sparkpixpos[1], sparkpixpos[0] ];
+      sparkkey = [ keybgr[2], keybgr[1],keybgr[0] ];
+  else:
+    sparkkey = [0,0,0];
 
   note=i;
   if ( note > 120 ):
@@ -1464,6 +1519,9 @@ def drawframe():
          if ( abs( int(key[0]) - keyc[0] ) < keyp_delta ) and ( abs( int(key[1]) - keyc[1] ) < keyp_delta ) and ( abs( int(key[2]) - keyc[2] ) < keyp_delta ):
           keypressed=1;
           pressedcolor=keyc;
+         if ( use_sparks ):
+           if ( abs( int(sparkkey[0]) - keyc[0] ) < keyp_spark_delta ) and ( abs( int(sparkkey[1]) - keyc[1] ) < keyp_spark_delta ) and ( abs( int(sparkkey[2]) - keyc[2] ) < keyp_spark_delta ):
+             keypressed=0;
 
   glPushMatrix();
   glTranslatef(keys_pos[i][0],keys_pos[i][1],0);
@@ -1488,9 +1546,18 @@ def drawframe():
   if ( separate_note_id == i ):
     glColor4f(0,1,0,1);
     DrawRect(-7,-12,7,12,2);
+    
   DrawQuad(-1,-1,1,1);
   glPopMatrix();
   glColor4f(0.0, 1.0, 1.0, 0.7);
+  # Sparks
+  if ( use_sparks ):
+    glPushMatrix();
+    glTranslatef(keys_pos[i][0], keyp_spark_y_pos ,0);
+    glColor4f(0.5, 1, 1.0, 0.7);
+    DrawQuad(-1,-1,1,1);
+    glPopMatrix();
+
  glPopMatrix();
 
  glDisable(GL_BLEND);
@@ -1585,22 +1652,22 @@ def processmidi():
 
   # processing white keys;
   for i in range( len(keys_pos) ):
-    pixx=int(xoffset_whitekeys + keys_pos[i][0]);
-    pixy=int(yoffset_whitekeys + keys_pos[i][1]);
+    pixpos = getkeyp_pixel_pos(keys_pos[i][0],keys_pos[i][1]);
 
-    if ( pixx >= width ) or ( pixy >= height ) or ( pixx < 0 ) or ( pixy < 0 ): continue;
-    if ( resize == 1 ):
-      pixxo=pixx;
-      pixyo=pixy;
+    if (pixpos[0] == -1) and (pixpos[1] == -1):
+      continue;
+    keybgr=image[ pixpos[1], pixpos[0] ];
+    key= [ keybgr[2], keybgr[1],keybgr[0] ];
 
-      pixx= int(round( pixx * ( video_width / float(resize_width) )))
-      pixy= int(round( pixy * ( video_height / float(resize_height) )))
-      if ( pixx > video_width -1 ): pixx = video_width-1;
-      if ( pixy > video_height-1 ): pixy= video_height-1;
-#      print "original x:"+str(pixxo) + "x" +str(pixyo) + " mapped :" +str(pixx) +"x"+str(pixy);
-
-    keybgr=image[pixy,pixx];
-    key=[ keybgr[2], keybgr[1],keybgr[0] ];
+    keybgr=[0,0,0];
+    sparkkey=[0,0,0];
+    if ( use_sparks ):
+      sparkpixpos = getkeyp_pixel_pos(keys_pos[i][0],keyp_spark_y_pos);
+      if not ((sparkpixpos[0] == -1) and (sparkpixpos[1] == -1)):
+        keybgr   = image[ sparkpixpos[1], sparkpixpos[0] ];
+        sparkkey = [ keybgr[2], keybgr[1],keybgr[0] ];
+    else:
+      sparkkey = [0,0,0];
 
     note=i;
     if ( note > 120 ): 
@@ -1629,6 +1696,10 @@ def processmidi():
           deltaclr = delta;
           deltaid = j;
          keypressed=1;
+         if ( use_sparks ):
+           if ( abs( int(sparkkey[0]) - keyp_colors[j][0] ) < keyp_spark_delta ) and ( abs( int(sparkkey[1]) - keyp_colors[j][1] ) < keyp_spark_delta ) and ( abs( int(sparkkey[2]) - keyp_colors[j][2] ) < keyp_spark_delta ):
+             keypressed=0;
+         
     #
     if ( keypressed==1 ):
        note_channel=keyp_colors_channel[ deltaid ];
@@ -1779,6 +1850,7 @@ def main():
   global width,height;
   global screen;
   global lastkeygrabid;
+  global keyp_spark_y_pos;
 
   running=1;
   keygrab=0;
@@ -1877,17 +1949,24 @@ def main():
         basenote = octave * 12;
 
       if event.key == pygame.K_UP:
-       if mods & pygame.KMOD_SHIFT:
-        yoffset_blackkeys -= 1;
+       if mods & pygame.KMOD_ALT:
+         keyp_spark_y_pos -= 1;
        else:
-        yoffset_blackkeys -= 2;
+         if mods & pygame.KMOD_SHIFT:
+          yoffset_blackkeys -= 1;
+         else:
+          yoffset_blackkeys -= 2;
+          
        updatekeys( );
 
       if event.key == pygame.K_DOWN:
-       if mods & pygame.KMOD_SHIFT:
-        yoffset_blackkeys += 1;
+       if mods & pygame.KMOD_ALT:
+         keyp_spark_y_pos += 1;
        else:
-        yoffset_blackkeys += 2;
+         if mods & pygame.KMOD_SHIFT:
+          yoffset_blackkeys += 1;
+         else:
+          yoffset_blackkeys += 2;
        updatekeys( );
 
       if event.key == pygame.K_LEFT:
