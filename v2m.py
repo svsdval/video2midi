@@ -234,6 +234,9 @@ fontChars = u''' !"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_
 screen=0;
 colorBtns = []
 
+#quantized notes to the grid.
+use_snap_notes_to_grid = False;
+notes_grid_size=32;
 #
 
 #cfg
@@ -247,6 +250,7 @@ def loadsettings( cfgfile ):
  global miditrackname,debug,notes_overlap,resize,resize_width,resize_height,minimal_duration,keyp_colors_channel,keyp_colors_channel_prog,xoffset_whitekeys,yoffset_whitekeys,keyp_colors,keys_pos,ignore_minimal_duration,keyp_delta,screen,tempo,width,height;
  global colorBtns,colorWindow_colorBtns_channel_labels;
  global keyp_colors_alternate_sensetivity, keyp_colors_alternate,keyp_spark_y_pos,keyp_spark_delta,use_sparks;
+ print("starting read settings...")
  
  if not os.path.exists( cfgfile ):
   print("cannot find setings file: "+cfgfile);
@@ -271,8 +275,14 @@ def loadsettings( cfgfile ):
    minimal_duration = config.getfloat(section, 'minimal_note_duration')
   if config.has_option(section, 'color_channel_accordance'):
    clr_chnls = config.get(section, 'color_channel_accordance')
+  else:
+   clr_chnls = "";
+   
   if config.has_option(section, 'channel_prog_accordance'):
    clr_chnls_prog = config.get(section, 'channel_prog_accordance')
+  else:
+   clr_chnls_prog = "";
+   
   if config.has_option(section, 'ignore_notes_with_minimal_duration'):
    ignore_minimal_duration = config.getboolean(section, 'ignore_notes_with_minimal_duration')
   if config.has_option(section, 'notes_overlap'):
@@ -286,10 +296,9 @@ def loadsettings( cfgfile ):
    keyp_spark_y_pos = config.getint(section, 'keyp_spark_y_pos')
   if config.has_option(section, 'keyp_spark_delta'):
    keyp_spark_delta = config.getint(section, 'keyp_spark_delta')
-   extra_slider2.value = keyp_spark_delta;
+    
   if config.has_option(section, 'use_sparks'):
    use_sparks = config.getint(section, 'use_sparks')
-
 
   if ( clr_chnls != "" ):
 #    keyp_colors_channel = map(int, clr_chnls.split(","))
@@ -306,7 +315,7 @@ def loadsettings( cfgfile ):
    xoffset_whitekeys = config.getint(section, 'xoffset_whitekeys')
   if config.has_option(section, 'yoffset_whitekeys'):
    yoffset_whitekeys = config.getint(section, 'yoffset_whitekeys')
-
+  
   if config.has_option(section, 'keyp_colors'):
    skeyp_colors = config.get(section, 'keyp_colors')
    if ( skeyp_colors.strip() != "" ):
@@ -314,7 +323,8 @@ def loadsettings( cfgfile ):
     for cur in skeyp_colors.split(","):
      c = cur.split(":")
      keyp_colors.append( [ int(c[0]), int(c[1]),int(c[2]) ]);
-
+    
+    
   while ( len(keyp_colors) < len(colorBtns) ):  
     print("Warning, append array keyp_colors", len(keyp_colors));
     keyp_colors.append( [0,0,0] );
@@ -328,6 +338,10 @@ def loadsettings( cfgfile ):
      keys_pos.append( [ int(c[0]), int(c[1])  ]);
     print( len(keyp_colors) );
     print( len(keyp_colors_channel));
+
+  while ( len(keyp_colors_channel) < len(keyp_colors) ):  
+    print("Warning, append array keyp_colors_channel", len(keyp_colors_channel));
+    keyp_colors_channel.append( len(keyp_colors_channel) // 2 ); 
 
   if len(colorWindow_colorBtns_channel_labels) > 0:
    for i in range(len(colorBtns)):
@@ -350,19 +364,25 @@ def loadsettings( cfgfile ):
     for cur in s.split(","):
      keyp_colors_alternate_sensetivity.append( int(cur) );
     
- while ( len(keyp_colors_channel) < len(keyp_colors) ):  
-    print("Warning, append array keyp_colors_channel", len(keyp_colors_channel));
-    keyp_colors_channel.append( len(keyp_colors_channel) // 2 ); 
+# while ( len(keyp_colors_channel) < len(keyp_colors) ):  
+#    print("Warning, append array keyp_colors_channel", len(keyp_colors_channel));
+#     keyp_colors_channel.append( len(keyp_colors_channel) // 2 ); 
+    
  while ( len(keyp_colors_channel_prog) < len(keyp_colors) ):  
     print("Warning, append array keyp_colors_channel_prog", len(keyp_colors_channel_prog));
     keyp_colors_channel_prog.append(0);
-
-     
-     
-
+   
+   
  if ( resize == 1 ):
     width = resize_width;
     height = resize_height;
+
+ if 'glwindows' in globals():
+    settingsWindow_slider1.setvalue(keyp_delta);
+    settingsWindow_slider2.setvalue(minimal_duration * 100);
+    settingsWindow_slider3.setvalue(tempo);
+    sparks_switch.switch_status = use_sparks;
+    sparks_slider.value = keyp_spark_delta;
 
  pass;
  
@@ -388,14 +408,23 @@ def updatekeys( append=0 ):
  xx=0;
  for i in range(9):
   for j in range(12):
-   if (append == 1):
+   if (append == 1) or (i*12+j > len(keys_pos)-1):
     keys_pos.append( [0,0] );
+   
    keys_pos[i*12+j][0] = int(round( xx ));
    keys_pos[i*12+j][1] = 0;
    if (j == 1) or ( j ==3 ) or ( j == 6 ) or ( j == 8) or ( j == 10 ):
-    xx += -whitekey_width;
-    keys_pos[i*12+j][0] = int(round( xx  + whitekey_width *0.5 ));
-    keys_pos[i*12+j][1] = yoffset_blackkeys;
+     keys_pos[i*12+j][1] = yoffset_blackkeys;
+     xx += -whitekey_width;
+#     keys_pos[i*12+j][0] = int(round( xx  + whitekey_width *0.5 ));
+   # tune by wuzhuoqing  
+   if (j == 1) or ( j == 6 ):
+     keys_pos[i*12+j][0] = int(round( xx  + whitekey_width *0.4 ));
+   if (j == 8 ):
+     keys_pos[i*12+j][0] = int(round( xx  + whitekey_width *0.5 ));
+   if ( j ==3 ) or ( j == 10 ):
+     keys_pos[i*12+j][0] = int(round( xx  + whitekey_width *0.7 ));
+     
    xx += whitekey_width;
   pass;
 
@@ -772,7 +801,7 @@ def drawText(position, color, textString, size=24):
   pass
 
 class GLSlider:
-  def __init__(self,x,y,w,h, vmin,vmax, value, update_func = None ):
+  def __init__(self,x,y,w,h, vmin,vmax, value, update_func = None, label = "" ):
     self.w = float(w);
     self.h = float(h);
     self.x = float(x);
@@ -790,6 +819,10 @@ class GLSlider:
     self.mousepos = [0,0];
     self.mouseclickpos = [0,0];
     self.showvalue= False;
+    self.label = label;
+    self.showlabel = label != "";
+    self.showvaluesinlabel = 1;
+    self.round = 2;
     pass;
 
   def draw(self):
@@ -807,9 +840,23 @@ class GLSlider:
     DrawQuad(2,2,self.percent * self.w * 0.01, self.h );
 
     if (self.showvalue):
+      glPushMatrix();
       glTranslatef(self.w *0.5 , self.h *0.5 + Label_v_spacer *0.5 ,0);
       drawText( (0,0,1), (128,0,255), str(round(self.value,2)));
-
+      glPopMatrix()
+    if (self.showlabel):
+      labeltext = self.label;
+      if (self.showvaluesinlabel):
+        if (self.round == 0):
+         value = str(int(self.value));
+        else:
+         value = str(self.value);
+        labeltext = labeltext + ": " + value;
+      glPushMatrix();
+      drawText( (0,0,1),(255,255,255), labeltext );
+      glPopMatrix()
+        
+    
     glPopMatrix();
     pass;
 #
@@ -817,7 +864,8 @@ class GLSlider:
     pass;
   def setvalue(self,value):
 #
-    self.value = value;
+    self.value = round(value, self.round );
+    #value;
     if (self.vmax - self.vmin) != 0:
       self.percent = ((self.value + abs(self.vmin)) / float(self.vmax - self.vmin)) * 100;
     pass;
@@ -833,7 +881,7 @@ class GLSlider:
       if (self.vmax-self.vmin) == 0:
         selv.value = 0;
       else:
-        self.value = self.percent * (self.vmax-self.vmin) * 0.01 + self.vmin
+        self.value = round( self.percent * (self.vmax-self.vmin) * 0.01 + self.vmin, self.round );
     if ( self.update_func != None ):
       self.update_func(self, self.value);
 #      print "update_mouse_move on slider x:" + str( mpx ) + " y:" + str(mpy) + " self.x:" + str( self.x ) + " self.y:" + str(self.y) + " value : " +str(self.value) ;
@@ -953,7 +1001,7 @@ class GLColorButton:
 
 
 class GLButton:
-  def __init__(self,x,y,w,h, index, color, text, procedure):
+  def __init__(self,x,y,w,h, index, color = [128,128,128], text="", procedure=None, upcolor=[128,128,128], downcolor=[80,80,80], switch =0, switch_status =0, switch_on= [128,128,255], switch_off = [128,128,128]):
     self.w = float(w);
     self.h = float(h);
     self.x = float(x);
@@ -965,6 +1013,12 @@ class GLButton:
     self.mousegrab = 0;
     self.mousepos = [0,0];
     self.mouseclickpos = [0,0];
+    self.switch = switch;
+    self.switch_status = switch_status;
+    self.switch_on  = switch_on;
+    self.switch_off = switch_off;
+    self.downcolor = downcolor;
+    self.upcolor = upcolor;
     pass;
 
   def draw(self):
@@ -983,7 +1037,12 @@ class GLButton:
 
     glColor4f(1.0, 1.0, 1.0, 1);
     DrawQuad(2,2,self.w-2,self.h-2);
-
+    if (self.switch) and (self.mousegrab == 0):
+      if self.switch_status:
+        self.color = self.switch_on;
+      else:
+        self.color = self.switch_off;
+    #
     glColor4ub(self.color[0],self.color[1],self.color[2], 255);
     DrawQuad(3,3,self.w-3,self.h-3);
     glPopMatrix();
@@ -997,7 +1056,6 @@ class GLButton:
       drawText( (0,Label_v_spacer,1),(255,255,255), i);
       glTranslatef(0,Label_v_spacer,0);
     glPopMatrix()
-    
     pass;
 
 
@@ -1023,6 +1081,7 @@ class GLButton:
     if (( mpx > self.x ) and ( mpx < self.x+self.w ) and
         ( mpy > self.y ) and ( mpy < self.y+self.h )):
         self.mousegrab = 1;
+        self.color = self.downcolor;
     self.update();
     pass;
 
@@ -1034,6 +1093,9 @@ class GLButton:
 
     if (( mpx > self.x ) and ( mpx < self.x+self.w ) and
         ( mpy > self.y ) and ( mpy < self.y+self.h )):
+        self.color = self.upcolor;
+        if (self.switch):
+          self.switch_status = not self.switch_status;
         self.procedure(self);
         #keyp_colormap_id = self.index
  #       print "color button: update_mouse_up set index = " + str(keyp_colormap_id);
@@ -1309,14 +1371,25 @@ def change_use_alternate_keys(sender):
 
 def change_use_sparks(sender):
    global use_sparks;
-   use_sparks = not use_sparks;  
-   sender.text = "use sparks:"+str(use_sparks);
+   use_sparks = sender.switch_status;
+#   sender.text = "use sparks:"+str(use_sparks);
 
 
 def updatecolor(sender):
    if (lastkeygrabid != -1):
     readkeycolor(lastkeygrabid);
 
+def update_sparks_y_pos (sender):
+   global keyp_spark_y_pos;
+   if (sender.text == "y+"):
+     keyp_spark_y_pos =  keyp_spark_y_pos -1;
+   else:
+     keyp_spark_y_pos =  keyp_spark_y_pos +1;
+   pass;
+
+def snap_notes_to_the_grid(sender):
+    global use_snap_notes_to_grid;
+    use_snap_notes_to_grid = sender.switch_status;
  
 # 
 wh = ( (len(keyp_colors) // 2)+2 ) * 24;
@@ -1324,14 +1397,18 @@ colorWindow = GLWindow(32, 16, 264, wh, "color map")
 settingsWindow = GLWindow(32, wh, 250, 250, "Settings");
 helpWindow = GLWindow(32+270, 16, 750, 475, "help");
 
-extra = GLWindow(32+270+750+6, 16, 510, 254, "extra/experimental");
+extraWindow = GLWindow(32+270+750+6, 16, 510, 250, "extra/experimental");
+
+sparksWindow = GLWindow(32+270+750+6, 250, 510, 125, "sparks");
+
 
 glwindows = [];
 glwindows.append(colorWindow);
 glwindows.append(settingsWindow);
 glwindows.append(helpWindow);
 
-glwindows.append(extra);
+glwindows.append(extraWindow);
+glwindows.append(sparksWindow);
 
 #helpWindow.hidden=1;
 helpWindow_label1 = GLLabel(0,0, """h - on window title, show/hide the window
@@ -1360,16 +1437,19 @@ helpWindow.appendChild(helpWindow_label1);
 settingsWindow_label1 = GLLabel(0,0, "base octave: " + str(octave) + "\nnotes overlap: " + str(notes_overlap) + "\nignore minimal duration: " + str(ignore_minimal_duration));
 settingsWindow.appendChild(settingsWindow_label1);
 
-settingsWindow_label2 = GLLabel(0,67,  "Sensitivity:"+str(keyp_delta)+"\n\nMinimal note duration (sec):"+str(minimal_duration) +   "\n\nOutput tempo for midi:" + str(tempo)  );
-settingsWindow.appendChild(settingsWindow_label2);
+#settingsWindow_label2 = GLLabel(0,67,  "Sensitivity:"+str(keyp_delta)+"\n\nMinimal note duration (sec):"+str(minimal_duration) +   "\n\nOutput tempo for midi:" + str(tempo)  );
+#settingsWindow.appendChild(settingsWindow_label2);
 
-settingsWindow_slider1 = GLSlider(1,90, 240,18, 0,130,keyp_delta);
+settingsWindow_slider1 = GLSlider(1,90, 240,18, 0,130,keyp_delta,label="Sensitivity");
+settingsWindow_slider1.round=1;
 settingsWindow.appendChild(settingsWindow_slider1);
 
-settingsWindow_slider2 = GLSlider(1,130, 240,18, 0,200,minimal_duration*100);
+settingsWindow_slider2 = GLSlider(1,130, 240,18, 0,200,minimal_duration*100,label="Minimal note duration (sec)");
+settingsWindow_slider2.round=0;
 settingsWindow.appendChild(settingsWindow_slider2);
 
-settingsWindow_slider3 = GLSlider(1,173, 240,18, 30,200,tempo);
+settingsWindow_slider3 = GLSlider(1,173, 240,18, 30,240,tempo,label="Output tempo for midi");
+settingsWindow_slider3.round=0;
 settingsWindow.appendChild(settingsWindow_slider3);
 
 # for i in range( len( keyp_colors ) ):
@@ -1392,28 +1472,38 @@ for i in range( len( keyp_colors ) ):
  colorWindow_colorBtns_channel_btns.append( GLButton(offsetx+cx+80+20,offsety+cy ,20,20,-(i+1), [128,128,128], "-" ,update_channels) );
  colorWindow.appendChild( colorWindow_colorBtns_channel_btns[i*2+1] );
 
-extra.appendChild( GLButton(10,20 ,128,25,1, [128,128,128], "read colors" ,readcolors) );
-extra.appendChild( GLButton(140,20 ,138,25,1, [128,128,128], "enable/disable" ,change_use_alternate_keys) );
-extra.appendChild( GLButton(10,45 ,128,25,1, [128,128,128], "update color" ,updatecolor) );
+extraWindow.appendChild( GLButton(5,20 ,128,25,1, [128,128,128], "read colors" ,readcolors) );
+extraWindow.appendChild( GLButton(135,20 ,128,25,1, [128,128,128], "update color" ,updatecolor) );
+extraWindow.appendChild( GLButton(265,20 ,138,25,1, [128,128,128], "enable/disable" ,change_use_alternate_keys) );
+extraWindow.appendChild( GLButton(265,45 ,155,22,1, [96,96,128], "snap notes to grid" ,snap_notes_to_the_grid,switch=1, switch_status=use_snap_notes_to_grid) );
 
-extra.appendChild( GLButton(140,45 ,138,25,1, [128,128,128], "use sparks" ,change_use_sparks ) );
 
-extra_label1 = GLLabel(0,0,  "Use alternate:"+str(use_alternate_keys)  );
-extra.appendChild( extra_label1 );
-extra_label2 = GLLabel(0,67,  "Selected key sensitivity:"+str(0) );
-extra_slider1 = GLSlider(1,90, 240,18, -100,100,0,update_alternate_sensetivity);
-extra_slider1.showvalue=True;
+extra_label1 = GLLabel(6,0,  "Use alternate:"+str(use_alternate_keys)  );
+extraWindow.appendChild( extra_label1 );
+#extra_label2 = GLLabel(0,67,  "Selected key sensitivity:"+str(0) );
+extra_slider1 = GLSlider(6,65, 240,18, -100,100,0,update_alternate_sensetivity, label="Selected key sensitivity");
+#extra_slider1.showvalue=True;
+#showvaluesinlabel=0
 
-extra_slider2 = GLSlider(140+138+5,45, 150,18, -50,100,keyp_spark_delta,update_sparks_delta);
-extra_slider2.showvalue=True;
+extraWindow.appendChild(extra_slider1);
 
-extra_label3 = GLLabel(0,130,  """to select the key press ctrl + left mouse button on the key rect.
+extra_label3 = GLLabel( 6,90,  """to select the key press ctrl + left mouse button on the key rect.
 to deselect the key press ctrl + left mouse button on empty space.""" );
+extraWindow.appendChild( extra_label3 );
 
-extra.appendChild(extra_slider1);
-extra.appendChild(extra_slider2);
-extra.appendChild(extra_label2);
-extra.appendChild(extra_label3);
+sparks_slider = GLSlider(6,25, 150,18, -50,100,keyp_spark_delta,update_sparks_delta, label="Sparks delta");
+sparks_switch = GLButton(160,24 ,138,22,1, [128,128,128], "use sparks" ,change_use_sparks,switch=1, switch_status=use_sparks );
+sparksWindow.appendChild( sparks_slider );
+sparksWindow.appendChild( sparks_switch );
+#
+sparksWindow.appendChild( GLButton(160 + 140   ,24 ,32,22,1, [96,96,128], "y+" ,update_sparks_y_pos) );
+sparksWindow.appendChild( GLButton(160 + 140+35,24 ,32,22,1, [96,96,128], "y-" ,update_sparks_y_pos) );
+sparksWindow.appendChild( GLLabel( 6,50,  "alt + up / down - move sparks label up or down " ));
+
+#
+
+#extra_slider2.showvalue=True;
+#extra.appendChild(extra_label2);
  
 
 #loadsettings( settingsfile );    
@@ -1571,7 +1661,7 @@ def drawframe():
  tempo = int(settingsWindow_slider3.value);
 
  settingsWindow_label1.text = "base octave: " + str(octave) + "\nnotes overlap: " + str(notes_overlap) + "\nignore minimal duration: " + str(ignore_minimal_duration);
- settingsWindow_label2.text = "Sensitivity:"+str(keyp_delta)+"\n\nMinimal note duration (sec):"+format(minimal_duration,'.2f' ) +   "\n\nOutput tempo for midi:" + str(tempo);
+ #settingsWindow_label2.text = "Sensitivity:"+str(keyp_delta)+"\n\nMinimal note duration (sec):"+format(minimal_duration,'.2f' ) +   "\n\nOutput tempo for midi:" + str(tempo);
  for i in range(len(keyp_colors)):
      colorBtns[i].color = keyp_colors[i];
 
@@ -1618,6 +1708,7 @@ def processmidi():
 
  mf.addTrackName(track, time, miditrackname);
  mf.addTempo(track, time, tempo );
+ first_note_time=0;
  
  channel_has_note = [ 0 for x in range(16) ];
  for i in range(len(keyp_colors_channel)):
@@ -1703,6 +1794,8 @@ def processmidi():
     #
     if ( keypressed==1 ):
        note_channel=keyp_colors_channel[ deltaid ];
+       if (first_note_time == 0):
+           first_note_time = frame / fps;
 
     if ( debug == 1 ):
       if (keypressed == 1 ):
@@ -1731,6 +1824,21 @@ def processmidi():
         # case if one key over other
         time = notes_db[note] / fps;
         duration = ( frame - notes_db[note] ) / fps;
+        if (use_snap_notes_to_grid == 1):
+          #print ("1 time:", time , "first_note_time:",first_note_time)
+          time = (time - first_note_time);
+          
+          #print ("1 time before:", time , "durection before:",duration)
+          
+          time_q = ( (int(time) - time) * notes_grid_size ) / notes_grid_size;
+          time = (time_q + int(time))*4;
+          #int ((0,6)×4)÷4
+          
+          duration_q = ( (int(duration) - duration) * notes_grid_size ) / notes_grid_size;
+          duration = (duration_q + int(duration)) *4;
+          #print ("1 time after:", time , "after before:",duration)
+          
+          
         ignore = 0
         if ( duration < minimal_duration ):
           if ( debug_keys == 1 ):
@@ -1758,6 +1866,22 @@ def processmidi():
         notes_de[ note ] = frame;
         time = notes_db[note] / fps;
         duration = ( notes_de[note] - notes_db[note] ) / fps;
+        
+        if (use_snap_notes_to_grid):
+          if (first_note_time == 0):
+            first_note_time = time;
+          #print ("2 time:", time , "first_note_time:",first_note_time)
+          time = (time - first_note_time)+1;
+          
+          #print ("2 time before:", time , "durection before:",duration)
+          time_q = int( (time - int(time)) * notes_grid_size ) / notes_grid_size;
+          time = (time_q + int(time));
+          
+          duration_q = int( (duration - int(duration)) * notes_grid_size ) / notes_grid_size;
+          duration = (duration_q + int(duration));
+          #print ("2 time after:", time , "durection after:",duration)
+          
+          
         ignore=0
         if ( duration < minimal_duration ):
           if ( debug_keys == 1 ):
@@ -1771,6 +1895,7 @@ def processmidi():
           print("midi add white keys, note : " +str(note) + " time:" +str(time) + " duration:" + str(duration));
         if ( not ignore ):
           mf.addNote(track, notes_channel[note] , basenote+ note, time * tempo / 60.0 , duration * tempo / 60.0 , volume );
+
           channel_has_note[ note_channel ] = 1;
           notecnt+=1;
 
@@ -1927,9 +2052,6 @@ def main():
       if event.key == pygame.K_F3:
         old_resize = resize;
         loadsettings( settingsfile )
-        settingsWindow_slider1.setvalue(keyp_delta);
-        settingsWindow_slider2.setvalue(minimal_duration * 100);
-        settingsWindow_slider3.setvalue(tempo);
         if (resize != old_resize):
           resize_window();
        
@@ -1951,13 +2073,13 @@ def main():
       if event.key == pygame.K_UP:
        if mods & pygame.KMOD_ALT:
          keyp_spark_y_pos -= 1;
+         
        else:
          if mods & pygame.KMOD_SHIFT:
           yoffset_blackkeys -= 1;
          else:
           yoffset_blackkeys -= 2;
-          
-       updatekeys( );
+         updatekeys( );
 
       if event.key == pygame.K_DOWN:
        if mods & pygame.KMOD_ALT:
@@ -1967,7 +2089,7 @@ def main():
           yoffset_blackkeys += 1;
          else:
           yoffset_blackkeys += 2;
-       updatekeys( );
+         updatekeys( );
 
       if event.key == pygame.K_LEFT:
        if mods & pygame.KMOD_SHIFT:
