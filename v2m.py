@@ -194,14 +194,17 @@ keyp_colors = [
 [0  ,  0,  0], [  0,  0,  0]
 # .....
 ];
-
+keyp_colors_sparks_sensitivity = [50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50]
 
 
 keyp_delta = 90; # sensitivity
 
 keyp_spark_y_pos = -110; 
-keyp_spark_delta = 60;
 use_sparks= False;
+#old_spark_color = [[0,0,0]] * 128;
+#cur_spark_color = [[0,0,0]] * 128;
+
+
 
 #
 keyp_colors_channel =      [ 0,0, 1,1, 2,2, 3,3, 4,4, 5,5, 6,6, 7,7, 8,8 ]; # MIDI channel per color
@@ -249,7 +252,7 @@ if os.path.exists( 'v2m.ini' ):
 def loadsettings( cfgfile ):
  global miditrackname,debug,notes_overlap,resize,resize_width,resize_height,minimal_duration,keyp_colors_channel,keyp_colors_channel_prog,xoffset_whitekeys,yoffset_whitekeys,keyp_colors,keys_pos,ignore_minimal_duration,keyp_delta,screen,tempo,width,height;
  global colorBtns,colorWindow_colorBtns_channel_labels;
- global keyp_colors_alternate_sensetivity, keyp_colors_alternate,keyp_spark_y_pos,keyp_spark_delta,use_sparks;
+ global keyp_colors_alternate_sensetivity, keyp_colors_alternate,keyp_spark_y_pos,use_sparks;
  print("starting read settings...")
  
  if not os.path.exists( cfgfile ):
@@ -294,8 +297,6 @@ def loadsettings( cfgfile ):
   # Sparks 
   if config.has_option(section, 'keyp_spark_y_pos'):
    keyp_spark_y_pos = config.getint(section, 'keyp_spark_y_pos')
-  if config.has_option(section, 'keyp_spark_delta'):
-   keyp_spark_delta = config.getint(section, 'keyp_spark_delta')
     
   if config.has_option(section, 'use_sparks'):
    use_sparks = config.getint(section, 'use_sparks')
@@ -328,6 +329,17 @@ def loadsettings( cfgfile ):
   while ( len(keyp_colors) < len(colorBtns) ):  
     print("Warning, append array keyp_colors", len(keyp_colors));
     keyp_colors.append( [0,0,0] );
+
+  if config.has_option(section, 'keyp_colors_sparks_sensitivity'):
+   skeyp_colors_sparks_sensitivity = config.get(section, 'keyp_colors_sparks_sensitivity')
+   if ( skeyp_colors_sparks_sensitivity.strip() != "" ):
+    keyp_colors_sparks_sensitivity[:] = [];
+    for cur in skeyp_colors_sparks_sensitivity.split(","):
+     keyp_colors_sparks_sensitivity.append( float(cur) );
+    
+  while ( len(keyp_colors_sparks_sensitivity) < len(keyp_colors) ):
+    keyp_colors_sparks_sensitivity.append(50);
+      
     
   if config.has_option(section, 'keys_pos'):
    skeys_pos = config.get(section, 'keys_pos')
@@ -382,7 +394,8 @@ def loadsettings( cfgfile ):
     settingsWindow_slider2.setvalue(minimal_duration * 100);
     settingsWindow_slider3.setvalue(tempo);
     sparks_switch.switch_status = use_sparks;
-    sparks_slider.value = keyp_spark_delta;
+    sparks_slider_delta.value = 0;
+    sparks_slider_delta.id =-1;
 
  pass;
  
@@ -448,7 +461,6 @@ def savesettings():
  config.set(section, 'output_midi_tempo', str(int(tempo)));
  #Sparks 
  config.set(section, 'keyp_spark_y_pos', str(int(keyp_spark_y_pos)));
- config.set(section, 'keyp_spark_delta', str(int(keyp_spark_delta)));
  config.set(section, 'use_sparks', str(int(use_sparks)));
  
  
@@ -468,6 +480,11 @@ def savesettings():
  for i in keyp_colors:
   skeyp_colors+= str(int(i[0]))+":"+str(int(i[1]))+":"+str(int(i[2]))+",";
  config.set(section, 'keyp_colors', skeyp_colors[0:-1]);
+
+ skeyp_colors_sparks_sensitivity="";
+ for i in keyp_colors_sparks_sensitivity:
+  skeyp_colors_sparks_sensitivity += str(round(i,2))+",";
+ config.set(section, 'keyp_colors_sparks_sensitivity', skeyp_colors_sparks_sensitivity[0:-1]);
 
  skeys_pos="";
  for i in keys_pos:
@@ -497,6 +514,14 @@ glListRect1=-1;
 
 tStart = t0 = time.time()-1;
 frames = 0;
+
+def snap_to_grid( input_value , input_grid_size ):
+    quantized = int( (input_value - int(input_value)) * input_grid_size ) / input_grid_size;
+    result = (quantized + int(input_value));
+    #print ("value before:", input_value , " after :", result);
+    return result;
+
+
 
 def framerate():
     global t0, frames
@@ -801,7 +826,7 @@ def drawText(position, color, textString, size=24):
   pass
 
 class GLSlider:
-  def __init__(self,x,y,w,h, vmin,vmax, value, update_func = None, label = "" ):
+  def __init__(self,x,y,w,h, vmin,vmax, value, update_func = None, label = "", color = [128, 128, 255] ):
     self.w = float(w);
     self.h = float(h);
     self.x = float(x);
@@ -823,6 +848,8 @@ class GLSlider:
     self.showlabel = label != "";
     self.showvaluesinlabel = 1;
     self.round = 2;
+    self.color = color;
+    self.id    = -1;
     pass;
 
   def draw(self):
@@ -836,7 +863,7 @@ class GLSlider:
     glTranslatef( self.x , self.y ,0);
     glColor4f(0.8, 0.8, 0.8, 1);
     DrawQuad(0,0,self.w+2,self.h+2);
-    glColor4f(0.5, 0.5, 1.0, 1);
+    glColor4ub( self.color[0], self.color[1], self.color[2], 255);
     DrawQuad(2,2,self.percent * self.w * 0.01, self.h );
 
     if (self.showvalue):
@@ -882,8 +909,8 @@ class GLSlider:
         selv.value = 0;
       else:
         self.value = round( self.percent * (self.vmax-self.vmin) * 0.01 + self.vmin, self.round );
-    if ( self.update_func != None ):
-      self.update_func(self, self.value);
+      if ( self.update_func != None ):
+        self.update_func(self, self.value);
 #      print "update_mouse_move on slider x:" + str( mpx ) + " y:" + str(mpy) + " self.x:" + str( self.x ) + " self.y:" + str(self.y) + " value : " +str(self.value) ;
 #      if ( self.value > self.vmax ) : self.value = self.vmax;
 #      if ( self.value < self.vmin ) : self.value = self.vmin;
@@ -990,6 +1017,10 @@ class GLColorButton:
     if (( mpx > self.x ) and ( mpx < self.x+self.w ) and
         ( mpy > self.y ) and ( mpy < self.y+self.h )):
         keyp_colormap_id = self.index
+        if keyp_colormap_id < len(keyp_colors) :
+         sparks_slider_delta.id    = keyp_colormap_id;
+         sparks_slider_delta.color = keyp_colors[keyp_colormap_id];
+         sparks_slider_delta.setvalue( keyp_colors_sparks_sensitivity[keyp_colormap_id] );
  #       print "color button: update_mouse_up set index = " + str(keyp_colormap_id);
     pass;
 
@@ -1359,8 +1390,11 @@ def update_alternate_sensetivity(sender,value):
      keyp_colors_alternate_sensetivity[ lastkeygrabid ] = value;
      
 def update_sparks_delta(sender,value):
-   global keyp_spark_delta;
-   keyp_spark_delta = value;
+   if (sender.id == -1):
+     return;
+   if (sender.id < len(keyp_colors))  :
+    keyp_colors_sparks_sensitivity[sender.id] = sender.value
+    #print("keyp_colors_sparks_sensitivity["+str(sender.id)+"] = "+ str(sender.value) );
      
 
 
@@ -1491,13 +1525,16 @@ extra_label3 = GLLabel( 6,90,  """to select the key press ctrl + left mouse butt
 to deselect the key press ctrl + left mouse button on empty space.""" );
 extraWindow.appendChild( extra_label3 );
 
-sparks_slider = GLSlider(6,25, 150,18, -50,100,keyp_spark_delta,update_sparks_delta, label="Sparks delta");
-sparks_switch = GLButton(160,24 ,138,22,1, [128,128,128], "use sparks" ,change_use_sparks,switch=1, switch_status=use_sparks );
-sparksWindow.appendChild( sparks_slider );
+sparks_slider_delta = GLSlider(6,25, 150,18, -50,150,50,update_sparks_delta, label="Sparks delta");
+sparks_slider_height = GLSlider(160,25, 150,18, 1,60,1,None, label="Sparks height");
+sparks_slider_height.round=0;
+sparks_switch = GLButton(313,24 ,100,22,1, [128,128,128], "use sparks" ,change_use_sparks,switch=1, switch_status=use_sparks );
+sparksWindow.appendChild( sparks_slider_delta );
+sparksWindow.appendChild( sparks_slider_height );
 sparksWindow.appendChild( sparks_switch );
 #
-sparksWindow.appendChild( GLButton(160 + 140   ,24 ,32,22,1, [96,96,128], "y+" ,update_sparks_y_pos) );
-sparksWindow.appendChild( GLButton(160 + 140+35,24 ,32,22,1, [96,96,128], "y-" ,update_sparks_y_pos) );
+sparksWindow.appendChild( GLButton(413   ,24 ,32,22,1, [96,96,128], "y+" ,update_sparks_y_pos) );
+sparksWindow.appendChild( GLButton(413+33,24 ,32,22,1, [96,96,128], "y-" ,update_sparks_y_pos) );
 sparksWindow.appendChild( GLLabel( 6,50,  "alt + up / down - move sparks label up or down " ));
 
 #
@@ -1544,6 +1581,8 @@ def drawframe():
  global keyp_delta;
  global minimal_duration;
  global tempo;
+ #global old_spark_color;
+ #global cur_spark_color;
  
  scale=1.0;
  mousex, mousey = pygame.mouse.get_pos();
@@ -1584,10 +1623,18 @@ def drawframe():
   keybgr=[0,0,0];
   sparkkey=[0,0,0];
   if ( use_sparks ):
-    sparkpixpos = getkeyp_pixel_pos(keys_pos[i][0],keyp_spark_y_pos);
-    if not ((sparkpixpos[0] == -1) and (sparkpixpos[1] == -1)):
-      keybgr   = image[ sparkpixpos[1], sparkpixpos[0] ];
-      sparkkey = [ keybgr[2], keybgr[1],keybgr[0] ];
+    sh = int(sparks_slider_height.value);
+    if sh == 0:
+        sh = 1;
+    for spark_y_add_pos in range (sh):
+     sparkpixpos = getkeyp_pixel_pos(keys_pos[i][0],keyp_spark_y_pos - spark_y_add_pos );
+     if not ((sparkpixpos[0] == -1) and (sparkpixpos[1] == -1)):
+       keybgr   = image[ sparkpixpos[1], sparkpixpos[0] ];
+       sparkkey = [ sparkkey[0] + keybgr[2], 
+                    sparkkey[1] + keybgr[1],
+                    sparkkey[2] + keybgr[0] ];
+    sparkkey = [ sparkkey[0] / sh,  sparkkey[1] / sh,sparkkey[2] / sh];
+    #cur_spark_color[i] = sparkkey;
   else:
     sparkkey = [0,0,0];
 
@@ -1604,13 +1651,19 @@ def drawframe():
       keypressed=1;
       pressedcolor=keyp_colors_alternate[i];
   else: 
-      for keyc in keyp_colors:
+      for key_id in range( len(keyp_colors) ):
+       keyc = keyp_colors[key_id];
+       spark_delta = keyp_colors_sparks_sensitivity[key_id];
+       #
        if (keyc[0] != 0 ) or (keyc[1] != 0 ) or (keyc[2] != 0 ) :
          if ( abs( int(key[0]) - keyc[0] ) < keyp_delta ) and ( abs( int(key[1]) - keyc[1] ) < keyp_delta ) and ( abs( int(key[2]) - keyc[2] ) < keyp_delta ):
           keypressed=1;
-          pressedcolor=keyc;
-         if ( use_sparks ):
-           if ( abs( int(sparkkey[0]) - keyc[0] ) < keyp_spark_delta ) and ( abs( int(sparkkey[1]) - keyc[1] ) < keyp_spark_delta ) and ( abs( int(sparkkey[2]) - keyc[2] ) < keyp_spark_delta ):
+          pressedcolor = keyc;
+          if ( use_sparks ):
+            unpressed_by_spark_delta = ( abs( int(sparkkey[0]) - keyc[0] ) < spark_delta ) and ( abs( int(sparkkey[1]) - keyc[1] ) < spark_delta ) and ( abs( int(sparkkey[2]) - keyc[2] ) < spark_delta );
+            #unpressed_by_spark_fade = ( cur_spark_color[i][0] <  old_spark_color[i][0]) and ( cur_spark_color[i][1] <  old_spark_color[i][1]) and ( cur_spark_color[i][2] <  old_spark_color[i][2]) ;
+            #unpressed_by_spark_fade_delta = ( abs( cur_spark_color[i][0] - old_spark_color[i][0]) > 20 ) 
+            if ( unpressed_by_spark_delta ):
              keypressed=0;
 
   glPushMatrix();
@@ -1646,6 +1699,8 @@ def drawframe():
     glTranslatef(keys_pos[i][0], keyp_spark_y_pos ,0);
     glColor4f(0.5, 1, 1.0, 0.7);
     DrawQuad(-1,-1,1,1);
+    DrawQuad(-0.5,-sparks_slider_height.value ,0.5,0);
+    
     glPopMatrix();
 
  glPopMatrix();
@@ -1753,10 +1808,17 @@ def processmidi():
     keybgr=[0,0,0];
     sparkkey=[0,0,0];
     if ( use_sparks ):
-      sparkpixpos = getkeyp_pixel_pos(keys_pos[i][0],keyp_spark_y_pos);
-      if not ((sparkpixpos[0] == -1) and (sparkpixpos[1] == -1)):
-        keybgr   = image[ sparkpixpos[1], sparkpixpos[0] ];
-        sparkkey = [ keybgr[2], keybgr[1],keybgr[0] ];
+     sh = int(sparks_slider_height.value);
+     if sh == 0:
+        sh = 1;
+     for spark_y_add_pos in range (sh):
+       sparkpixpos = getkeyp_pixel_pos(keys_pos[i][0],keyp_spark_y_pos - spark_y_add_pos );
+       if not ((sparkpixpos[0] == -1) and (sparkpixpos[1] == -1)):
+         keybgr   = image[ sparkpixpos[1], sparkpixpos[0] ];
+         sparkkey = [ sparkkey[0] + keybgr[2], 
+                      sparkkey[1] + keybgr[1],
+                      sparkkey[2] + keybgr[0] ];
+     sparkkey = [ sparkkey[0] / sh,  sparkkey[1] / sh,sparkkey[2] / sh];
     else:
       sparkkey = [0,0,0];
 
@@ -1788,14 +1850,12 @@ def processmidi():
           deltaid = j;
          keypressed=1;
          if ( use_sparks ):
-           if ( abs( int(sparkkey[0]) - keyp_colors[j][0] ) < keyp_spark_delta ) and ( abs( int(sparkkey[1]) - keyp_colors[j][1] ) < keyp_spark_delta ) and ( abs( int(sparkkey[2]) - keyp_colors[j][2] ) < keyp_spark_delta ):
+           if ( abs( int(sparkkey[0]) - keyp_colors[j][0] ) < keyp_colors_sparks_sensitivity[j] ) and ( abs( int(sparkkey[1]) - keyp_colors[j][1] ) < keyp_colors_sparks_sensitivity[j] ) and ( abs( int(sparkkey[2]) - keyp_colors[j][2] ) < keyp_colors_sparks_sensitivity[j] ):
              keypressed=0;
          
     #
     if ( keypressed==1 ):
        note_channel=keyp_colors_channel[ deltaid ];
-       if (first_note_time == 0):
-           first_note_time = frame / fps;
 
     if ( debug == 1 ):
       if (keypressed == 1 ):
@@ -1813,6 +1873,8 @@ def processmidi():
           print("note pressed on :" + str( note ));
         notes[ note ] = 1;
         notes_db[ note ] = frame;
+        if (first_note_time == 0):
+          first_note_time = frame / fps;
         notes_channel[ note ] = note_channel;
         if ( separate_note_id != -1 ):
           if ( separate_note_id < note ):
@@ -1826,16 +1888,8 @@ def processmidi():
         duration = ( frame - notes_db[note] ) / fps;
         if (use_snap_notes_to_grid == 1):
           #print ("1 time:", time , "first_note_time:",first_note_time)
-          time = (time - first_note_time);
-          
-          #print ("1 time before:", time , "durection before:",duration)
-          
-          time_q = ( (int(time) - time) * notes_grid_size ) / notes_grid_size;
-          time = (time_q + int(time))*4;
-          #int ((0,6)×4)÷4
-          
-          duration_q = ( (int(duration) - duration) * notes_grid_size ) / notes_grid_size;
-          duration = (duration_q + int(duration)) *4;
+          time = snap_to_grid( time - first_note_time , notes_grid_size ) + 1;
+          duration = snap_to_grid( duration , notes_grid_size );
           #print ("1 time after:", time , "after before:",duration)
           
           
@@ -1871,16 +1925,8 @@ def processmidi():
           if (first_note_time == 0):
             first_note_time = time;
           #print ("2 time:", time , "first_note_time:",first_note_time)
-          time = (time - first_note_time)+1;
-          
-          #print ("2 time before:", time , "durection before:",duration)
-          time_q = int( (time - int(time)) * notes_grid_size ) / notes_grid_size;
-          time = (time_q + int(time));
-          
-          duration_q = int( (duration - int(duration)) * notes_grid_size ) / notes_grid_size;
-          duration = (duration_q + int(duration));
-          #print ("2 time after:", time , "durection after:",duration)
-          
+          time = snap_to_grid( time - first_note_time , notes_grid_size ) + 1;
+          duration = snap_to_grid( duration , notes_grid_size );
           
         ignore=0
         if ( duration < minimal_duration ):
@@ -1976,6 +2022,7 @@ def main():
   global screen;
   global lastkeygrabid;
   global keyp_spark_y_pos;
+  #global old_spark_color, cur_spark_color;
 
   running=1;
   keygrab=0;
@@ -2128,7 +2175,9 @@ def main():
         frame+=100;
        if (frame > length *0.99):
         frame=math.trunc(length *0.99);
-
+       #for i in range( len(cur_spark_color)):
+       #  old_spark_color[i] = cur_spark_color[i];
+         
        glBindTexture(GL_TEXTURE_2D, bgImgGL);
        loadImage(frame);
 
@@ -2139,6 +2188,8 @@ def main():
         frame-=100;
        if (frame < 1):
         frame=1;
+       #for i in range( len(cur_spark_color)):
+       #  old_spark_color[i] = cur_spark_color[i];
        glBindTexture(GL_TEXTURE_2D, bgImgGL);
        loadImage(frame);
 
