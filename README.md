@@ -10,6 +10,8 @@ youtube synthesia video to midi, just for fun )
 
 [Video example on YouTube, creating 2 channels midi, version video2midi 0.3.0](https://youtu.be/AY0wME73Z98)
 
+GH already added new [discuss functionality](https://github.com/svsdval/video2midi/discussions) so we can talk without opening an issueif you have any questions or comments, [you can open discuss](https://github.com/svsdval/video2midi/discussions), i'll try to answer / help  ;)
+
 # EN:
 # dependency
 
