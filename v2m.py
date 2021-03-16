@@ -241,6 +241,7 @@ colorBtns = []
 use_snap_notes_to_grid = False;
 notes_grid_size=32;
 #
+midi_file_format = 0;
 
 #cfg
 home = expanduser("~")
@@ -292,6 +293,10 @@ def loadsettings( cfgfile ):
    notes_overlap = config.getboolean(section, 'notes_overlap')
   if config.has_option(section, 'sensitivity'):
    keyp_delta = config.getint(section, 'sensitivity')
+  #
+  if config.has_option(section, 'midi_file_format'):
+   midi_file_format = config.getint(section, 'midi_file_format')
+   print(midi_file_format);
   if config.has_option(section, 'output_midi_tempo'):
    tempo = config.getint(section, 'output_midi_tempo')
   # Sparks 
@@ -1428,7 +1433,7 @@ def snap_notes_to_the_grid(sender):
 # 
 wh = ( (len(keyp_colors) // 2)+2 ) * 24;
 colorWindow = GLWindow(32, 16, 264, wh, "color map")
-settingsWindow = GLWindow(32, wh, 250, 250, "Settings");
+settingsWindow = GLWindow(32, wh, 250, 310, "Settings");
 helpWindow = GLWindow(32+270, 16, 750, 475, "help");
 
 extraWindow = GLWindow(32+270+750+6, 16, 510, 250, "extra/experimental");
@@ -1485,6 +1490,13 @@ settingsWindow.appendChild(settingsWindow_slider2);
 settingsWindow_slider3 = GLSlider(1,173, 240,18, 30,240,tempo,label="Output tempo for midi");
 settingsWindow_slider3.round=0;
 settingsWindow.appendChild(settingsWindow_slider3);
+
+settingsWindow_slider4 = GLSlider(1,215, 240,18, 0,2,midi_file_format,label="Output midi format");
+settingsWindow_slider4.round=1;
+settingsWindow.appendChild(settingsWindow_slider3);
+settingsWindow.appendChild(settingsWindow_slider4);
+
+
 
 # for i in range( len( keyp_colors ) ):
   #keyp_colormap_colors_pos.append ([ (i % 2) * 32,  ( i // 2 ) * 20  ]);
@@ -1756,7 +1768,7 @@ def processmidi():
  print("video " + str(width) + "x" + str(height));
 
  # create  MIDI object;
- mf = MIDIFile(1) # only 1 track;
+ mf = MIDIFile(1,file_format=int(midi_file_format)) # only 1 track;
  track = 0 # the only track;
  time = 0 # start at the beginning;
  
