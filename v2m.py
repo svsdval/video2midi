@@ -1492,7 +1492,7 @@ settingsWindow_slider3.round=0;
 settingsWindow.appendChild(settingsWindow_slider3);
 
 settingsWindow_slider4 = GLSlider(1,215, 240,18, 0,2,midi_file_format,label="Output midi format");
-settingsWindow_slider4.round=1;
+settingsWindow_slider4.round=0;
 settingsWindow.appendChild(settingsWindow_slider3);
 settingsWindow.appendChild(settingsWindow_slider4);
 
