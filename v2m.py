@@ -242,6 +242,8 @@ use_snap_notes_to_grid = False;
 notes_grid_size=32;
 #
 midi_file_format = 0;
+#
+blackkey_relative_position = 0.4
 
 #cfg
 home = expanduser("~")
@@ -251,7 +253,7 @@ if os.path.exists( 'v2m.ini' ):
   print("local config file exists.")
 
 def loadsettings( cfgfile ):
- global miditrackname,debug,notes_overlap,resize,resize_width,resize_height,minimal_duration,keyp_colors_channel,keyp_colors_channel_prog,xoffset_whitekeys,yoffset_whitekeys,keyp_colors,keys_pos,ignore_minimal_duration,keyp_delta,screen,tempo,width,height;
+ global miditrackname,debug,notes_overlap,resize,resize_width,resize_height,minimal_duration,keyp_colors_channel,keyp_colors_channel_prog,xoffset_whitekeys,yoffset_whitekeys,yoffset_blackkeys,whitekey_width,keyp_colors,keys_pos,ignore_minimal_duration,keyp_delta,screen,tempo,width,height;
  global colorBtns,colorWindow_colorBtns_channel_labels;
  global keyp_colors_alternate_sensetivity, keyp_colors_alternate,keyp_spark_y_pos,use_sparks;
  print("starting read settings...")
@@ -299,6 +301,9 @@ def loadsettings( cfgfile ):
    print(midi_file_format);
   if config.has_option(section, 'output_midi_tempo'):
    tempo = config.getint(section, 'output_midi_tempo')
+  if config.has_option(section, 'blackkey_relative_position'):
+   blackkey_relative_position = config.getfloat(section, 'blackkey_relative_position')
+     
   # Sparks 
   if config.has_option(section, 'keyp_spark_y_pos'):
    keyp_spark_y_pos = config.getint(section, 'keyp_spark_y_pos')
@@ -320,8 +325,12 @@ def loadsettings( cfgfile ):
   if config.has_option(section, 'xoffset_whitekeys'):
    xoffset_whitekeys = config.getint(section, 'xoffset_whitekeys')
   if config.has_option(section, 'yoffset_whitekeys'):
-   yoffset_whitekeys = config.getint(section, 'yoffset_whitekeys')
-  
+   yoffset_whitekeys = config.getint(section, 'yoffset_whitekeys')  
+  if config.has_option(section, 'yoffset_blackkeys'):
+   yoffset_blackkeys = config.getint(section, 'yoffset_blackkeys')
+  if config.has_option(section, 'whitekey_width'):
+   whitekey_width = config.getint(section, 'whitekey_width')   
+
   if config.has_option(section, 'keyp_colors'):
    skeyp_colors = config.get(section, 'keyp_colors')
    if ( skeyp_colors.strip() != "" ):
@@ -437,11 +446,11 @@ def updatekeys( append=0 ):
 #     keys_pos[i*12+j][0] = int(round( xx  + whitekey_width *0.5 ));
    # tune by wuzhuoqing  
    if (j == 1) or ( j == 6 ):
-     keys_pos[i*12+j][0] = int(round( xx  + whitekey_width *0.4 ));
+     keys_pos[i*12+j][0] = int(round( xx  + whitekey_width * blackkey_relative_position ));
    if (j == 8 ):
-     keys_pos[i*12+j][0] = int(round( xx  + whitekey_width *0.5 ));
+     keys_pos[i*12+j][0] = int(round( xx  + whitekey_width * 0.5 ));
    if ( j ==3 ) or ( j == 10 ):
-     keys_pos[i*12+j][0] = int(round( xx  + whitekey_width *0.7 ));
+     keys_pos[i*12+j][0] = int(round( xx  + whitekey_width * (1.0 - blackkey_relative_position) ));
      
    xx += whitekey_width;
   pass;
@@ -464,6 +473,7 @@ def savesettings():
  config.set(section, 'notes_overlap', str(int(notes_overlap)));
  config.set(section, 'sensitivity', str(int(keyp_delta)));
  config.set(section, 'output_midi_tempo', str(int(tempo)));
+ config.set(section, 'blackkey_relative_position', str(float(blackkey_relative_position)));
  #Sparks 
  config.set(section, 'keyp_spark_y_pos', str(int(keyp_spark_y_pos)));
  config.set(section, 'use_sparks', str(int(use_sparks)));
@@ -480,6 +490,8 @@ def savesettings():
 
  config.set(section, 'xoffset_whitekeys',str(int(xoffset_whitekeys)));
  config.set(section, 'yoffset_whitekeys',str(int(yoffset_whitekeys)));
+ config.set(section, 'yoffset_blackkeys',str(int(yoffset_blackkeys)));
+ config.set(section, 'whitekey_width',str(int(whitekey_width)));
 
  skeyp_colors="";
  for i in keyp_colors:
@@ -1401,7 +1413,10 @@ def update_sparks_delta(sender,value):
     keyp_colors_sparks_sensitivity[sender.id] = sender.value
     #print("keyp_colors_sparks_sensitivity["+str(sender.id)+"] = "+ str(sender.value) );
      
-
+def update_blackkey_relative_position(sender,value):
+  global blackkey_relative_position;
+  blackkey_relative_position = value * 0.001;
+  updatekeys();
 
 def change_use_alternate_keys(sender):
    global use_alternate_keys,extra_label1;
@@ -1493,9 +1508,11 @@ settingsWindow.appendChild(settingsWindow_slider3);
 
 settingsWindow_slider4 = GLSlider(1,215, 240,18, 0,2,midi_file_format,label="Output midi format");
 settingsWindow_slider4.round=0;
-settingsWindow.appendChild(settingsWindow_slider3);
 settingsWindow.appendChild(settingsWindow_slider4);
 
+settingsWindow_slider5 = GLSlider(1,255, 240,18, 0,1000,blackkey_relative_position * 1000, update_blackkey_relative_position, label="black key relative pos");
+settingsWindow_slider5.round=0;
+settingsWindow.appendChild(settingsWindow_slider5);
 
 
 # for i in range( len( keyp_colors ) ):
