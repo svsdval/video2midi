@@ -65,6 +65,7 @@ while os.path.exists( outputmid ):
 settingsfile= filepath + ".ini";
 #
 frame= 0;
+printed_for_frame=0;
 resize= 0;
 convertCvtColor=1;
 # For OpenCV 2.X ..
@@ -1593,9 +1594,15 @@ def drawframe():
  global keyp_delta;
  global minimal_duration;
  global tempo;
+ global frame;
+ global printed_for_frame;
  #global old_spark_color;
  #global cur_spark_color;
- 
+ print_for_frame_debug = False
+ if printed_for_frame != frame:
+  print_for_frame_debug = True
+ printed_for_frame = frame
+
  scale=1.0;
  mousex, mousey = pygame.mouse.get_pos();
 
@@ -1672,23 +1679,29 @@ def drawframe():
           keypressed=1;
           pressedcolor = keyc;
           if ( use_sparks ):
-            unpressed_by_spark_delta = ( abs( int(sparkkey[0]) - keyc[0] ) < spark_delta ) and ( abs( int(sparkkey[1]) - keyc[1] ) < spark_delta ) and ( abs( int(sparkkey[2]) - keyc[2] ) < spark_delta );
+            #unpressed_by_spark_delta = ( abs( int(sparkkey[0]) - keyc[0] ) < spark_delta ) and ( abs( int(sparkkey[1]) - keyc[1] ) < spark_delta ) and ( abs( int(sparkkey[2]) - keyc[2] ) < spark_delta );
+            has_spark_delta = ((sparkkey[0] - keyc[0] ) > spark_delta ) or ((sparkkey[1] - keyc[1] ) > spark_delta ) or ((sparkkey[2] - keyc[2] ) > spark_delta );
             #unpressed_by_spark_fade = ( cur_spark_color[i][0] <  old_spark_color[i][0]) and ( cur_spark_color[i][1] <  old_spark_color[i][1]) and ( cur_spark_color[i][2] <  old_spark_color[i][2]) ;
-            #unpressed_by_spark_fade_delta = ( abs( cur_spark_color[i][0] - old_spark_color[i][0]) > 20 ) 
-            if ( unpressed_by_spark_delta ):
-             keypressed=0;
+            #unpressed_by_spark_fade_delta = ( abs( cur_spark_color[i][0] - old_spark_color[i][0]) > 20 ) 			
+            if print_for_frame_debug:
+             print("note %d key_id %d spark_delta %d sparkkey vs keyc %d %d, %d %d, %d %d" % (note, key_id, spark_delta, sparkkey[0], keyc[0], sparkkey[1], keyc[1], sparkkey[2], keyc[2]))
+            if ( not has_spark_delta ):
+             keypressed=2;
 
   glPushMatrix();
   glTranslatef(keys_pos[i][0],keys_pos[i][1],0);
 
   glColor4f(1,1,1,0.5);
   DrawQuad(-0.5,-20,0.5,7);
-  if ( keypressed == 1 ):
+  if ( keypressed != 0 ):
     #glColor4f(1.0, 0.5, 1.0, 0.9);
     glColor4f(pressedcolor[0]/255.0,pressedcolor[1]/255.0,pressedcolor[2]/255.0,0.9);
     DrawQuad(-6,-7,6,7);
     glColor4f(0,0,0,1);
-    DrawRect(-7,-9,7,9,3);
+    if ( keypressed == 1):
+      DrawRect(-7,-9,7,9,3);
+    else:
+      DrawRect(-5,-7,5,7,3);
   else:
     glColor4f(0,0,0,1);
     DrawRect(-7,-7,7,7,1);
@@ -1862,11 +1875,13 @@ def processmidi():
           deltaid = j;
          keypressed=1;
          if ( use_sparks ):
-           if ( abs( int(sparkkey[0]) - keyp_colors[j][0] ) < keyp_colors_sparks_sensitivity[j] ) and ( abs( int(sparkkey[1]) - keyp_colors[j][1] ) < keyp_colors_sparks_sensitivity[j] ) and ( abs( int(sparkkey[2]) - keyp_colors[j][2] ) < keyp_colors_sparks_sensitivity[j] ):
-             keypressed=0;
+           has_spark_delta = ((sparkkey[0] - keyp_colors[j][0] ) > keyp_colors_sparks_sensitivity[j] ) or ((sparkkey[1] - keyp_colors[j][1] ) > keyp_colors_sparks_sensitivity[j] ) or ((sparkkey[2] - keyp_colors[j][2] ) > keyp_colors_sparks_sensitivity[j] );
+           #if ( abs( int(sparkkey[0]) - keyp_colors[j][0] ) < keyp_colors_sparks_sensitivity[j] ) and ( abs( int(sparkkey[1]) - keyp_colors[j][1] ) < keyp_colors_sparks_sensitivity[j] ) and ( abs( int(sparkkey[2]) - keyp_colors[j][2] ) < keyp_colors_sparks_sensitivity[j] ):
+           if ( not has_spark_delta ):
+             keypressed=2;
          
     #
-    if ( keypressed==1 ):
+    if ( keypressed != 0 ):
        note_channel=keyp_colors_channel[ deltaid ];
 
     if ( debug == 1 ):
@@ -1877,13 +1892,12 @@ def processmidi():
       cv2.rectangle(image, (pixx-1,pixy-1), (pixx+1,pixy+1), (255,0,255));
 #      cv2.putText(image, str(note), (pixx-5,pixy+20), 0, 0.5, (255,0,255));
 
-    # reg pressed key;
-    if keypressed==1:
+    # reg pressed key; when keypressed==2 and previous keypressed state is 0 or 2 we should also goes here
+    if keypressed==1 or (keypressed==2 and notes[note] != 1):
       # if key is not pressed;
       if ( notes[note] == 0 ):
         if ( debug_keys == 1 ):
           print("note pressed on :" + str( note ));
-        notes[ note ] = 1;
         notes_db[ note ] = frame;
         if (first_note_time == 0):
           first_note_time = frame / fps;
@@ -1893,8 +1907,10 @@ def processmidi():
             notes_channel[ note ] = 0
           else:
             notes_channel[ note ] = 1
+      # always update to last press state
+      notes[ note ] = keypressed;
 
-      if ( notes[note] == 1 ) and ( notes_channel[ note ] != note_channel ) and ( notes_overlap == 1 ):
+      if ( notes[note] != 0 ) and ( notes_channel[ note ] != note_channel ) and ( notes_overlap == 1 ):
         # case if one key over other
         time = notes_db[note] / fps;
         duration = ( frame - notes_db[note] ) / fps;
@@ -1926,8 +1942,8 @@ def processmidi():
         notes_db[ note ] = frame;
         notes_channel[ note ] = note_channel;
     else:
-      # if key been presed and released:
-      if ( notes[note] == 1 ):
+      # if key been presed and released: two cases goes here keypressed==0 or (keypressed==2 and previous state is keypressed==1)
+      if ( notes[note] != 0):
         notes[ note ] = 0;
         notes_de[ note ] = frame;
         time = notes_db[note] / fps;
@@ -1956,6 +1972,11 @@ def processmidi():
 
           channel_has_note[ note_channel ] = 1;
           notecnt+=1;
+        # coming here when use sparks is true and previous state is keypressed==1. We consider the key is released and then pressed again
+        if (keypressed==2):
+          notes[ note ] = keypressed;
+          notes_db[ note ] = frame;
+          notes_channel[ note ] = note_channel;
 
   xapp=0;
   if ( debug == 1 ):
@@ -2301,7 +2322,7 @@ def main():
       wnd.update_mouse_move(mousex,mousey)
 
     pygame.display.flip();
-    framerate();
+    #framerate();
     #limit fps to 60 and get the frame time in milliseconds
     ms = clock.tick(60)
     
