@@ -245,6 +245,7 @@ notes_grid_size=32;
 midi_file_format = 0;
 #
 blackkey_relative_position = 0.4
+line_height = 20;
 
 #cfg
 home = expanduser("~")
@@ -1441,6 +1442,11 @@ def update_sparks_y_pos (sender):
    else:
      keyp_spark_y_pos =  keyp_spark_y_pos +1;
    pass;
+   
+def update_line_height(sender,value):
+  global line_height;
+  line_height = value;
+   
 
 def snap_notes_to_the_grid(sender):
     global use_snap_notes_to_grid;
@@ -1516,6 +1522,8 @@ settingsWindow_slider5.round=0;
 settingsWindow.appendChild(settingsWindow_slider5);
 
 
+
+
 # for i in range( len( keyp_colors ) ):
   #keyp_colormap_colors_pos.append ([ (i % 2) * 32,  ( i // 2 ) * 20  ]);
 print ('creating new colors '+str(len( keyp_colors )));
@@ -1554,6 +1562,11 @@ extraWindow.appendChild(extra_slider1);
 extra_label3 = GLLabel( 6,90,  """to select the key press ctrl + left mouse button on the key rect.
 to deselect the key press ctrl + left mouse button on empty space.""" );
 extraWindow.appendChild( extra_label3 );
+
+extraWindow_slider2 = GLSlider(5,155, 240,18, 0,2000, line_height, update_line_height, label="length of vertical key lines");
+extraWindow_slider2.round=0;
+extraWindow.appendChild(extraWindow_slider2);
+
 
 sparks_slider_delta = GLSlider(6,25, 150,18, -50,150,50,update_sparks_delta, label="Sparks delta");
 sparks_slider_height = GLSlider(160,25, 150,18, 1,60,1,None, label="Sparks height");
@@ -1709,7 +1722,10 @@ def drawframe():
   glTranslatef(keys_pos[i][0],keys_pos[i][1],0);
 
   glColor4f(1,1,1,0.5);
-  DrawQuad(-0.5,-20,0.5,7);
+  j = i % 12;
+  if (j == 1) or ( j ==3 ) or ( j == 6 ) or ( j == 8) or ( j == 10 ):
+    glColor4f(0.57,0.57,0.57,0.55);
+  DrawQuad(-0.5,-line_height,0.5, line_height );
   if ( keypressed != 0 ):
     #glColor4f(1.0, 0.5, 1.0, 0.9);
     glColor4f(pressedcolor[0]/255.0,pressedcolor[1]/255.0,pressedcolor[2]/255.0,0.9);
