@@ -172,6 +172,7 @@ notes=[];
 notes_db=[];
 notes_de=[];
 notes_channel=[];
+notes_tmp=[];
 
 keys_pos=[];
 keyp_colors_alternate = []
@@ -246,6 +247,8 @@ midi_file_format = 0;
 #
 blackkey_relative_position = 0.4
 line_height = 20;
+#
+rollcheck = False;
 
 #cfg
 home = expanduser("~")
@@ -258,6 +261,7 @@ def loadsettings( cfgfile ):
  global miditrackname,debug,notes_overlap,resize,resize_width,resize_height,minimal_duration,keyp_colors_channel,keyp_colors_channel_prog,xoffset_whitekeys,yoffset_whitekeys,yoffset_blackkeys,whitekey_width,keyp_colors,keys_pos,ignore_minimal_duration,keyp_delta,screen,tempo,width,height;
  global colorBtns,colorWindow_colorBtns_channel_labels;
  global keyp_colors_alternate_sensetivity, keyp_colors_alternate,keyp_spark_y_pos,use_sparks;
+ global rollcheck;
  print("starting read settings...")
  
  if not os.path.exists( cfgfile ):
@@ -391,7 +395,10 @@ def loadsettings( cfgfile ):
     keyp_colors_alternate_sensetivity[:] = [];
     for cur in s.split(","):
      keyp_colors_alternate_sensetivity.append( int(cur) );
-    
+     
+  if config.has_option(section, 'rollcheck'):
+   rollcheck = config.getboolean(section, 'rollcheck')
+      
 # while ( len(keyp_colors_channel) < len(keyp_colors) ):  
 #    print("Warning, append array keyp_colors_channel", len(keyp_colors_channel));
 #     keyp_colors_channel.append( len(keyp_colors_channel) // 2 ); 
@@ -412,6 +419,7 @@ def loadsettings( cfgfile ):
     sparks_switch.switch_status = use_sparks;
     sparks_slider_delta.value = 0;
     sparks_slider_delta.id =-1;
+    extraWindow_rollcheck_button.switch_status = rollcheck;
 
  pass;
  
@@ -421,11 +429,13 @@ if ( resize == 1 ):
   height = resize_height;
 
 
+
 for i in range(127):
   notes.append(0);
   notes_db.append(0);
   notes_de.append(0);
   notes_channel.append(0);
+  notes_tmp.append(0);
   #
   keyp_colors_alternate.append([0,0,0]);
   keyp_colors_alternate_sensetivity.append(0);
@@ -478,7 +488,9 @@ def savesettings():
  config.set(section, 'blackkey_relative_position', str(float(blackkey_relative_position)));
  #Sparks 
  config.set(section, 'keyp_spark_y_pos', str(int(keyp_spark_y_pos)));
- config.set(section, 'use_sparks', str(int(use_sparks)));
+ config.set(section, 'use_sparks', str( int(use_sparks) ));
+ # Roll Check
+ config.set(section, 'rollcheck', str( int(rollcheck) ));
  
  
  skeyp_colors_channel = "";
@@ -1429,6 +1441,9 @@ def change_use_sparks(sender):
    global use_sparks;
    use_sparks = sender.switch_status;
 #   sender.text = "use sparks:"+str(use_sparks);
+def change_rollcheck(sender):
+   global rollcheck;
+   rollcheck = sender.switch_status;
 
 
 def updatecolor(sender):
@@ -1567,6 +1582,10 @@ extraWindow_slider2 = GLSlider(5,155, 240,18, 0,2000, line_height, update_line_h
 extraWindow_slider2.round=0;
 extraWindow.appendChild(extraWindow_slider2);
 
+extraWindow_rollcheck_button = GLButton(250,155 ,100,22,1, [128,128,128], "roll check" ,change_rollcheck,switch=1, switch_status=rollcheck );
+extraWindow.appendChild(extraWindow_rollcheck_button);
+
+
 
 sparks_slider_delta = GLSlider(6,25, 150,18, -50,150,50,update_sparks_delta, label="Sparks delta");
 sparks_slider_height = GLSlider(160,25, 150,18, 1,60,1,None, label="Sparks height");
@@ -1626,6 +1645,7 @@ def drawframe():
  global tempo;
  global frame;
  global printed_for_frame;
+ global notes_tmp;
  #global old_spark_color;
  #global cur_spark_color;
  print_for_frame_debug = False
@@ -1660,6 +1680,7 @@ def drawframe():
  glPushMatrix();
  glTranslatef(xoffset_whitekeys,yoffset_whitekeys,0);
  glDisable(GL_TEXTURE_2D);
+
  for i in range( len( keys_pos) ):
   pixpos = getkeyp_pixel_pos(keys_pos[i][0],keys_pos[i][1]);
 
@@ -1717,12 +1738,19 @@ def drawframe():
              print("note %d key_id %d spark_delta %d sparkkey vs keyc %d %d, %d %d, %d %d" % (note, key_id, spark_delta, sparkkey[0], keyc[0], sparkkey[1], keyc[1], sparkkey[2], keyc[2]))
             if ( not has_spark_delta ):
              keypressed=2;
+  notes_tmp[i] = keypressed;
 
+  j = i % 12;
+  if rollcheck and (i >1):
+
+      if (j == 1) or ( j ==3 ) or ( j == 6 ) or ( j == 8) or ( j == 10 ):
+        if notes_tmp[i-1] >0:
+            keypressed =0;
+            
   glPushMatrix();
   glTranslatef(keys_pos[i][0],keys_pos[i][1],0);
 
   glColor4f(1,1,1,0.5);
-  j = i % 12;
   if (j == 1) or ( j ==3 ) or ( j == 6 ) or ( j == 8) or ( j == 10 ):
     glColor4f(0.57,0.57,0.57,0.55);
   DrawQuad(-0.5,-line_height,0.5, line_height );
@@ -1940,6 +1968,15 @@ def processmidi():
             notes_channel[ note ] = 0
           else:
             notes_channel[ note ] = 1
+            
+
+      if rollcheck and ( note >1):
+          notes_tmp[ note ] = keypressed;
+          j = note % 12;
+          if (j == 1) or ( j ==3 ) or ( j == 6 ) or ( j == 8) or ( j == 10 ):
+            if notes_tmp[ note -1] >0:
+                keypressed =0;
+            
       # always update to last press state
       notes[ note ] = keypressed;
 
