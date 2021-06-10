@@ -4,6 +4,8 @@ youtube synthesia video to midi, just for fun )
 Воссоздание midi с видео роликов synthesia и ей подобным..
 ![Alt text](docs/mainwindow.png?raw=true "main window")
 
+[Video example on YouTube, creating midi from hybrid synthesia video & real piano video2midi 0.4.5.2](https://www.youtube.com/watch?v=5M-Q62Rhk54)
+
 [Video example on YouTube, creating 2 channels midi, version video2midi 0.3.9.1](https://www.youtube.com/watch?v=NkAPkb7i2Ec)
 
 [Video example on YouTube, creating 6 channels midi, version video2midi 0.3.9.1](https://www.youtube.com/watch?v=seJz35iDKVY)
