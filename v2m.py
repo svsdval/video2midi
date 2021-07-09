@@ -1,4 +1,4 @@
-#!/usr/bin/env python3.8
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 # by svsd_val
@@ -19,11 +19,6 @@ from OpenGL.GL import *;
 from OpenGL.GLU import *;
 import time;
 
-try:
-    from configparser import ConfigParser
-except ImportError:
-    from ConfigParser import ConfigParser  # ver. < 3.0
-
 from os.path import expanduser
 
 
@@ -36,16 +31,9 @@ height=480;
 
 mpos = [0,0];
 
-xoffset_whitekeys = 60;
-yoffset_whitekeys = 673;
-
-yoffset_blackkeys = -30;
-
 keygrab=0;
 keygrabid=-1;
 lastkeygrabid=-1;
-
-whitekey_width=24.6;
 
 if ( len(sys.argv) < 2 ):
   print("halt, no args");
@@ -162,7 +150,7 @@ print("video " + str(width) + "x" + str(height) +" fps: " + str(fps));
 channel = 0;
 volume = 100;
 octave = 3;
-basenote = octave * 12;prefs.resize
+basenote = octave * 12;
 
 
 notes=[];
@@ -170,40 +158,6 @@ notes_db=[];
 notes_de=[];
 notes_channel=[];
 notes_tmp=[];
-
-keys_pos=[];
-keyp_colors_alternate = []
-keyp_colors_alternate_sensetivity = []
-
-keyp_colors = [
-#L.GREEN         D.GREEN
-[166,250,103], [ 58,146,  0],
-#L.BLUE          D.BLUE
-[102,185,207], [  8,113,174],
-#L.YELLOW        D.YELLOW
-[255,255,85 ], [254,210,  0],
-#L.ORANGE        D.ORANGE
-[255,212,85 ], [255,138,  0],
-#L.RED           D.RED
-[253,125,114], [255, 37,  9],
-#EMPTY 
-[0  ,  0,  0], [  0,  0,  0],
-[0  ,  0,  0], [  0,  0,  0],
-[0  ,  0,  0], [  0,  0,  0],
-[0  ,  0,  0], [  0,  0,  0]
-# .....
-];
-keyp_colors_sparks_sensitivity = [50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50]
-
-
-#old_spark_color = [[0,0,0]] * 128;
-#cur_spark_color = [[0,0,0]] * 128;
-
-
-
-#
-keyp_colors_channel =      [ 0,0, 1,1, 2,2, 3,3, 4,4, 5,5, 6,6, 7,7, 8,8 ]; # MIDI channel per color
-keyp_colors_channel_prog = [ 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0 ]; # MIDI program ID per channel
 
 colorWindow_colorBtns_channel_labels=[];
 colorWindow_colorBtns_channel_btns=[];
@@ -244,163 +198,25 @@ if os.path.exists( 'v2m.ini' ):
   print("local config file exists.")
 
 
+def loadsettings(cfgfile):
+  global width, height
+  global colorBtns, colorWindow_colorBtns_channel_labels
 
-
-def loadsettings( cfgfile ):
- global keyp_colors_channel,keyp_colors_channel_prog,xoffset_whitekeys,yoffset_whitekeys,yoffset_blackkeys,whitekey_width,keyp_colors,keys_pos,screen,width,height;
- global colorBtns,colorWindow_colorBtns_channel_labels;
- global keyp_colors_alternate_sensetivity, keyp_colors_alternate
- print("starting read settings...")
- 
- if not os.path.exists( cfgfile ):
-  print("cannot find setings file: "+cfgfile);
- else:  
-  print("reading settings from file: "+cfgfile);
-  config = ConfigParser()
-  config.read( cfgfile )
-  section = 'options';
-  if config.has_option(section, 'midi_track_name'):
-   prefs.miditrackname = config.get(section, 'midi_track_name')
-  if config.has_option(section, 'debug'):
-   prefs.debug = config.getboolean(section, 'debug')
-  if config.has_option(section, 'notes_overlap'):
-   prefs.notes_overlap = config.getboolean(section, 'notes_overlap')
-  if config.has_option(section, 'resize'):
-   prefs.resize = config.getboolean(section, 'resize')
-  if config.has_option(section, 'resize_width'):
-   resize_width = config.getint(section, 'resize_width')
-  if config.has_option(section, 'resize_height'):
-   resize_height = config.getint(section, 'resize_height')
-  if config.has_option(section, 'minimal_note_duration'):
-   prefs.minimal_duration = config.getfloat(section, 'minimal_note_duration')
-  if config.has_option(section, 'color_channel_accordance'):
-   clr_chnls = config.get(section, 'color_channel_accordance')
-  else:
-   clr_chnls = "";
-   
-  if config.has_option(section, 'channel_prog_accordance'):
-   clr_chnls_prog = config.get(section, 'channel_prog_accordance')
-  else:
-   clr_chnls_prog = "";
-   
-  if config.has_option(section, 'ignore_notes_with_minimal_duration'):
-   prefs.ignore_minimal_duration = config.getboolean(section, 'ignore_notes_with_minimal_duration')
-  if config.has_option(section, 'notes_overlap'):
-   prefs.notes_overlap = config.getboolean(section, 'notes_overlap')
-  if config.has_option(section, 'sensitivity'):
-   prefs.keyp_delta = config.getint(section, 'sensitivity')
-  #
-  if config.has_option(section, 'midi_file_format'):
-   midi_file_format = config.getint(section, 'midi_file_format')
-   print(midi_file_format);
-  if config.has_option(section, 'output_midi_tempo'):
-   prefs.tempo = config.getint(section, 'output_midi_tempo')
-  if config.has_option(section, 'blackkey_relative_position'):
-   blackkey_relative_position = config.getfloat(section, 'blackkey_relative_position')
-     
-  # Sparks 
-  if config.has_option(section, 'keyp_spark_y_pos'):
-   prefs.keyp_spark_y_pos = config.getint(section, 'keyp_spark_y_pos')
+  settings.loadsettings(cfgfile)
     
-  if config.has_option(section, 'use_sparks'):
-   prefs.use_sparks = config.getint(section, 'use_sparks')
-
-  if ( clr_chnls != "" ):
-#    keyp_colors_channel = map(int, clr_chnls.split(","))
-    keyp_colors_channel = [ int(x) for x in clr_chnls.split(",") ]
-    print("readed color = channel", keyp_colors_channel);
-
-  if ( clr_chnls_prog != "" ):
-#    keyp_colors_channel_prog = map(int, clr_chnls_prog.split(","))
-    keyp_colors_channel_prog = [ int(x) for x in clr_chnls_prog.split(",") ]
-
-    print("readed color channel = prog ", keyp_colors_channel_prog);
-    
-  if config.has_option(section, 'xoffset_whitekeys'):
-   xoffset_whitekeys = config.getint(section, 'xoffset_whitekeys')
-  if config.has_option(section, 'yoffset_whitekeys'):
-   yoffset_whitekeys = config.getint(section, 'yoffset_whitekeys')  
-  if config.has_option(section, 'yoffset_blackkeys'):
-   yoffset_blackkeys = config.getint(section, 'yoffset_blackkeys')
-  if config.has_option(section, 'whitekey_width'):
-   whitekey_width = config.getint(section, 'whitekey_width')   
-
-  if config.has_option(section, 'keyp_colors'):
-   skeyp_colors = config.get(section, 'keyp_colors')
-   if ( skeyp_colors.strip() != "" ):
-    keyp_colors[:] = [];
-    for cur in skeyp_colors.split(","):
-     c = cur.split(":")
-     keyp_colors.append( [ int(c[0]), int(c[1]),int(c[2]) ]);
-    
-    
-  while ( len(keyp_colors) < len(colorBtns) ):  
-    print("Warning, append array keyp_colors", len(keyp_colors));
-    keyp_colors.append( [0,0,0] );
-
-  if config.has_option(section, 'keyp_colors_sparks_sensitivity'):
-   skeyp_colors_sparks_sensitivity = config.get(section, 'keyp_colors_sparks_sensitivity')
-   if ( skeyp_colors_sparks_sensitivity.strip() != "" ):
-    keyp_colors_sparks_sensitivity[:] = [];
-    for cur in skeyp_colors_sparks_sensitivity.split(","):
-     keyp_colors_sparks_sensitivity.append( float(cur) );
-    
-  while ( len(keyp_colors_sparks_sensitivity) < len(keyp_colors) ):
-    keyp_colors_sparks_sensitivity.append(50);
-      
-    
-  if config.has_option(section, 'keys_pos'):
-   skeys_pos = config.get(section, 'keys_pos')
-   if ( skeys_pos.strip() != "" ):
-    keys_pos = [];
-    for cur in skeys_pos.split(","):
-     c = cur.split(":")
-     keys_pos.append( [ int(c[0]), int(c[1])  ]);
-    print( len(keyp_colors) );
-    print( len(keyp_colors_channel));
-
-  while ( len(keyp_colors_channel) < len(keyp_colors) ):  
-    print("Warning, append array keyp_colors_channel", len(keyp_colors_channel));
-    keyp_colors_channel.append( len(keyp_colors_channel) // 2 ); 
+  while ( len(prefs.keyp_colors) < len(colorBtns) ):  
+    print("Warning, append array keyp_colors", len(prefs.keyp_colors));
+    prefs.keyp_colors.append( [0,0,0] );
 
   if len(colorWindow_colorBtns_channel_labels) > 0:
    for i in range(len(colorBtns)):
-     colorWindow_colorBtns_channel_labels[i].text = "Ch:" + str(keyp_colors_channel[i]+1);
+     colorWindow_colorBtns_channel_labels[i].text = "Ch:" + str(prefs.keyp_colors_channel[i]+1);
 
-  if config.has_option(section, 'keyp_colors_alternate'):
-   s = config.get(section, 'keyp_colors_alternate');
-   if ( s.strip() != "" ):
-    keyp_colors_alternate[:] = [];
-    for cur in s.split(","):
-     
-     c = cur.split(":")
-     print(" Append :" + str(cur));
-     keyp_colors_alternate.append( [ int(c[0]), int(c[1]),int(c[2]) ]);
-  #
-  if config.has_option(section, 'keyp_colors_alternate_sensetivity'):
-   s = config.get(section, 'keyp_colors_alternate_sensetivity');
-   if ( s.strip() != "" ):
-    keyp_colors_alternate_sensetivity[:] = [];
-    for cur in s.split(","):
-     keyp_colors_alternate_sensetivity.append( int(cur) );
-     
-  if config.has_option(section, 'rollcheck'):
-   prefs.rollcheck = config.getboolean(section, 'rollcheck')
-      
-# while ( len(keyp_colors_channel) < len(keyp_colors) ):  
-#    print("Warning, append array keyp_colors_channel", len(keyp_colors_channel));
-#     keyp_colors_channel.append( len(keyp_colors_channel) // 2 ); 
-    
- while ( len(keyp_colors_channel_prog) < len(keyp_colors) ):  
-    print("Warning, append array keyp_colors_channel_prog", len(keyp_colors_channel_prog));
-    keyp_colors_channel_prog.append(0);
-   
-   
- if ( prefs.resize == 1 ):
-    width = resize_width;
-    height = resize_height;
+  if ( prefs.resize == 1 ):
+    width = prefs.resize_width;
+    height = prefs.resize_height;
 
- if 'glwindows' in globals():
+  if 'glwindows' in globals():
     settingsWindow_slider1.setvalue(prefs.keyp_delta);
     settingsWindow_slider2.setvalue(prefs.minimal_duration * 100);
     settingsWindow_slider3.setvalue(prefs.tempo);
@@ -408,15 +224,11 @@ def loadsettings( cfgfile ):
     sparks_slider_delta.value = 0;
     sparks_slider_delta.id =-1;
     extraWindow_rollcheck_button.switch_status = prefs.rollcheck;
-
- pass;
+  pass;
  
-###
 if ( prefs.resize == 1 ):
   width = prefs.resize_width;
   height = prefs.resize_height;
-
-
 
 for i in range(127):
   notes.append(0);
@@ -425,34 +237,33 @@ for i in range(127):
   notes_channel.append(0);
   notes_tmp.append(0);
   #
-  keyp_colors_alternate.append([0,0,0]);
-  keyp_colors_alternate_sensetivity.append(0);
+  prefs.keyp_colors_alternate.append([0,0,0]);
+  prefs.keyp_colors_alternate_sensetivity.append(0);
 #;
 
 
 def updatekeys( append=0 ):
- global keys_pos;
  xx=0;
  for i in range(9):
   for j in range(12):
-   if (append == 1) or (i*12+j > len(keys_pos)-1):
-    keys_pos.append( [0,0] );
+   if (append == 1) or (i*12+j > len(prefs.keys_pos)-1):
+    prefs.keys_pos.append( [0,0] );
    
-   keys_pos[i*12+j][0] = int(round( xx ));
-   keys_pos[i*12+j][1] = 0;
+   prefs.keys_pos[i*12+j][0] = int(round( xx ));
+   prefs.keys_pos[i*12+j][1] = 0;
    if (j == 1) or ( j ==3 ) or ( j == 6 ) or ( j == 8) or ( j == 10 ):
-     keys_pos[i*12+j][1] = yoffset_blackkeys;
-     xx += -whitekey_width;
+     prefs.keys_pos[i*12+j][1] = prefs.yoffset_blackkeys;
+     xx += -prefs.whitekey_width;
 #     keys_pos[i*12+j][0] = int(round( xx  + whitekey_width *0.5 ));
    # tune by wuzhuoqing  
    if (j == 1) or ( j == 6 ):
-     keys_pos[i*12+j][0] = int(round( xx  + whitekey_width * prefs.blackkey_relative_position ));
+     prefs.keys_pos[i*12+j][0] = int(round( xx  + prefs.whitekey_width * prefs.blackkey_relative_position ));
    if (j == 8 ):
-     keys_pos[i*12+j][0] = int(round( xx  + whitekey_width * 0.5 ));
+     prefs.keys_pos[i*12+j][0] = int(round( xx  + prefs.whitekey_width * 0.5 ));
    if ( j ==3 ) or ( j == 10 ):
-     keys_pos[i*12+j][0] = int(round( xx  + whitekey_width * (1.0 - prefs.blackkey_relative_position) ));
+     prefs.keys_pos[i*12+j][0] = int(round( xx  + prefs.whitekey_width * (1.0 - prefs.blackkey_relative_position) ));
      
-   xx += whitekey_width;
+   xx += prefs.whitekey_width;
   pass;
 
 
@@ -608,7 +419,7 @@ def DrawTriangle(x,y, s,r=0):
    glVertex2f(x + s*0.5, y);
   else:
    glVertex2f(x , y);
-   glVertex2f(x + s,y);
+   glVertex2f(x + s,y);range
    glVertex2f(x + s*0.5, y-s);
   glEnd();
   pass
@@ -970,10 +781,10 @@ class GLColorButton:
     if (( mpx > self.x ) and ( mpx < self.x+self.w ) and
         ( mpy > self.y ) and ( mpy < self.y+self.h )):
         keyp_colormap_id = self.index
-        if keyp_colormap_id < len(keyp_colors) :
+        if keyp_colormap_id < len(prefs.keyp_colors) :
          sparks_slider_delta.id    = keyp_colormap_id;
-         sparks_slider_delta.color = keyp_colors[keyp_colormap_id];
-         sparks_slider_delta.setvalue( keyp_colors_sparks_sensitivity[keyp_colormap_id] );
+         sparks_slider_delta.color = prefs.keyp_colors[keyp_colormap_id];
+         sparks_slider_delta.setvalue( prefs.keyp_colors_sparks_sensitivity[keyp_colormap_id] );
  #       print "color button: update_mouse_up set index = " + str(keyp_colormap_id);
     pass;
 
@@ -1301,19 +1112,19 @@ def update_channels(sender):
    print( 'update_channels...' +str(sender.index));
    i=abs(sender.index) -1;
    if (sender.index > 0):
-     keyp_colors_channel[i]= keyp_colors_channel[i] + 1;
+     prefs.keyp_colors_channel[i]= prefs.keyp_colors_channel[i] + 1;
    else:
-     keyp_colors_channel[i]= keyp_colors_channel[i] - 1;
-   if (keyp_colors_channel[i] > 15):
-     keyp_colors_channel[i] = 15;
-   if (keyp_colors_channel[i] < 0):
-     keyp_colors_channel[i] = 0;
-   colorWindow_colorBtns_channel_labels[i].text = "Ch:" + str(keyp_colors_channel[i]+1);
+     prefs.keyp_colors_channel[i]= prefs.keyp_colors_channel[i] - 1;
+   if (prefs.keyp_colors_channel[i] > 15):
+     prefs.keyp_colors_channel[i] = 15;
+   if (prefs.keyp_colors_channel[i] < 0):
+     prefs.keyp_colors_channel[i] = 0;
+   colorWindow_colorBtns_channel_labels[i].text = "Ch:" + str(prefs.keyp_colors_channel[i]+1);
 
 def readkeycolor(i):
    global use_alternate_keys;
-   pixx=int(xoffset_whitekeys + keys_pos[i][0]);
-   pixy=int(yoffset_whitekeys + keys_pos[i][1]);
+   pixx=int(prefs.xoffset_whitekeys + prefs.keys_pos[i][0]);
+   pixy=int(prefs.yoffset_whitekeys + prefs.keys_pos[i][1]);
 
    if ( pixx >= width ) or ( pixy >= height ) or ( pixx < 0 ) or ( pixy < 0 ): return;
    if ( prefs.resize == 1 ):
@@ -1329,24 +1140,23 @@ def readkeycolor(i):
    keybgr=image[pixy,pixx];
    key=[ keybgr[2], keybgr[1],keybgr[0] ];
 
-   keyp_colors_alternate[i] = key;
+   prefs.keyp_colors_alternate[i] = key;
     
 
 def readcolors(sender):
-   for i in range( len(keys_pos) ):
+   for i in range( len(prefs.keys_pos) ):
     readkeycolor(i);
 
 def update_alternate_sensetivity(sender,value):
    global lastkeygrabid;
-   global keyp_colors_alternate_sensetivity;
    if ( lastkeygrabid != -1 ):
-     keyp_colors_alternate_sensetivity[ lastkeygrabid ] = value;
+     prefs.keyp_colors_alternate_sensetivity[ lastkeygrabid ] = value;
      
 def update_sparks_delta(sender,value):
    if (sender.id == -1):
      return;
-   if (sender.id < len(keyp_colors))  :
-    keyp_colors_sparks_sensitivity[sender.id] = sender.value
+   if (sender.id < len(prefs.keyp_colors))  :
+    prefs.keyp_colors_sparks_sensitivity[sender.id] = sender.value
     #print("keyp_colors_sparks_sensitivity["+str(sender.id)+"] = "+ str(sender.value) );
      
 def update_blackkey_relative_position(sender,value):
@@ -1386,7 +1196,7 @@ def snap_notes_to_the_grid(sender):
     use_snap_notes_to_grid = sender.switch_status;
  
 # 
-wh = ( (len(keyp_colors) // 2)+2 ) * 24;
+wh = ( (len(prefs.keyp_colors) // 2)+2 ) * 24;
 colorWindow = GLWindow(32, 16, 264, wh, "color map")
 settingsWindow = GLWindow(32, wh, 250, 310, "Settings");
 helpWindow = GLWindow(32+270, 16, 750, 475, "help");
@@ -1459,14 +1269,14 @@ settingsWindow.appendChild(settingsWindow_slider5);
 
 # for i in range( len( keyp_colors ) ):
   #keyp_colormap_colors_pos.append ([ (i % 2) * 32,  ( i // 2 ) * 20  ]);
-print ('creating new colors '+str(len( keyp_colors )));
+print ('creating new colors '+str(len( prefs.keyp_colors )));
 
-for i in range( len( keyp_colors ) ):
+for i in range( len( prefs.keyp_colors ) ):
  cx,cy = (i % 2) * 130,  ( i // 2 ) * 20;
  offsetx,offsety=4,4;
- colorBtns.append( GLColorButton(offsetx+cx,offsety+cy ,20,20,i, keyp_colors[i] ) );
+ colorBtns.append( GLColorButton(offsetx+cx,offsety+cy ,20,20,i, prefs.keyp_colors[i] ) );
  colorWindow.appendChild(colorBtns[i]);
- colorWindow_label1 = GLLabel(offsetx+25+cx,offsety+cy , "Ch:" + str(keyp_colors_channel[i]+1) );
+ colorWindow_label1 = GLLabel(offsetx+25+cx,offsety+cy , "Ch:" + str(prefs.keyp_colors_channel[i]+1) );
  
  colorWindow_colorBtns_channel_labels.append( colorWindow_label1 );
  colorWindow.appendChild(colorWindow_label1);
@@ -1527,8 +1337,8 @@ sparksWindow.appendChild( GLLabel( 6,50,  "alt + up / down - move sparks label u
 #frame=801
 
 def getkeyp_pixel_pos( x, y ):
-  pixx=int(xoffset_whitekeys + x);
-  pixy=int(yoffset_whitekeys + y);
+  pixx=int(prefs.xoffset_whitekeys + x);
+  pixy=int(prefs.yoffset_whitekeys + y);
 
   if ( pixx >= width ) or ( pixy >= height ) or ( pixx < 0 ) or ( pixy < 0 ): 
     return [-1,-1];
@@ -1543,10 +1353,6 @@ def getkeyp_pixel_pos( x, y ):
 
  
 def drawframe():
- global xoffset_whitekeys;
- global yoffset_whitekeys;
- global yoffset_blackkeys;
- global whitekey_width;
  global bgImgGL;
  global pyfont;
  global helptext;
@@ -1591,11 +1397,11 @@ def drawframe():
 
  glColor4f(1.0, 0.5, 1.0, 0.5);
  glPushMatrix();
- glTranslatef(xoffset_whitekeys,yoffset_whitekeys,0);
+ glTranslatef(prefs.xoffset_whitekeys,prefs.yoffset_whitekeys,0);
  glDisable(GL_TEXTURE_2D);
 
- for i in range( len( keys_pos) ):
-  pixpos = getkeyp_pixel_pos(keys_pos[i][0],keys_pos[i][1]);
+ for i in range( len( prefs.keys_pos) ):
+  pixpos = getkeyp_pixel_pos(prefs.keys_pos[i][0],prefs.keys_pos[i][1]);
 
   if (pixpos[0] == -1) and (pixpos[1] == -1):
      continue;
@@ -1610,7 +1416,7 @@ def drawframe():
     if sh == 0:
         sh = 1;
     for spark_y_add_pos in range (sh):
-     sparkpixpos = getkeyp_pixel_pos(keys_pos[i][0],prefs.keyp_spark_y_pos - spark_y_add_pos );
+     sparkpixpos = getkeyp_pixel_pos(prefs.keys_pos[i][0],prefs.keyp_spark_y_pos - spark_y_add_pos );
      if not ((sparkpixpos[0] == -1) and (sparkpixpos[1] == -1)):
        keybgr   = image[ sparkpixpos[1], sparkpixpos[0] ];
        sparkkey = [ sparkkey[0] + keybgr[2], 
@@ -1629,14 +1435,14 @@ def drawframe():
 
   pressedcolor=[0,0,0];
   if use_alternate_keys:
-    delta = prefs.keyp_delta + keyp_colors_alternate_sensetivity[i];  
-    if ( abs( int(key[0]) - keyp_colors_alternate[i][0] ) > delta ) and ( abs( int(key[1]) - keyp_colors_alternate[i][1] ) > delta ) and ( abs( int(key[2]) - keyp_colors_alternate[i][2] ) > delta ):
+    delta = prefs.keyp_delta + prefs.keyp_colors_alternate_sensetivity[i];  
+    if ( abs( int(key[0]) - prefs.keyp_colors_alternate[i][0] ) > delta ) and ( abs( int(key[1]) - prefs.keyp_colors_alternate[i][1] ) > delta ) and ( abs( int(key[2]) - prefs.keyp_colors_alternate[i][2] ) > delta ):
       keypressed=1;
-      pressedcolor=keyp_colors_alternate[i];
+      pressedcolor=prefs.keyp_colors_alternate[i];
   else: 
-      for key_id in range( len(keyp_colors) ):
-       keyc = keyp_colors[key_id];
-       spark_delta = keyp_colors_sparks_sensitivity[key_id];
+      for key_id in range( len(prefs.keyp_colors) ):
+       keyc = prefs.keyp_colors[key_id];
+       spark_delta = prefs.keyp_colors_sparks_sensitivity[key_id];
        #
        if (keyc[0] != 0 ) or (keyc[1] != 0 ) or (keyc[2] != 0 ) :
          if ( abs( int(key[0]) - keyc[0] ) < prefs.keyp_delta ) and ( abs( int(key[1]) - keyc[1] ) < prefs.keyp_delta ) and ( abs( int(key[2]) - keyc[2] ) < prefs.keyp_delta ):
@@ -1661,7 +1467,7 @@ def drawframe():
             keypressed =0;
             
   glPushMatrix();
-  glTranslatef(keys_pos[i][0],keys_pos[i][1],0);
+  glTranslatef(prefs.keys_pos[i][0],prefs.keys_pos[i][1],0);
 
   glColor4f(1,1,1,0.5);
   if (j == 1) or ( j ==3 ) or ( j == 6 ) or ( j == 8) or ( j == 10 ):
@@ -1695,7 +1501,7 @@ def drawframe():
   # Sparks
   if prefs.use_sparks:
     glPushMatrix();
-    glTranslatef(keys_pos[i][0], prefs.keyp_spark_y_pos ,0);
+    glTranslatef(prefs.keys_pos[i][0], prefs.keyp_spark_y_pos ,0);
     glColor4f(0.5, 1, 1.0, 0.7);
     DrawQuad(-1,-1,1,1);
     DrawQuad(-0.5,-sparks_slider_height.value ,0.5,0);
@@ -1716,8 +1522,8 @@ def drawframe():
 
  settingsWindow_label1.text = "base octave: " + str(octave) + "\nnotes overlap: " + str(prefs.notes_overlap) + "\nignore minimal duration: " + str(prefs.ignore_minimal_duration);
  #settingsWindow_label2.text = "Sensitivity:"+str(keyp_delta)+"\n\nMinimal note duration (sec):"+format(minimal_duration,'.2f' ) +   "\n\nOutput tempo for midi:" + str(tempo);
- for i in range(len(keyp_colors)):
-     colorBtns[i].color = keyp_colors[i];
+ for i in range(len(prefs.keyp_colors)):
+     colorBtns[i].color = prefs.keyp_colors[i];
 
  glPushMatrix();
  glTranslatef(mousex,mousey,0);
@@ -1728,9 +1534,6 @@ def drawframe():
 
 def processmidi():
  global frame;
- global xoffset_whitekeys;
- global yoffset_whitekeys;
- global whitekey_width;
  global bgImgGL;
  global width;
  global height;
@@ -1741,8 +1544,6 @@ def processmidi():
  global notes_db;
  global notes_de;
  global notes_channel;
- global keyp_colors_channel;
- global keyp_colors_channel_prog;
 
  global success,image;
  global startframe;
@@ -1761,8 +1562,8 @@ def processmidi():
  first_note_time=0;
  
  channel_has_note = [ 0 for x in range(16) ];
- for i in range(len(keyp_colors_channel)):
-  mf.addProgramChange(track, keyp_colors_channel[i], 0, keyp_colors_channel_prog[i]);
+ for i in range(len(prefs.keyp_colors_channel)):
+  mf.addProgramChange(track, prefs.keyp_colors_channel[i], 0, prefs.keyp_colors_channel_prog[i]);
   
  print("starting from frame:" + str(startframe));
  getFrame( startframe );
@@ -1792,8 +1593,8 @@ def processmidi():
 #    image=cv2.resize(image, (width , height));
 
   # processing white keys;
-  for i in range( len(keys_pos) ):
-    pixpos = getkeyp_pixel_pos(keys_pos[i][0],keys_pos[i][1]);
+  for i in range( len(prefs.keys_pos) ):
+    pixpos = getkeyp_pixel_pos(prefs.keys_pos[i][0],prefs.keys_pos[i][1]);
 
     if (pixpos[0] == -1) and (pixpos[1] == -1):
       continue;
@@ -1807,7 +1608,7 @@ def processmidi():
      if sh == 0:
         sh = 1;
      for spark_y_add_pos in range (sh):
-       sparkpixpos = getkeyp_pixel_pos(keys_pos[i][0],prefs.keyp_spark_y_pos - spark_y_add_pos );
+       sparkpixpos = getkeyp_pixel_pos(prefs.keys_pos[i][0],prefs.keyp_spark_y_pos - spark_y_add_pos );
        if not ((sparkpixpos[0] == -1) and (sparkpixpos[1] == -1)):
          keybgr   = image[ sparkpixpos[1], sparkpixpos[0] ];
          sparkkey = [ sparkkey[0] + keybgr[2], 
@@ -1831,28 +1632,28 @@ def processmidi():
 
     deltaid = 0
     if use_alternate_keys:
-      delta = prefs.keyp_delta + keyp_colors_alternate_sensetivity[i];  
-      if ( abs( int(key[0]) - keyp_colors_alternate[i][0] ) > delta ) and ( abs( int(key[1]) - keyp_colors_alternate[i][1] ) > delta ) and ( abs( int(key[2]) - keyp_colors_alternate[i][2] ) > delta ):
+      delta = prefs.keyp_delta + prefs.keyp_colors_alternate_sensetivity[i];  
+      if ( abs( int(key[0]) - prefs.keyp_colors_alternate[i][0] ) > delta ) and ( abs( int(key[1]) - prefs.keyp_colors_alternate[i][1] ) > delta ) and ( abs( int(key[2]) - prefs.keyp_colors_alternate[i][2] ) > delta ):
         keypressed = 1;
-        pressedcolor = keyp_colors_alternate[i];
+        pressedcolor = prefs.keyp_colors_alternate[i];
     else: 
-      for j in range(len(keyp_colors)):
-       if (keyp_colors[j][0] != 0 ) or ( keyp_colors[j][1] != 0 ) or ( keyp_colors[j][2] != 0 ):
-        if ( abs( int(key[0]) - keyp_colors[j][0] ) < prefs.keyp_delta ) and ( abs( int(key[1]) - keyp_colors[j][1] ) < prefs.keyp_delta ) and ( abs( int(key[2]) - keyp_colors[j][2] ) < prefs.keyp_delta ):
-         delta = abs( int(key[0]) - keyp_colors[j][0] ) +  abs( int(key[1]) - keyp_colors[j][1] ) + abs( int(key[2]) - keyp_colors[j][2] )
+      for j in range(len(prefs.keyp_colors)):
+       if (prefs.keyp_colors[j][0] != 0 ) or ( prefs.keyp_colors[j][1] != 0 ) or ( prefs.keyp_colors[j][2] != 0 ):
+        if ( abs( int(key[0]) - prefs.keyp_colors[j][0] ) < prefs.keyp_delta ) and ( abs( int(key[1]) - prefs.keyp_colors[j][1] ) < prefs.keyp_delta ) and ( abs( int(key[2]) - prefs.keyp_colors[j][2] ) < prefs.keyp_delta ):
+         delta = abs( int(key[0]) - prefs.keyp_colors[j][0] ) +  abs( int(key[1]) - prefs.keyp_colors[j][1] ) + abs( int(key[2]) - prefs.keyp_colors[j][2] )
          if ( delta < deltaclr ):
           deltaclr = delta;
           deltaid = j;
          keypressed=1;
          if prefs.use_sparks:
-           has_spark_delta = ((sparkkey[0] - keyp_colors[j][0] ) > keyp_colors_sparks_sensitivity[j] ) or ((sparkkey[1] - keyp_colors[j][1] ) > keyp_colors_sparks_sensitivity[j] ) or ((sparkkey[2] - keyp_colors[j][2] ) > keyp_colors_sparks_sensitivity[j] );
+           has_spark_delta = ((sparkkey[0] - prefs.keyp_colors[j][0] ) > prefs.keyp_colors_sparks_sensitivity[j] ) or ((sparkkey[1] - prefs.keyp_colors[j][1] ) > prefs.keyp_colors_sparks_sensitivity[j] ) or ((sparkkey[2] - prefs.keyp_colors[j][2] ) > prefs.keyp_colors_sparks_sensitivity[j] );
            #if ( abs( int(sparkkey[0]) - keyp_colors[j][0] ) < keyp_colors_sparks_sensitivity[j] ) and ( abs( int(sparkkey[1]) - keyp_colors[j][1] ) < keyp_colors_sparks_sensitivity[j] ) and ( abs( int(sparkkey[2]) - keyp_colors[j][2] ) < keyp_colors_sparks_sensitivity[j] ):
            if ( not has_spark_delta ):
              keypressed=2;
          
     #
     if ( keypressed != 0 ):
-       note_channel=keyp_colors_channel[ deltaid ];
+       note_channel=prefs.keyp_colors_channel[ deltaid ];
 
     if ( prefs.debug == 1 ):
       if (keypressed == 1 ):
@@ -2004,10 +1805,6 @@ def doinit():
 
 
 def main():
-  global xoffset_whitekeys;
-  global yoffset_whitekeys;
-  global yoffset_blackkeys;
-  global whitekey_width;
   global bgImgGL;
   global pyfont;
   global mousex, mousey;
@@ -2015,7 +1812,6 @@ def main():
   global keyp_colormap_pos;
   global keyp_colormap_id;
   global success,image;
-  global keyp_colors;
   global startframe;
   global endframe;
   global basenote;
@@ -2099,7 +1895,7 @@ def main():
         quit();
 
       if event.key == pygame.K_F2:
-        settings.savesettings()
+        settings.savesettings(settingsfile)
 
       if event.key == pygame.K_F3:
         old_resize = prefs.resize;
@@ -2128,9 +1924,9 @@ def main():
          
        else:
          if mods & pygame.KMOD_SHIFT:
-          yoffset_blackkeys -= 1;
+          prefs.yoffset_blackkeys -= 1;
          else:
-          yoffset_blackkeys -= 2;
+          prefs.yoffset_blackkeys -= 2;
          updatekeys( );
 
       if event.key == pygame.K_DOWN:
@@ -2138,23 +1934,23 @@ def main():
          prefs.keyp_spark_y_pos += 1;
        else:
          if mods & pygame.KMOD_SHIFT:
-          yoffset_blackkeys += 1;
+          prefs.yoffset_blackkeys += 1;
          else:
-          yoffset_blackkeys += 2;
+          prefs.yoffset_blackkeys += 2;
          updatekeys( );
 
       if event.key == pygame.K_LEFT:
        if mods & pygame.KMOD_SHIFT:
-        whitekey_width-=0.1;
+        prefs.whitekey_width-=0.1;
        else:
-        whitekey_width-=1.0;
+        prefs.whitekey_width-=1.0;
        updatekeys( );
 
       if event.key == pygame.K_RIGHT:
        if mods & pygame.KMOD_SHIFT:
-        whitekey_width+=0.1;
+        prefs.whitekey_width+=0.1;
        else:
-        whitekey_width+=1.0;
+        prefs.whitekey_width+=1.0;
        updatekeys( );
 
       if event.key == pygame.K_HOME:
@@ -2169,9 +1965,9 @@ def main():
 
       if event.key == pygame.K_0:
         if mods & pygame.KMOD_CTRL and keyp_colormap_id != -1:
-         keyp_colors[keyp_colormap_id][0] = 0;
-         keyp_colors[keyp_colormap_id][1] = 0;
-         keyp_colors[keyp_colormap_id][2] = 0;
+         prefs.keyp_colors[keyp_colormap_id][0] = 0;
+         prefs.keyp_colors[keyp_colormap_id][1] = 0;
+         prefs.keyp_colors[keyp_colormap_id][2] = 0;
 
       if event.key == pygame.K_PAGEUP:
        if mods & pygame.KMOD_SHIFT:
@@ -2201,8 +1997,8 @@ def main():
       if event.key == pygame.K_p:
         size=5;
         separate_note_id=-1;
-        for i in range( len( keys_pos) ):
-         if (abs( mousex - (keys_pos[i][0] + xoffset_whitekeys) )< size) and (abs( mousey - (keys_pos[i][1] + yoffset_whitekeys) )< size):
+        for i in range( len( prefs.keys_pos) ):
+         if (abs( mousex - (prefs.keys_pos[i][0] + prefs.xoffset_whitekeys) )< size) and (abs( mousey - (prefs.keys_pos[i][1] + prefs.yoffset_whitekeys) )< size):
            separate_note_id=i;
            pass
      #
@@ -2222,12 +2018,12 @@ def main():
 
 #      print event.button;
       if ( event.button == 4 ):
-        whitekey_width+=0.05;
+        prefs.whitekey_width+=0.05;
 #        print "whitekey_width="+str(whitekey_width);
         updatekeys( );
 #        scale+=0.1;
       if ( event.button == 5 ):
-        whitekey_width-=0.05;
+        prefs.whitekey_width-=0.05;
 #        print "whitekey_width="+str(whitekey_width);
         updatekeys( );
 #
@@ -2244,9 +2040,9 @@ def main():
              print("original mouse x:"+str(mousex) + "x" +str(mousey) + " mapped :" +str(pixx) +"x"+str(pixy));
 
            keybgr=image[pixy,pixx];
-           keyp_colors[keyp_colormap_id][0] = keybgr[2];
-           keyp_colors[keyp_colormap_id][1] = keybgr[1];
-           keyp_colors[keyp_colormap_id][2] = keybgr[0];
+           prefs.keyp_colors[keyp_colormap_id][0] = keybgr[2];
+           prefs.keyp_colors[keyp_colormap_id][1] = keybgr[1];
+           prefs.keyp_colors[keyp_colormap_id][2] = keybgr[0];
         else:
 #        if not (mods & pygame.KMOD_CTRL):
          if not colorWindow.active:
@@ -2258,13 +2054,13 @@ def main():
         if (mods & pygame.KMOD_CTRL):
           lastkeygrabid=-1;
             
-        for i in range( len( keys_pos) ):
-         if (abs( mousex - (keys_pos[i][0] + xoffset_whitekeys) )< size) and (abs( mousey - (keys_pos[i][1] + yoffset_whitekeys) )< size):
+        for i in range( len( prefs.keys_pos) ):
+         if (abs( mousex - (prefs.keys_pos[i][0] + prefs.xoffset_whitekeys) )< size) and (abs( mousey - (prefs.keys_pos[i][1] + prefs.yoffset_whitekeys) )< size):
           keygrab=1;
           if not ( mods & pygame.KMOD_CTRL ):
             keygrabid=i;
           lastkeygrabid=i;
-          extra_slider1.setvalue( keyp_colors_alternate_sensetivity[i] );
+          extra_slider1.setvalue( prefs.keyp_colors_alternate_sensetivity[i] );
           print("ok click found on : "+str(keygrabid));
           break;
         pass;
@@ -2273,23 +2069,23 @@ def main():
       if ( event.button == 3 ):
         keygrab = 2;
         size=5;
-        print("x offset " + str(xoffset_whitekeys) + " y offset: " +str(yoffset_whitekeys));
+        print("x offset " + str(prefs.xoffset_whitekeys) + " y offset: " +str(prefs.yoffset_whitekeys));
         keygrabaddx=0
-        for i in range( len( keys_pos) ):
-         if (abs( mousex - (keys_pos[i][0] + xoffset_whitekeys) )< size) and (abs( mousey - (keys_pos[i][1] + yoffset_whitekeys) )< size):
+        for i in range( len( prefs.keys_pos) ):
+         if (abs( mousex - (prefs.keys_pos[i][0] + prefs.xoffset_whitekeys) )< size) and (abs( mousey - (prefs.keys_pos[i][1] + prefs.yoffset_whitekeys) )< size):
           keygrab=2;
-          keygrabaddx=keys_pos[i][0];
+          keygrabaddx=prefs.keys_pos[i][0];
           print("ok click found on : "+str(keygrabid));
           break;
 
     if ( keygrab == 1) and ( keygrabid >-1 ):
 #     print "moving keyid = " + str(keygrabid);
-     keys_pos[ keygrabid ][0] = mousex - xoffset_whitekeys;
-     keys_pos[ keygrabid ][1] = mousey - yoffset_whitekeys;
+     prefs.keys_pos[ keygrabid ][0] = mousex - prefs.xoffset_whitekeys;
+     prefs.keys_pos[ keygrabid ][1] = mousey - prefs.yoffset_whitekeys;
     if ( keygrab == 2):
 #      print "moving offsets : "+ str(mousex) + " x " + str(mousey);
-      xoffset_whitekeys = mousex - keygrabaddx;
-      yoffset_whitekeys = mousey;
+      prefs.xoffset_whitekeys = mousex - keygrabaddx;
+      prefs.yoffset_whitekeys = mousey;
     for wnd in glwindows:
       wnd.update_mouse_move(mousex,mousey)
 
