@@ -11,7 +11,7 @@ class TestMySettings(unittest.TestCase):
         self.assertEqual(prefs.xoffset_whitekeys, 99)
 
     def test_b_compatible_size(self):
-        loadsettings('vidSpin/spin.mp4.ini')
+        loadsettings('./tests/spin.mp4.ini')
         self.assertEqual(len(prefs.keyp_colors_channel_prog),14);
 
         colorBtns = []
