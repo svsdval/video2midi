@@ -208,6 +208,14 @@ def loadsettings(cfgfile):
     print("Warning, append array keyp_colors", len(prefs.keyp_colors));
     prefs.keyp_colors.append( [0,0,0] );
 
+  while ( len(prefs.keyp_colors_channel) < len(prefs.keyp_colors) ):  
+    print("Warning, append array keyp_colors_channel", len(prefs.keyp_colors_channel));
+    prefs.keyp_colors_channel.append( len(prefs.keyp_colors_channel) // 2 ); 
+
+  while ( len(prefs.keyp_colors_channel_prog) < len(prefs.keyp_colors) ):  
+    print("Warning, append array keyp_colors_channel_prog", len(prefs.keyp_colors_channel_prog));
+    prefs.keyp_colors_channel_prog.append(0);
+
   if len(colorWindow_colorBtns_channel_labels) > 0:
    for i in range(len(colorBtns)):
      colorWindow_colorBtns_channel_labels[i].text = "Ch:" + str(prefs.keyp_colors_channel[i]+1);

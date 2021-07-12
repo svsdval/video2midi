@@ -167,7 +167,6 @@ def loadsettings( cfgfile ):
     
   while ( len(prefs.keyp_colors_sparks_sensitivity) < len(prefs.keyp_colors) ):
     prefs.keyp_colors_sparks_sensitivity.append(50);
-      
     
   if config.has_option(section, 'keys_pos'):
    skeys_pos = config.get(section, 'keys_pos')
@@ -178,10 +177,6 @@ def loadsettings( cfgfile ):
      prefs.keys_pos.append( [ int(c[0]), int(c[1])  ]);
     print( len(prefs.keyp_colors) );
     print( len(prefs.keyp_colors_channel));
-
-  while ( len(prefs.keyp_colors_channel) < len(prefs.keyp_colors) ):  
-    print("Warning, append array keyp_colors_channel", len(prefs.keyp_colors_channel));
-    prefs.keyp_colors_channel.append( len(prefs.keyp_colors_channel) // 2 ); 
 
   if config.has_option(section, 'keyp_colors_alternate'):
    s = config.get(section, 'keyp_colors_alternate');
@@ -201,9 +196,5 @@ def loadsettings( cfgfile ):
      prefs.keyp_colors_alternate_sensetivity.append( int(cur) );
   if config.has_option(section, 'rollcheck'):
    prefs.rollcheck = config.getboolean(section, 'rollcheck')
-   
- while ( len(prefs.keyp_colors_channel_prog) < len(prefs.keyp_colors) ):  
-    print("Warning, append array keyp_colors_channel_prog", len(prefs.keyp_colors_channel_prog));
-    prefs.keyp_colors_channel_prog.append(0);
 
  pass;
