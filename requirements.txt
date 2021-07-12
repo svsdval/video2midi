@@ -1,0 +1,4 @@
+MIDIUtil==1.2.1
+opencv-python>=4.2.0.34
+pygame==2.0.1
+PyOpenGL==3.1.0
