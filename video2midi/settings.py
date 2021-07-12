@@ -80,7 +80,7 @@ def loadsettings( cfgfile ):
  print("starting read settings...")
  
  if not os.path.exists( cfgfile ):
-  print("cannot find setings file: "+cfgfile);
+  print("cannot find settings file: "+cfgfile);
  else:  
   print("reading settings from file: "+cfgfile);
   config = ConfigParser()
@@ -198,3 +198,18 @@ def loadsettings( cfgfile ):
    prefs.rollcheck = config.getboolean(section, 'rollcheck')
 
  pass;
+
+
+def compatibleColors(colorBtns):
+  while ( len(prefs.keyp_colors) < len(colorBtns) ):  
+    print("Warning, append array keyp_colors", len(prefs.keyp_colors));
+    prefs.keyp_colors.append( [0,0,0] );
+
+  while ( len(prefs.keyp_colors_channel) < len(prefs.keyp_colors) ):  
+    print("Warning, append array keyp_colors_channel", len(prefs.keyp_colors_channel));
+    prefs.keyp_colors_channel.append( len(prefs.keyp_colors_channel) // 2 ); 
+
+  while ( len(prefs.keyp_colors_channel_prog) < len(prefs.keyp_colors) ):  
+    print("Warning, append array keyp_colors_channel_prog", len(prefs.keyp_colors_channel_prog));
+    prefs.keyp_colors_channel_prog.append(0);
+  pass;

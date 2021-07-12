@@ -197,32 +197,23 @@ if os.path.exists( 'v2m.ini' ):
   inifile="v2m.ini";
   print("local config file exists.")
 
+def update_size():
+  global width, height
+  if ( prefs.resize == 1 ):
+    width = prefs.resize_width;
+    height = prefs.resize_height;
 
 def loadsettings(cfgfile):
-  global width, height
   global colorBtns, colorWindow_colorBtns_channel_labels
 
   settings.loadsettings(cfgfile)
-    
-  while ( len(prefs.keyp_colors) < len(colorBtns) ):  
-    print("Warning, append array keyp_colors", len(prefs.keyp_colors));
-    prefs.keyp_colors.append( [0,0,0] );
-
-  while ( len(prefs.keyp_colors_channel) < len(prefs.keyp_colors) ):  
-    print("Warning, append array keyp_colors_channel", len(prefs.keyp_colors_channel));
-    prefs.keyp_colors_channel.append( len(prefs.keyp_colors_channel) // 2 ); 
-
-  while ( len(prefs.keyp_colors_channel_prog) < len(prefs.keyp_colors) ):  
-    print("Warning, append array keyp_colors_channel_prog", len(prefs.keyp_colors_channel_prog));
-    prefs.keyp_colors_channel_prog.append(0);
+  settings.compatibleColors(colorBtns)
 
   if len(colorWindow_colorBtns_channel_labels) > 0:
    for i in range(len(colorBtns)):
      colorWindow_colorBtns_channel_labels[i].text = "Ch:" + str(prefs.keyp_colors_channel[i]+1);
 
-  if ( prefs.resize == 1 ):
-    width = prefs.resize_width;
-    height = prefs.resize_height;
+  update_size
 
   if 'glwindows' in globals():
     settingsWindow_slider1.setvalue(prefs.keyp_delta);
@@ -233,10 +224,8 @@ def loadsettings(cfgfile):
     sparks_slider_delta.id =-1;
     extraWindow_rollcheck_button.switch_status = prefs.rollcheck;
   pass;
- 
-if ( prefs.resize == 1 ):
-  width = prefs.resize_width;
-  height = prefs.resize_height;
+
+update_size
 
 for i in range(127):
   notes.append(0);
@@ -248,6 +237,7 @@ for i in range(127):
   prefs.keyp_colors_alternate.append([0,0,0]);
   prefs.keyp_colors_alternate_sensetivity.append(0);
 #;
+
 
 
 def updatekeys( append=0 ):
