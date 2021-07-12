@@ -162,9 +162,6 @@ notes_tmp=[];
 colorWindow_colorBtns_channel_labels=[];
 colorWindow_colorBtns_channel_btns=[];
 
-
-use_alternate_keys = False;
-
 bgImgGL=-1;
 
 keyp_colormap_id=-1;
@@ -1120,7 +1117,6 @@ def update_channels(sender):
    colorWindow_colorBtns_channel_labels[i].text = "Ch:" + str(prefs.keyp_colors_channel[i]+1);
 
 def readkeycolor(i):
-   global use_alternate_keys;
    pixx=int(prefs.xoffset_whitekeys + prefs.keys_pos[i][0]);
    pixy=int(prefs.yoffset_whitekeys + prefs.keys_pos[i][1]);
 
@@ -1162,9 +1158,12 @@ def update_blackkey_relative_position(sender,value):
   updatekeys();
 
 def change_use_alternate_keys(sender):
-   global use_alternate_keys,extra_label1;
-   use_alternate_keys = not use_alternate_keys;  
-   extra_label1.text = "Use alternate:"+str(use_alternate_keys);
+   global extra_label1;
+   prefs.use_alternate_keys = not prefs.use_alternate_keys
+   update_alternate_label()
+
+def update_alternate_label():
+  extra_label1.text = "Use alternate:"+str(prefs.use_alternate_keys)
 
 def change_use_sparks(sender):
    prefs.use_sparks = sender.switch_status;
@@ -1291,7 +1290,7 @@ extraWindow.appendChild( GLButton(265,20 ,138,25,1, [128,128,128], "enable/disab
 extraWindow.appendChild( GLButton(265,45 ,155,22,1, [96,96,128], "snap notes to grid" ,snap_notes_to_the_grid,switch=1, switch_status=use_snap_notes_to_grid) );
 
 
-extra_label1 = GLLabel(6,0,  "Use alternate:"+str(use_alternate_keys)  );
+extra_label1 = GLLabel(6,0,  "Use alternate:"+str(prefs.use_alternate_keys)  );
 extraWindow.appendChild( extra_label1 );
 #extra_label2 = GLLabel(0,67,  "Selected key sensitivity:"+str(0) );
 extra_slider1 = GLSlider(6,65, 240,18, -100,100,0,update_alternate_sensetivity, label="Selected key sensitivity");
@@ -1432,7 +1431,7 @@ def drawframe():
   keypressed=0;
 
   pressedcolor=[0,0,0];
-  if use_alternate_keys:
+  if prefs.use_alternate_keys:
     delta = prefs.keyp_delta + prefs.keyp_colors_alternate_sensetivity[i];  
     if ( abs( int(key[0]) - prefs.keyp_colors_alternate[i][0] ) > delta ) and ( abs( int(key[1]) - prefs.keyp_colors_alternate[i][1] ) > delta ) and ( abs( int(key[2]) - prefs.keyp_colors_alternate[i][2] ) > delta ):
       keypressed=1;
@@ -1629,7 +1628,7 @@ def processmidi():
     deltaclr = prefs.keyp_delta*prefs.keyp_delta*prefs.keyp_delta;
 
     deltaid = 0
-    if use_alternate_keys:
+    if prefs.use_alternate_keys:
       delta = prefs.keyp_delta + prefs.keyp_colors_alternate_sensetivity[i];  
       if ( abs( int(key[0]) - prefs.keyp_colors_alternate[i][0] ) > delta ) and ( abs( int(key[1]) - prefs.keyp_colors_alternate[i][1] ) > delta ) and ( abs( int(key[2]) - prefs.keyp_colors_alternate[i][2] ) > delta ):
         keypressed = 1;
@@ -1898,6 +1897,7 @@ def main():
       if event.key == pygame.K_F3:
         old_resize = prefs.resize;
         loadsettings( settingsfile )
+        update_alternate_label()
         if (prefs.resize != old_resize):
           resize_window();
        

@@ -25,9 +25,9 @@ def savesettings(settingsfile):
  #Sparks 
  config.set(section, 'keyp_spark_y_pos', str(int(prefs.keyp_spark_y_pos)));
  config.set(section, 'use_sparks', str( int(prefs.use_sparks) ));
- # Roll Check
+ # extra
  config.set(section, 'rollcheck', str( int(prefs.rollcheck) ));
- 
+ config.set(section, 'use_alternate_keys', str( int(prefs.use_alternate_keys) ));
  
  skeyp_colors_channel = "";
  for i in prefs.keyp_colors_channel:
@@ -131,6 +131,8 @@ def loadsettings( cfgfile ):
     
   if config.has_option(section, 'use_sparks'):
    prefs.use_sparks = config.getint(section, 'use_sparks')
+  if config.has_option(section, 'use_alternate_keys'):
+   prefs.use_alternate_keys = config.getboolean(section, 'use_alternate_keys')
 
   if ( clr_chnls != "" ):
     prefs.keyp_colors_channel = [ int(x) for x in clr_chnls.split(",") ]
