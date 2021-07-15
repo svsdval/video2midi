@@ -20,6 +20,7 @@ def savesettings(settingsfile):
  config.set(section, 'minimal_note_duration', str(prefs.minimal_duration));
  config.set(section, 'ignore_notes_with_minimal_duration', str(int(prefs.ignore_minimal_duration)));
  config.set(section, 'sensitivity', str(int(prefs.keyp_delta)));
+ config.set(section, 'octave', str(int(prefs.octave)));
  config.set(section, 'output_midi_tempo', str(int(prefs.tempo)));
  config.set(section, 'blackkey_relative_position', str(float(prefs.blackkey_relative_position)));
  #Sparks 
@@ -116,6 +117,8 @@ def loadsettings( cfgfile ):
    prefs.notes_overlap = config.getboolean(section, 'notes_overlap')
   if config.has_option(section, 'sensitivity'):
    prefs.keyp_delta = config.getint(section, 'sensitivity')
+  if config.has_option(section, 'octave'):
+   prefs.octave = config.getint(section, 'octave')
   #
   if config.has_option(section, 'midi_file_format'):
    midi_file_format = config.getint(section, 'midi_file_format')
