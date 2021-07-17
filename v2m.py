@@ -162,8 +162,7 @@ print("video " + str(width) + "x" + str(height) +" fps: " + str(fps));
 # add some notes;
 channel = 0;
 volume = 100;
-octave = 3;
-basenote = octave * 12;
+basenote = prefs.octave * 12;
 
 
 notes=[];
@@ -405,6 +404,18 @@ def snap_notes_to_the_grid(sender):
     global use_snap_notes_to_grid;
     use_snap_notes_to_grid = sender.switch_status;
  
+def raise_octave(*args):
+  global basenote
+  prefs.octave += 1
+  if (prefs.octave > 7): prefs.octave = 7
+  basenote = prefs.octave * 12
+
+def lower_octave(*args):
+  global basenote
+  prefs.octave -= 1
+  if (prefs.octave < 0): prefs.octave = 0
+  basenote = prefs.octave * 12
+
 # 
 wh = ( (len(prefs.keyp_colors) // 2)+2 ) * 24;
 colorWindow = GLWindow(32, 16, 264, wh, "color map")
@@ -448,11 +459,11 @@ Space - abort re-creation and save midi file to disk""");
 
 helpWindow.appendChild(helpWindow_label1);
 
-settingsWindow_label1 = GLLabel(0,0, "base octave: " + str(octave) + "\nnotes overlap: " + str(prefs.notes_overlap) + "\nignore minimal duration: " + str(prefs.ignore_minimal_duration));
+settingsWindow_label1 = GLLabel(0,0, "base octave: " + str(prefs.octave) + "\nnotes overlap: " + str(prefs.notes_overlap) + "\nignore minimal duration: " + str(prefs.ignore_minimal_duration));
 settingsWindow.appendChild(settingsWindow_label1);
 
-#settingsWindow_label2 = GLLabel(0,67,  "Sensitivity:"+str(keyp_delta)+"\n\nMinimal note duration (sec):"+str(minimal_duration) +   "\n\nOutput tempo for midi:" + str(tempo)  );
-#settingsWindow.appendChild(settingsWindow_label2);
+settingsWindow.appendChild( GLButton(130,0 ,20,20,1, [128,128,128], "+", raise_octave) );
+settingsWindow.appendChild( GLButton(150,0 ,20,20,1, [128,128,128], " -", lower_octave) );
 
 settingsWindow_slider1 = GLSlider(1,90, 240,18, 0,130,prefs.keyp_delta,label="Sensitivity");
 settingsWindow_slider1.round=1;
@@ -568,7 +579,6 @@ def drawframe():
  global mousex, mousey;
  global keyp_colormap_colors_pos;
  global keyp_colormap_pos;
- global octave;
  global frame;
  global printed_for_frame;
  global notes_tmp;
@@ -727,7 +737,7 @@ def drawframe():
  prefs.minimal_duration = settingsWindow_slider2.value *0.01;
  prefs.tempo = int(settingsWindow_slider3.value);
 
- settingsWindow_label1.text = "base octave: " + str(octave) + "\nnotes overlap: " + str(prefs.notes_overlap) + "\nignore minimal duration: " + str(prefs.ignore_minimal_duration);
+ settingsWindow_label1.text = "base octave: " + str(prefs.octave) + "\nnotes overlap: " + str(prefs.notes_overlap) + "\nignore minimal duration: " + str(prefs.ignore_minimal_duration);
  #settingsWindow_label2.text = "Sensitivity:"+str(keyp_delta)+"\n\nMinimal note duration (sec):"+format(minimal_duration,'.2f' ) +   "\n\nOutput tempo for midi:" + str(tempo);
  for i in range(len(prefs.keyp_colors)):
      colorBtns[i].color = prefs.keyp_colors[i];
@@ -1011,7 +1021,6 @@ def main():
   global startframe;
   global endframe;
   global basenote;
-  global octave;
   global glwindows;
   global separate_note_id;
   global frame;
@@ -1105,14 +1114,10 @@ def main():
         resize_window();
 
       if event.key == pygame.K_RIGHTBRACKET:
-        octave += 1;
-        if (octave > 7): octave = 7;
-        basenote = octave * 12;
+        raise_octave()
 
       if event.key == pygame.K_LEFTBRACKET:
-        octave -= 1;
-        if (octave < 0): octave = 0;
-        basenote = octave * 12;
+        lower_octave()
 
       if event.key == pygame.K_UP:
        if mods & pygame.KMOD_ALT:

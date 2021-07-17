@@ -13,6 +13,7 @@ class prefs:
 
     keyp_delta = 90; # sensitivity
 
+    octave = 3
     tempo = 120
 
     blackkey_relative_position = 0.4
