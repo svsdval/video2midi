@@ -399,7 +399,7 @@ class GLSlider:
     pass;
 
 class GLColorButton:
-  def __init__(self,x,y,w,h, index, color, sparks_slider_delta):
+  def __init__(self,x,y,w,h, index, color, onclick_procedure=None):
     self.w = float(w);
     self.h = float(h);
     self.x = float(x);
@@ -409,7 +409,7 @@ class GLColorButton:
     self.mousegrab = 0;
     self.mousepos = [0,0];
     self.mouseclickpos = [0,0];
-    self.sparks_slider_delta = sparks_slider_delta;
+    self.onclick_procedure = onclick_procedure;
     pass;
 
   def draw(self):
@@ -472,10 +472,9 @@ class GLColorButton:
     if (( mpx > self.x ) and ( mpx < self.x+self.w ) and
         ( mpy > self.y ) and ( mpy < self.y+self.h )):
         Gl.keyp_colormap_id = self.index
-        if Gl.keyp_colormap_id < len(prefs.keyp_colors) :
-         self.sparks_slider_delta.id    = Gl.keyp_colormap_id;
-         self.sparks_slider_delta.color = prefs.keyp_colors[Gl.keyp_colormap_id];
-         self.sparks_slider_delta.setvalue( prefs.keyp_colors_sparks_sensitivity[Gl.keyp_colormap_id] );
+#        if Gl.keyp_colormap_id < len(prefs.keyp_colors) :
+        if self.onclick_procedure != None:
+          self.onclick_procedure(self,self.index);
  #       print "color button: update_mouse_up set index = " + str(keyp_colormap_id);
     pass;
 
@@ -724,6 +723,7 @@ class GLWindow:
   def update_mouse_down(self,mpx,mpy,btn):
     self.mouseclickpos[0] = mpx - self.x;
     self.mouseclickpos[1] = mpy - self.y;
+    self.active = 0;
     if ( not self.hidden ):
       if (( mpx > self.x ) and ( mpx < self.x + self.w ) and
           ( mpy > self.y ) and ( mpy < self.y + self.h - self.titleheight )):
@@ -754,6 +754,7 @@ class GLWindow:
           i.update_mouse_down(mpx - self.clientrect[0],mpy - self.clientrect[1],btn);
 
     self.update();
+    return self.active;
     pass;
     
     

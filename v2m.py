@@ -224,6 +224,7 @@ def loadsettings(cfgfile):
     sparks_slider_delta.value = 0;
     sparks_slider_delta.id =-1;
     extraWindow_rollcheck_button.switch_status = prefs.rollcheck;
+    use_percolor_delta.switch_status = prefs.use_percolor_delta;
   pass;
 
 update_size
@@ -236,7 +237,7 @@ for i in range(127):
   notes_tmp.append(0);
   #
   prefs.keyp_colors_alternate.append([0,0,0]);
-  prefs.keyp_colors_alternate_sensetivity.append(0);
+  prefs.keyp_colors_alternate_sensitivity.append(0);
 #;
 
 
@@ -353,10 +354,10 @@ def readcolors(sender):
    for i in range( len(prefs.keys_pos) ):
     readkeycolor(i);
 
-def update_alternate_sensetivity(sender,value):
+def update_alternate_sensitivity(sender,value):
    global lastkeygrabid;
    if ( lastkeygrabid != -1 ):
-     prefs.keyp_colors_alternate_sensetivity[ lastkeygrabid ] = value;
+     prefs.keyp_colors_alternate_sensitivity[ lastkeygrabid ] = value;
      
 def update_sparks_delta(sender,value):
    if (sender.id == -1):
@@ -416,6 +417,25 @@ def lower_octave(*args):
   if (prefs.octave < 0): prefs.octave = 0
   basenote = prefs.octave * 12
 
+def onPallete_click(sender, index):
+  selected_color_delta.color = sender.color;
+  if index < len(prefs.percolor_delta):
+    selected_color_delta.setvalue( prefs.percolor_delta[ index ] );
+    sparks_slider_delta.id    = Gl.keyp_colormap_id;
+    sparks_slider_delta.color = prefs.keyp_colors[Gl.keyp_colormap_id];
+    sparks_slider_delta.setvalue( prefs.keyp_colors_sparks_sensitivity[Gl.keyp_colormap_id] );
+
+
+def change_use_percolor_delta(sender):
+  prefs.use_percolor_delta = sender.switch_status;
+
+def update_percolor_delta(sender,value):
+  if (Gl.keyp_colormap_id == -1):
+    return;
+  if (Gl.keyp_colormap_id < len(prefs.percolor_delta)):
+    prefs.percolor_delta[ Gl.keyp_colormap_id ] = sender.value;
+    print("changed percolor delta for color with id ["+str(sender.id)+"] = "+ str(sender.value) );
+
 # 
 wh = ( (len(prefs.keyp_colors) // 2)+2 ) * 24;
 colorWindow = GLWindow(32, 16, 264, wh, "color map")
@@ -424,7 +444,7 @@ helpWindow = GLWindow(32+270, 16, 750, 475, "help");
 
 extraWindow = GLWindow(32+270+750+6, 16, 510, 250, "extra/experimental");
 
-sparksWindow = GLWindow(32+270+750+6, 250, 510, 125, "sparks");
+sparksWindow = GLWindow(32+270+750+6, 250, 510, 185, "sparks & color settings");
 
 
 glwindows = [];
@@ -496,7 +516,7 @@ sparks_slider_delta = GLSlider(6,25, 150,18, -50,150,50,update_sparks_delta, lab
 for i in range( len( prefs.keyp_colors ) ):
  cx,cy = (i % 2) * 130,  ( i // 2 ) * 20;
  offsetx,offsety=4,4;
- colorBtns.append( GLColorButton(offsetx+cx,offsety+cy ,20,20,i, prefs.keyp_colors[i], sparks_slider_delta ) );
+ colorBtns.append( GLColorButton(offsetx+cx,offsety+cy ,20,20,i, prefs.keyp_colors[i], onPallete_click ) );
  colorWindow.appendChild(colorBtns[i]);
  colorWindow_label1 = GLLabel(offsetx+25+cx,offsety+cy , "Ch:" + str(prefs.keyp_colors_channel[i]+1) );
  
@@ -518,7 +538,7 @@ extraWindow.appendChild( GLButton(265,45 ,155,22,1, [96,96,128], "snap notes to 
 extra_label1 = GLLabel(6,0,  "Use alternate:"+str(prefs.use_alternate_keys)  );
 extraWindow.appendChild( extra_label1 );
 #extra_label2 = GLLabel(0,67,  "Selected key sensitivity:"+str(0) );
-extra_slider1 = GLSlider(6,65, 240,18, -100,100,0,update_alternate_sensetivity, label="Selected key sensitivity");
+extra_slider1 = GLSlider(6,65, 240,18, -100,100,0,update_alternate_sensitivity, label="Selected key sensitivity");
 #extra_slider1.showvalue=True;
 #showvaluesinlabel=0
 
@@ -548,6 +568,12 @@ sparksWindow.appendChild( GLButton(413   ,24 ,32,22,1, [96,96,128], "y+" ,update
 sparksWindow.appendChild( GLButton(413+33,24 ,32,22,1, [96,96,128], "y-" ,update_sparks_y_pos) );
 sparksWindow.appendChild( GLLabel( 6,50,  "alt + up / down - move sparks label up or down " ));
 
+selected_color_delta = GLSlider(6,100, 200,18, 0,130,50,update_percolor_delta, label="percolor sensitivity");
+selected_color_delta.round=1;
+use_percolor_delta = GLButton(313,100 ,190,22,1, [128,128,128], "use percolor sensitivity" ,change_use_percolor_delta,switch=1, switch_status=prefs.use_sparks );
+sparksWindow.appendChild( selected_color_delta );
+sparksWindow.appendChild( use_percolor_delta );
+#colorSettingsWindow.appendChild( GLButton(413   ,24 ,64,22,1, [96,96,128], "Pallette" , None ) );
 #
 
 #extra_slider2.showvalue=True;
@@ -652,7 +678,7 @@ def drawframe():
 
   pressedcolor=[0,0,0];
   if prefs.use_alternate_keys:
-    delta = prefs.keyp_delta + prefs.keyp_colors_alternate_sensetivity[i];  
+    delta = prefs.keyp_delta + prefs.keyp_colors_alternate_sensitivity[i];  
     if ( abs( int(key[0]) - prefs.keyp_colors_alternate[i][0] ) > delta ) and ( abs( int(key[1]) - prefs.keyp_colors_alternate[i][1] ) > delta ) and ( abs( int(key[2]) - prefs.keyp_colors_alternate[i][2] ) > delta ):
       keypressed=1;
       pressedcolor=prefs.keyp_colors_alternate[i];
@@ -660,9 +686,14 @@ def drawframe():
       for key_id in range( len(prefs.keyp_colors) ):
        keyc = prefs.keyp_colors[key_id];
        spark_delta = prefs.keyp_colors_sparks_sensitivity[key_id];
-       #
+       delta = prefs.keyp_delta;
+       if prefs.use_percolor_delta:
+         if key_id < len( prefs.percolor_delta ):
+           delta =  prefs.percolor_delta[ key_id ];
+
+
        if (keyc[0] != 0 ) or (keyc[1] != 0 ) or (keyc[2] != 0 ) :
-         if ( abs( int(key[0]) - keyc[0] ) < prefs.keyp_delta ) and ( abs( int(key[1]) - keyc[1] ) < prefs.keyp_delta ) and ( abs( int(key[2]) - keyc[2] ) < prefs.keyp_delta ):
+         if ( abs( int(key[0]) - keyc[0] ) < delta ) and ( abs( int(key[1]) - keyc[1] ) < delta ) and ( abs( int(key[2]) - keyc[2] ) < delta ):
           keypressed=1;
           pressedcolor = keyc;
           if prefs.use_sparks:
@@ -848,14 +879,20 @@ def processmidi():
 
     deltaid = 0
     if prefs.use_alternate_keys:
-      delta = prefs.keyp_delta + prefs.keyp_colors_alternate_sensetivity[i];  
+      delta = prefs.keyp_delta + prefs.keyp_colors_alternate_sensitivity[i];  
       if ( abs( int(key[0]) - prefs.keyp_colors_alternate[i][0] ) > delta ) and ( abs( int(key[1]) - prefs.keyp_colors_alternate[i][1] ) > delta ) and ( abs( int(key[2]) - prefs.keyp_colors_alternate[i][2] ) > delta ):
         keypressed = 1;
         pressedcolor = prefs.keyp_colors_alternate[i];
     else: 
       for j in range(len(prefs.keyp_colors)):
+       delta = prefs.keyp_delta;
+       if prefs.use_percolor_delta:
+         if j < len( prefs.percolor_delta ):
+           delta =  prefs.percolor_delta[ j ];
+       deltaclr = delta*delta*delta;
+
        if (prefs.keyp_colors[j][0] != 0 ) or ( prefs.keyp_colors[j][1] != 0 ) or ( prefs.keyp_colors[j][2] != 0 ):
-        if ( abs( int(key[0]) - prefs.keyp_colors[j][0] ) < prefs.keyp_delta ) and ( abs( int(key[1]) - prefs.keyp_colors[j][1] ) < prefs.keyp_delta ) and ( abs( int(key[2]) - prefs.keyp_colors[j][2] ) < prefs.keyp_delta ):
+        if ( abs( int(key[0]) - prefs.keyp_colors[j][0] ) < delta ) and ( abs( int(key[1]) - prefs.keyp_colors[j][1] ) < delta ) and ( abs( int(key[2]) - prefs.keyp_colors[j][2] ) < delta ):
          delta = abs( int(key[0]) - prefs.keyp_colors[j][0] ) +  abs( int(key[1]) - prefs.keyp_colors[j][1] ) + abs( int(key[2]) - prefs.keyp_colors[j][2] )
          if ( delta < deltaclr ):
           deltaclr = delta;
@@ -1047,7 +1084,9 @@ def main():
   # set start frame;
   vidcap.set(CAP_PROP_POS_FRAMES, frame);
 
+  
   while running==1:
+    mouseOnWindows = False;
 #    mousex, mousey = pygame.mouse.get_pos();
     drawframe();
     mods = pygame.key.get_mods();
@@ -1215,7 +1254,8 @@ def main():
      #
      elif event.type == pygame.MOUSEBUTTONDOWN:
       for wnd in glwindows:
-        wnd.update_mouse_down(mousex,mousey,event.button);
+        if wnd.update_mouse_down(mousex,mousey,event.button) == 1:
+          mouseOnWindows=True;
 
 #      print event.button;
       if ( event.button == 4 ):
@@ -1246,7 +1286,7 @@ def main():
            prefs.keyp_colors[Gl.keyp_colormap_id][2] = keybgr[0];
         else:
 #        if not (mods & pygame.KMOD_CTRL):
-         if not colorWindow.active:
+         if not colorWindow.active and not mouseOnWindows:
             Gl.keyp_colormap_id = -1;
          #keyp_colormap_id = -1;
          pass
@@ -1261,7 +1301,7 @@ def main():
           if not ( mods & pygame.KMOD_CTRL ):
             keygrabid=i;
           lastkeygrabid=i;
-          extra_slider1.setvalue( prefs.keyp_colors_alternate_sensetivity[i] );
+          extra_slider1.setvalue( prefs.keyp_colors_alternate_sensitivity[i] );
           print("ok click found on : "+str(keygrabid));
           break;
         pass;

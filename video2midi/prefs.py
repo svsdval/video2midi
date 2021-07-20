@@ -33,7 +33,7 @@ class prefs:
     whitekey_width=24.6
 
     keyp_colors_alternate = []
-    keyp_colors_alternate_sensetivity = []
+    keyp_colors_alternate_sensitivity = []
     keyp_colors = [
     #L.GREEN         D.GREEN
     [166,250,103], [ 58,146,  0],
@@ -55,3 +55,7 @@ class prefs:
     keyp_colors_sparks_sensitivity = [50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50]
 
     keys_pos=[]
+    #
+    use_percolor_delta=False;
+    #
+    percolor_delta=[90]*20;

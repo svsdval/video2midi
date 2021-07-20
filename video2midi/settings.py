@@ -54,6 +54,12 @@ def savesettings(settingsfile):
   skeyp_colors_sparks_sensitivity += str(round(i,2))+",";
  config.set(section, 'keyp_colors_sparks_sensitivity', skeyp_colors_sparks_sensitivity[0:-1]);
 
+ spercolor_sensitivity="";
+ for i in prefs.percolor_delta:
+   spercolor_sensitivity += str(round(i,2))+",";
+ config.set(section, 'percolor_sensitivity', spercolor_sensitivity[0:-1]);
+ config.set(section, 'use_percolor_sensitivity', str( int(prefs.use_percolor_delta) ));
+
  skeys_pos="";
  for i in prefs.keys_pos:
   skeys_pos+= str(int(i[0]))+":"+str(int(i[1]))+",";
@@ -65,9 +71,9 @@ def savesettings(settingsfile):
  config.set(section, 'keyp_colors_alternate', s[0:-1]);
  # 
  s="";
- for i in prefs.keyp_colors_alternate_sensetivity:
+ for i in prefs.keyp_colors_alternate_sensitivity:
   s+= str(int(i))+",";
- config.set(section, 'keyp_colors_alternate_sensetivity', s[0:-1]);
+ config.set(section, 'keyp_colors_alternate_sensitivity', s[0:-1]);
   
  with open(settingsfile, 'w') as configfile:
     config.write(configfile);
@@ -145,7 +151,7 @@ def loadsettings( cfgfile ):
     prefs.keyp_colors_channel_prog = [ int(x) for x in clr_chnls_prog.split(",") ]
 
     print("readed color channel = prog ", prefs.keyp_colors_channel_prog);
-    
+
   if config.has_option(section, 'xoffset_whitekeys'):
    prefs.xoffset_whitekeys = config.getint(section, 'xoffset_whitekeys')
   if config.has_option(section, 'yoffset_whitekeys'):
@@ -193,14 +199,24 @@ def loadsettings( cfgfile ):
      print(" Append :" + str(cur));
      prefs.keyp_colors_alternate.append( [ int(c[0]), int(c[1]),int(c[2]) ]);
   #
-  if config.has_option(section, 'keyp_colors_alternate_sensetivity'):
-   s = config.get(section, 'keyp_colors_alternate_sensetivity');
+  if config.has_option(section, 'keyp_colors_alternate_sensitivity'):
+   s = config.get(section, 'keyp_colors_alternate_sensitivity');
    if ( s.strip() != "" ):
-    prefs.keyp_colors_alternate_sensetivity[:] = [];
+    prefs.keyp_colors_alternate_sensitivity[:] = [];
     for cur in s.split(","):
-     prefs.keyp_colors_alternate_sensetivity.append( int(cur) );
+     prefs.keyp_colors_alternate_sensitivity.append( int(cur) );
   if config.has_option(section, 'rollcheck'):
    prefs.rollcheck = config.getboolean(section, 'rollcheck')
+
+  if config.has_option(section, 'use_percolor_sensitivity'):
+   prefs.use_percolor_delta = config.getboolean(section, 'use_percolor_sensitivity')
+
+  if config.has_option(section, 'percolor_sensitivity'):
+   s = config.get(section, 'percolor_sensitivity')
+   prefs.percolor_delta = [ float(x) for x in s.split(",") ]
+   print("percolor_sensitivity", prefs.percolor_delta);
+   while len( prefs.percolor_delta ) < len(prefs.keyp_colors):
+     prefs.percolor_delta.append(0);
 
  pass;
 
