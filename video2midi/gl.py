@@ -637,6 +637,7 @@ class GLWindow:
     self.mousepos = [0,0];
     self.mouseclickpos = [0,0];
     self.hidden = 0;
+    self.fullhidden = 0;
     self.child = [];
     self.level = 0;
     self.active = 0;
@@ -650,6 +651,8 @@ class GLWindow:
     self.child.append(child);
 
   def draw(self):
+    if self.fullhidden:
+      return;
     self.update();
     glDisable(GL_TEXTURE_2D);
     glEnable(GL_BLEND);
@@ -686,6 +689,9 @@ class GLWindow:
     pass;
     
   def update(self):
+    if self.fullhidden:
+      return;
+
     self.titlewidth = self.w;
 
     self.clientrect[0] = self.x + self.borderwidth;
@@ -706,6 +712,9 @@ class GLWindow:
     pass;
     
   def update_mouse_move(self, mpx, mpy ):
+    if self.fullhidden:
+      return;
+
     self.mousepos[0] = mpx;
     self.mousepos[1] = mpy;
 
@@ -721,6 +730,9 @@ class GLWindow:
     pass;
     
   def update_mouse_down(self,mpx,mpy,btn):
+    if self.fullhidden:
+      return 0;
+
     self.mouseclickpos[0] = mpx - self.x;
     self.mouseclickpos[1] = mpy - self.y;
     self.active = 0;
@@ -741,7 +753,7 @@ class GLWindow:
     if (( mpx > self.x+self.titlewidth-16 ) and ( mpx < self.x + self.w ) and
         ( mpy > self.y ) and ( mpy < self.y + self.titleheight )):
         self.hidden = not self.hidden;
-        return;
+        return self.hidden;
         
 
     if (( mpx > self.x ) and ( mpx < self.x + self.titlewidth ) and
@@ -770,6 +782,9 @@ class GLWindow:
     pass;
     
   def update_key_down(self, keycode ):
+    if self.fullhidden:
+      return 0;
+
     mpx = self.mousepos[0];
     mpy = self.mousepos[1];
     
@@ -792,6 +807,9 @@ class GLWindow:
       
     pass;
   def update_key_up(self, keycode ):
+    if self.fullhidden:
+      return 0;
+
     if ( not self.hidden ):
       for i in self.child:
         if hasattr(i, 'update_key_up'):

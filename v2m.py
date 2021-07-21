@@ -474,7 +474,7 @@ PageUp/PageDown - scrolling video (mods : shift)
 Home/End - go to the beginning or end of the video
 [ / ] - change base octave
 F2 / F3 - save / load settings
-Escape - quit
+Escape - quit, TAB - Show/Hide all windows
 Space - abort re-creation and save midi file to disk""");
 
 helpWindow.appendChild(helpWindow_label1);
@@ -1178,6 +1178,12 @@ def main():
          else:
           prefs.yoffset_blackkeys += 2;
          updatekeys( );
+
+      if event.key == pygame.K_TAB:
+       print('switch hidden for all windows');
+       for i in glwindows:
+         #print("i.hidden =%s" % (str(i.fullhidden)) );
+         i.fullhidden = not i.fullhidden;
 
       if event.key == pygame.K_LEFT:
        if mods & pygame.KMOD_SHIFT:
