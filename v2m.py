@@ -24,7 +24,7 @@ from os.path import expanduser
 import video2midi.settings as settings
 from video2midi.prefs import prefs
 from video2midi.gl import *
-
+import datetime;
 
 width=640;
 height=480;
@@ -90,6 +90,7 @@ COLOR_BGR2RGB         = cv2.COLOR_BGR2RGB;
 #
 
 vidcap.set(CAP_PROP_POS_FRAMES, frame);
+vidcap.set(cv2.CAP_PROP_BUFFERSIZE, 2)
 success,image = vidcap.read();
 
 debug_keys = 0;
@@ -304,7 +305,9 @@ def framerate():
 def loadImage(idframe=130):
   global image;
   global convertCvtColor;
-  getFrame(idframe);
+  if running != 0:
+    getFrame(idframe);
+  #image2=cv2.resize(image, (int(video_width/4) , int(video_height/4)));
 
   print("load image from video " + str(width) + "x" + str(height) + " frame: "+ str(idframe));
   glPixelStorei(GL_UNPACK_ALIGNMENT,1)
@@ -314,10 +317,12 @@ def loadImage(idframe=130):
   glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL)
   if ( convertCvtColor == 1 ):
     #print ("Loading RGB texture");
+#    glTexImage2D(GL_TEXTURE_2D, 0, 3, int(video_width/4), int(video_height/4), 0, GL_RGB, GL_UNSIGNED_BYTE, cv2.cvtColor(image2,COLOR_BGR2RGB) );
     glTexImage2D(GL_TEXTURE_2D, 0, 3, video_width, video_height, 0, GL_RGB, GL_UNSIGNED_BYTE, cv2.cvtColor(image,COLOR_BGR2RGB) );
   else:
     #print ("Loading BGR texture");
     glTexImage2D(GL_TEXTURE_2D, 0, 3, video_width, video_height, 0, GL_BGR, GL_UNSIGNED_BYTE, image );
+#    glTexImage2D(GL_TEXTURE_2D, 0, 3, int(video_width/4), int(video_height/4), 0, GL_BGR, GL_UNSIGNED_BYTE, image2 );
   pass;
 
 def update_channels(sender):
@@ -975,14 +980,15 @@ def processmidi():
  notecnt=0
  while success:
 
-  if (frame % 100 == 0):
-   glBindTexture(GL_TEXTURE_2D, Gl.bgImgGL);
-   loadImage(frame)
+  if (frame % 10 == 0):
+   if (frame % 200 == 0):
+      glBindTexture(GL_TEXTURE_2D, Gl.bgImgGL);
+      loadImage(frame)
    #glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
    #glTexImage2D(GL_TEXTURE_2D, 0, 3, video_width, video_height, 0, GL_BGR, GL_UNSIGNED_BYTE, image );
    #glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-   glEnable(GL_TEXTURE_2D);
-   drawframe()
+      glEnable(GL_TEXTURE_2D);
+      drawframe()
 
    glColor4f(1.0, 0.5, 1.0, 0.5);
    glDisable(GL_TEXTURE_2D);
@@ -1177,6 +1183,7 @@ def processmidi():
   getFrame();
 
   frame += 1;
+  framerate();
 
   if ( frame > endframe ):
     success = False;
@@ -1488,7 +1495,10 @@ def main():
 main();
 helpWindow.hidden=1;
 frame=startframe;
+t1 = datetime.datetime.now();
 processmidi();
+t2 = datetime.datetime.now();
+print("""  processing time: {} / {} = {};  """.format( t1,t2, t2-t1 ));
 
 print ("done...");
 
