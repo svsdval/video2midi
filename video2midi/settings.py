@@ -176,8 +176,6 @@ def loadsettings( cfgfile ):
     for cur in skeyp_colors_sparks_sensitivity.split(","):
      prefs.keyp_colors_sparks_sensitivity.append( float(cur) );
     
-  while ( len(prefs.keyp_colors_sparks_sensitivity) < len(prefs.keyp_colors) ):
-    prefs.keyp_colors_sparks_sensitivity.append(50);
     
   if config.has_option(section, 'keys_pos'):
    skeys_pos = config.get(section, 'keys_pos')
@@ -215,9 +213,6 @@ def loadsettings( cfgfile ):
    s = config.get(section, 'percolor_sensitivity')
    prefs.percolor_delta = [ float(x) for x in s.split(",") ]
    print("percolor_sensitivity", prefs.percolor_delta);
-   while len( prefs.percolor_delta ) < len(prefs.keyp_colors):
-     prefs.percolor_delta.append(0);
-
  pass;
 
 
@@ -233,4 +228,16 @@ def compatibleColors(colorBtns):
   while ( len(prefs.keyp_colors_channel_prog) < len(prefs.keyp_colors) ):  
     print("Warning, append array keyp_colors_channel_prog", len(prefs.keyp_colors_channel_prog));
     prefs.keyp_colors_channel_prog.append(0);
+  #
+  while len( prefs.percolor_delta ) < len(prefs.keyp_colors):
+    prefs.percolor_delta.append(0);
+  #
+  while ( len(prefs.keyp_colors_sparks_sensitivity) < len(prefs.keyp_colors) ):
+    print( 'add sparks',len(prefs.keyp_colors_sparks_sensitivity) , len(prefs.keyp_colors) )
+    prefs.keyp_colors_sparks_sensitivity.append(50);
+  print('keyp_colors:', len(prefs.keyp_colors) );
+  print('keyp_colors_channel:', len(prefs.keyp_colors_channel));
+
+  print('percolor_delta:', len(prefs.percolor_delta));
+  print('keyp_colors_sparks_sensitivity:', len(prefs.keyp_colors_sparks_sensitivity));
   pass;

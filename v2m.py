@@ -190,6 +190,7 @@ notes_grid_size=32;
 midi_file_format = 0;
 #
 line_height = 20;
+running = 1;
 
 #cfg
 home = expanduser("~")
@@ -225,6 +226,9 @@ def loadsettings(cfgfile):
     sparks_slider_delta.id =-1;
     extraWindow_rollcheck_button.switch_status = prefs.rollcheck;
     use_percolor_delta.switch_status = prefs.use_percolor_delta;
+    notes_overlap_btn.switch_status = prefs.notes_overlap;
+    ignore_notes_with_minimal_duration_btn.switch_status = prefs.ignore_minimal_duration;
+
   pass;
 
 update_size
@@ -328,6 +332,13 @@ def update_channels(sender):
    if (prefs.keyp_colors_channel[i] < 0):
      prefs.keyp_colors_channel[i] = 0;
    colorWindow_colorBtns_channel_labels[i].text = "Ch:" + str(prefs.keyp_colors_channel[i]+1);
+
+def disable_color(sender):
+   print( 'disabled color...' +str(sender.index));
+   if sender.index < len(prefs.keyp_colors):
+    prefs.keyp_colors[ sender.index ] = [0,0,0];
+#     prefs.keyp_colors_channel[i]= prefs.keyp_colors_channel[i] + 1;
+  
 
 def readkeycolor(i):
    pixx=int(prefs.xoffset_whitekeys + prefs.keys_pos[i][0]);
@@ -434,20 +445,130 @@ def update_percolor_delta(sender,value):
     return;
   if (Gl.keyp_colormap_id < len(prefs.percolor_delta)):
     prefs.percolor_delta[ Gl.keyp_colormap_id ] = sender.value;
-    print("changed percolor delta for color with id ["+str(sender.id)+"] = "+ str(sender.value) );
+    #print("changed percolor delta for color with id ["+str(sender.id)+"] = "+ str(sender.value) );
+
+def showOrhideallwindows(sender):
+  if sender == None:
+    ShowHideButton.switch_status = not ShowHideButton.switch_status;
+  print('switch hidden for all windows');
+  for i in glwindows:
+    #print("i.type =%s" % (str(type(i))) );
+    if isinstance(i, GLWindow ):
+      i.fullhidden = ShowHideButton.switch_status;
+
+def start_recreate_midi(sender):
+  global running;
+  running=0;
+
+  pass;
+
+def set_start_frame_to_current_frame(sender):
+  global startframe;
+  if sender.index == 0:
+    startframe = int(round(vidcap.get(1)));
+  else:
+    startframe = 0;
+  print("set start frame = "+ str(startframe));
+  pass;
+
+def sef_end_frame_to_current_frame(sender):
+  global endframe;
+  if sender.index == 0:
+    endframe = int(round(vidcap.get(1)));
+  else:
+    endframe = length;
+  print("set end frame = "+ str(endframe), sender.index);
+  pass;
+
+def switch_notes_overlap(sender):
+  if sender == None:
+    prefs.notes_overlap = not prefs.notes_overlap;
+    notes_overlap_btn.switch_status = prefs.notes_overlap;
+  else:
+    prefs.notes_overlap = notes_overlap_btn.switch_status;
+  pass;
+
+def switch_ignore_notes_with_minimal_duration(sender):
+  if sender == None:
+    prefs.ignore_minimal_duration = not prefs.ignore_minimal_duration;
+    ignore_notes_with_minimal_duration_btn.switch_status = prefs.ignore_minimal_duration;
+  else:
+    prefs.ignore_minimal_duration = ignore_notes_with_minimal_duration_btn.switch_status;
+  pass;
+
+def switch_resize_windows(sender):
+  prefs.resize = not prefs.resize;
+  resize_window();
+  pass;
+
+def scroll_by_steps( steps ):
+  global frame;
+  frame+=steps;
+  if (frame > length *0.99):
+    frame=math.trunc(length *0.99);
+  if (frame < 1):
+    frame=1;
+  glBindTexture(GL_TEXTURE_2D, Gl.bgImgGL);
+  loadImage(frame);
+  pass;
+
+def scroll_forward_by_frame(sender):
+  scroll_by_steps(1);
+  pass;
+
+def scroll_fast_forward(sender):
+  scroll_by_steps(100);
+  pass;
+
+def scroll_prev_by_frame(sender):
+  scroll_by_steps(-1);
+  pass;
+
+def scroll_fast_prev(sender):
+  scroll_by_steps(-100);
+  pass;
+
+def scroll_to_start(sender):
+  global frame;
+  frame=0;
+  glBindTexture(GL_TEXTURE_2D, Gl.bgImgGL);
+  loadImage(frame);
+  pass;
+
+def scroll_to_end(sender):
+  global frame;
+  frame=length-100;
+  glBindTexture(GL_TEXTURE_2D, Gl.bgImgGL);
+  loadImage(frame);
+  pass;
+
+def btndown_save_settings(sender):
+  settings.savesettings(settingsfile)
+
+def btndown_load_settings(sender):
+  old_resize = prefs.resize;
+  loadsettings( settingsfile )
+  update_alternate_label()
+  if (prefs.resize != old_resize):
+    resize_window();
 
 # 
-wh = ( (len(prefs.keyp_colors) // 2)+2 ) * 24;
-colorWindow = GLWindow(32, 16, 264, wh, "color map")
-settingsWindow = GLWindow(32, wh, 250, 310, "Settings");
-helpWindow = GLWindow(32+270, 16, 750, 475, "help");
+wh = ( (len(prefs.keyp_colors) // 2)+2 ) * 24 - 24;
+colorWindow = GLWindow(24, 16, 274, wh, "color map")
+settingsWindow = GLWindow(24+275, 50, 550, 310, "Settings");
+helpWindow = GLWindow(24+270, 16, 750, 475, "help");
 
-extraWindow = GLWindow(32+270+750+6, 16, 510, 250, "extra/experimental");
+extraWindow = GLWindow(24+270+750+6, 16, 510, 250, "extra/experimental");
 
-sparksWindow = GLWindow(32+270+750+6, 250, 510, 185, "sparks & color settings");
+sparksWindow = GLWindow(24+270+750+6, 250, 510, 185, "sparks & color settings");
 
 
 glwindows = [];
+ShowHideButton = GLButton(0,0 ,13,13, 1, [128,128,128], "" , showOrhideallwindows ,switch=1, switch_status=0 );
+ShowHideButton.active = 2;
+
+glwindows.append(ShowHideButton);
+
 glwindows.append(colorWindow);
 glwindows.append(settingsWindow);
 glwindows.append(helpWindow);
@@ -455,7 +576,7 @@ glwindows.append(helpWindow);
 glwindows.append(extraWindow);
 glwindows.append(sparksWindow);
 
-#helpWindow.hidden=1;
+helpWindow.hidden=1;
 helpWindow_label1 = GLLabel(0,0, """h - on window title, show/hide the window
 q - begin to recreate midi
 s - set start frame, (mods : shift, set processing start frame to the beginning)
@@ -477,31 +598,63 @@ F2 / F3 - save / load settings
 Escape - quit, TAB - Show/Hide all windows
 Space - abort re-creation and save midi file to disk""");
 
+
+settingsWindow.appendChild( GLButton(260, 20 ,140,20,0    , [128,128,128], "start recreate midi"               , start_recreate_midi             , hint = "q - hot key") );
+settingsWindow.appendChild( GLButton(260, 40 ,140,20,0    , [128,128,128], "set start frame"                   , set_start_frame_to_current_frame, hint = "s - hot key, (mods : shift + s, set processing start frame to the beginning)" ) );
+settingsWindow.appendChild( GLButton(260+141, 40 ,140,20,0, [128,128,128], "set end frame"                     , sef_end_frame_to_current_frame  , hint = "e - hot key, (mods : shift + e, set processing end frame to the ending)" ) );
+
+notes_overlap_btn = GLButton(260, 80 ,140,20,0, [128,128,128],  "notes overlap"                     , switch_notes_overlap            , hint = "o - hot key", switch=1, switch_status=0)
+ignore_notes_with_minimal_duration_btn = GLButton(260,100 ,272,20,0, [128,128,128],  "ignore notes with minimal duration", switch_ignore_notes_with_minimal_duration, hint = "i - hot key", switch=1, switch_status=0);
+settingsWindow.appendChild( notes_overlap_btn );
+settingsWindow.appendChild( ignore_notes_with_minimal_duration_btn );
+settingsWindow.appendChild( GLButton(260,120 ,140,20,0, [128,128,128],  "resize window"                     , switch_resize_windows           , hint = "r - hot key") );
+settingsWindow.appendChild( GLButton(260    , 140 ,140,20,0, [128,128,128], "save settings"                  , btndown_save_settings  , hint = "F2 - hot key, save current settings" ) );
+settingsWindow.appendChild( GLButton(260+141, 140 ,140,20,0, [128,128,128], "load settings"                  , btndown_load_settings  , hint = "F3 - hot key, load saved settings" ) );
+
+navbtns_info = [
+             {'name' : "[<", 'hint' : 'Home - hot key, go to first frame',
+              'func' : scroll_to_start }, 
+             {'name' : "<<", 'hint' : 'PageUp - hot key, fast scroll prev',
+              'func' : scroll_fast_prev }, 
+             {'name' : " <", 'hint' : 'Shift+PageUp - shortcut, scroll prev by frame',
+              'func' : scroll_prev_by_frame }, 
+             {'name' : " >", 'hint' : 'Shift+PageDown - shortcut, scroll forward by frame',
+              'func' : scroll_forward_by_frame }, 
+             {'name' : ">>", 'hint' : 'PageDown - hot key,fast scroll forward',
+              'func' : scroll_fast_forward }, 
+             {'name' : "  >]", 'hint' : 'End - hot key, go to last frame',
+              'func' : scroll_to_end }
+           ];
+#btnfuncs = [ None,  None, None, None,  None, None ];
+for i in range(len( navbtns_info )):
+  settingsWindow.appendChild( GLButton(260 + i * 32,230 ,32,20,0, [128,128,128],  navbtns_info[i]['name'] , navbtns_info[i]['func'], hint = navbtns_info[i]['hint']) );
+
 helpWindow.appendChild(helpWindow_label1);
 
-settingsWindow_label1 = GLLabel(0,0, "base octave: " + str(prefs.octave) + "\nnotes overlap: " + str(prefs.notes_overlap) + "\nignore minimal duration: " + str(prefs.ignore_minimal_duration));
+settingsWindow_label1 = GLLabel(1,0, "base octave: " + str(prefs.octave));
+# + "\nnotes overlap: " + str(prefs.notes_overlap) + "\nignore minimal duration: " + str(prefs.ignore_minimal_duration));
 settingsWindow.appendChild(settingsWindow_label1);
 
-settingsWindow.appendChild( GLButton(130,0 ,20,20,1, [128,128,128], "+", raise_octave) );
-settingsWindow.appendChild( GLButton(150,0 ,20,20,1, [128,128,128], " -", lower_octave) );
+settingsWindow.appendChild( GLButton(130,0 ,20,20,1, [128,128,128],  "+", raise_octave, hint = "] - hot key, move up base octave (+12 tones)" ) );
+settingsWindow.appendChild( GLButton(150,0 ,20,20,1, [128,128,128], " -", lower_octave, hint = "[ - hot key, move down base octave (-12 tones)" ) );
 
-settingsWindow_slider1 = GLSlider(1,90, 240,18, 0,130,prefs.keyp_delta,label="Sensitivity");
+settingsWindow_slider1 = GLSlider(1,40, 240,18, 0,130,prefs.keyp_delta,label="Sensitivity");
 settingsWindow_slider1.round=1;
 settingsWindow.appendChild(settingsWindow_slider1);
 
-settingsWindow_slider2 = GLSlider(1,130, 240,18, 0,200,prefs.minimal_duration*100,label="Minimal note duration (sec)");
+settingsWindow_slider2 = GLSlider(1,90, 240,18, 0,200,prefs.minimal_duration*100,label="Minimal note duration (sec)");
 settingsWindow_slider2.round=0;
 settingsWindow.appendChild(settingsWindow_slider2);
 
-settingsWindow_slider3 = GLSlider(1,173, 240,18, 30,240,prefs.tempo,label="Output tempo for midi");
+settingsWindow_slider3 = GLSlider(1,133, 240,18, 30,240,prefs.tempo,label="Output tempo for midi");
 settingsWindow_slider3.round=0;
 settingsWindow.appendChild(settingsWindow_slider3);
 
-settingsWindow_slider4 = GLSlider(1,215, 240,18, 0,2,midi_file_format,label="Output midi format");
+settingsWindow_slider4 = GLSlider(1,175, 240,18, 0,2,midi_file_format,label="Output midi format");
 settingsWindow_slider4.round=0;
 settingsWindow.appendChild(settingsWindow_slider4);
 
-settingsWindow_slider5 = GLSlider(1,255, 240,18, 0,1000,prefs.blackkey_relative_position * 1000, update_blackkey_relative_position, label="black key relative pos");
+settingsWindow_slider5 = GLSlider(1,215, 240,18, 0,1000,prefs.blackkey_relative_position * 1000, update_blackkey_relative_position, label="black key relative pos");
 settingsWindow_slider5.round=0;
 settingsWindow.appendChild(settingsWindow_slider5);
 
@@ -523,16 +676,16 @@ for i in range( len( prefs.keyp_colors ) ):
  colorWindow_colorBtns_channel_labels.append( colorWindow_label1 );
  colorWindow.appendChild(colorWindow_label1);
  #
- colorWindow_colorBtns_channel_btns.append( GLButton(offsetx+cx+80,offsety+cy ,20,20,(i+1), [128,128,128], "+" ,update_channels) );
- colorWindow.appendChild( colorWindow_colorBtns_channel_btns[i*2] );
- #
- colorWindow_colorBtns_channel_btns.append( GLButton(offsetx+cx+80+20,offsety+cy ,20,20,-(i+1), [128,128,128], "-" ,update_channels) );
- colorWindow.appendChild( colorWindow_colorBtns_channel_btns[i*2+1] );
+ colorWindow_colorBtns_channel_btns.append( GLButton(offsetx+cx+70,offsety+cy ,20,20,(i+1), [128,128,128], "+" ,update_channels) );
+ colorWindow_colorBtns_channel_btns.append( GLButton(offsetx+cx+70+20,offsety+cy ,20,20,-(i+1), [128,128,128], "-" ,update_channels) );
+ colorWindow_colorBtns_channel_btns.append( GLButton(offsetx+cx+70+40,offsety+cy ,20,20,i, [128,128,128], "x" ,disable_color, hint="ctrl+0 - shortcut, disable selected color") );
+for i in colorWindow_colorBtns_channel_btns:
+ colorWindow.appendChild( i );
 
-extraWindow.appendChild( GLButton(5,20 ,128,25,1, [128,128,128], "read colors" ,readcolors) );
+extraWindow.appendChild( GLButton(5,  20 ,128,25,1, [128,128,128], "read colors" ,readcolors) );
 extraWindow.appendChild( GLButton(135,20 ,128,25,1, [128,128,128], "update color" ,updatecolor) );
 extraWindow.appendChild( GLButton(265,20 ,138,25,1, [128,128,128], "enable/disable" ,change_use_alternate_keys) );
-extraWindow.appendChild( GLButton(265,45 ,155,22,1, [96,96,128], "snap notes to grid" ,snap_notes_to_the_grid,switch=1, switch_status=use_snap_notes_to_grid) );
+extraWindow.appendChild( GLButton(265,45 ,155,22,1, [96 ,96 ,128], "snap notes to grid" ,snap_notes_to_the_grid,switch=1, switch_status=use_snap_notes_to_grid) );
 
 
 extra_label1 = GLLabel(6,0,  "Use alternate:"+str(prefs.use_alternate_keys)  );
@@ -564,8 +717,8 @@ sparksWindow.appendChild( sparks_slider_delta );
 sparksWindow.appendChild( sparks_slider_height );
 sparksWindow.appendChild( sparks_switch );
 #
-sparksWindow.appendChild( GLButton(413   ,24 ,32,22,1, [96,96,128], "y+" ,update_sparks_y_pos) );
-sparksWindow.appendChild( GLButton(413+33,24 ,32,22,1, [96,96,128], "y-" ,update_sparks_y_pos) );
+sparksWindow.appendChild( GLButton(413   ,24 ,32,22,1, [96,96,128], "y+" ,update_sparks_y_pos, hint="move sparks higher") );
+sparksWindow.appendChild( GLButton(413+33,24 ,32,22,1, [96,96,128], "y-" ,update_sparks_y_pos, hint="move sparks lower") );
 sparksWindow.appendChild( GLLabel( 6,50,  "alt + up / down - move sparks label up or down " ));
 
 selected_color_delta = GLSlider(6,100, 200,18, 0,130,50,update_percolor_delta, label="percolor sensitivity");
@@ -760,15 +913,20 @@ def drawframe():
 
  glDisable(GL_BLEND);
  glDisable(GL_TEXTURE_2D);
- 
+
  for i in range(len(glwindows)): 
    glwindows[i].draw();
+
+ # drawing hints over all windows
+ for i in range(len(glwindows)): 
+   glwindows[i].drawhint();
 
  prefs.keyp_delta = int(settingsWindow_slider1.value);
  prefs.minimal_duration = settingsWindow_slider2.value *0.01;
  prefs.tempo = int(settingsWindow_slider3.value);
 
- settingsWindow_label1.text = "base octave: " + str(prefs.octave) + "\nnotes overlap: " + str(prefs.notes_overlap) + "\nignore minimal duration: " + str(prefs.ignore_minimal_duration);
+ settingsWindow_label1.text = "base octave: " + str(prefs.octave)
+ # + "\nnotes overlap: " + str(prefs.notes_overlap) + "\nignore minimal duration: " + str(prefs.ignore_minimal_duration);
  #settingsWindow_label2.text = "Sensitivity:"+str(keyp_delta)+"\n\nMinimal note duration (sec):"+format(minimal_duration,'.2f' ) +   "\n\nOutput tempo for midi:" + str(tempo);
  for i in range(len(prefs.keyp_colors)):
      colorBtns[i].color = prefs.keyp_colors[i];
@@ -1064,9 +1222,9 @@ def main():
   global width,height;
   global screen;
   global lastkeygrabid;
+  global running;
   #global old_spark_color, cur_spark_color;
 
-  running=1;
   keygrab=0;
   keygrabid=-1;
   keygrabaddx=0;
@@ -1114,9 +1272,11 @@ def main():
       if event.key == pygame.K_q:
        running = 0;
       if event.key == pygame.K_o:
-       prefs.notes_overlap = not prefs.notes_overlap;
+       #prefs.notes_overlap = not prefs.notes_overlap;
+       switch_notes_overlap(None);
       if event.key == pygame.K_i:
-       prefs.ignore_minimal_duration = not prefs.ignore_minimal_duration;
+       #prefs.ignore_minimal_duration = not prefs.ignore_minimal_duration;
+       switch_ignore_notes_with_minimal_duration(None);
    
       if event.key == pygame.K_s:
        if mods & pygame.KMOD_SHIFT:
@@ -1138,19 +1298,13 @@ def main():
         quit();
 
       if event.key == pygame.K_F2:
-        settings.savesettings(settingsfile)
+        btndown_save_settings(None);
 
       if event.key == pygame.K_F3:
-        old_resize = prefs.resize;
-        loadsettings( settingsfile )
-        update_alternate_label()
-        if (prefs.resize != old_resize):
-          resize_window();
-       
+        btndown_load_settings(None)
 
       if event.key == pygame.K_r:
-        prefs.resize = not prefs.resize;
-        resize_window();
+        switch_resize_windows(None);
 
       if event.key == pygame.K_RIGHTBRACKET:
         raise_octave()
@@ -1180,10 +1334,7 @@ def main():
          updatekeys( );
 
       if event.key == pygame.K_TAB:
-       print('switch hidden for all windows');
-       for i in glwindows:
-         #print("i.hidden =%s" % (str(i.fullhidden)) );
-         i.fullhidden = not i.fullhidden;
+       showOrhideallwindows(None);
 
       if event.key == pygame.K_LEFT:
        if mods & pygame.KMOD_SHIFT:
@@ -1200,14 +1351,9 @@ def main():
        updatekeys( );
 
       if event.key == pygame.K_HOME:
-       frame=0;
-       glBindTexture(GL_TEXTURE_2D, Gl.bgImgGL);
-       loadImage(frame);
-
+        scroll_to_start(None)
       if event.key == pygame.K_END:
-       frame=length-100;
-       glBindTexture(GL_TEXTURE_2D, Gl.bgImgGL);
-       loadImage(frame);
+       scroll_to_end(None)
 
       if event.key == pygame.K_0:
         if mods & pygame.KMOD_CTRL and Gl.keyp_colormap_id != -1:
@@ -1217,28 +1363,15 @@ def main():
 
       if event.key == pygame.K_PAGEUP:
        if mods & pygame.KMOD_SHIFT:
-        frame+=1;
+          scroll_forward_by_frame(None);
        else:
-        frame+=100;
-       if (frame > length *0.99):
-        frame=math.trunc(length *0.99);
-       #for i in range( len(cur_spark_color)):
-       #  old_spark_color[i] = cur_spark_color[i];
-         
-       glBindTexture(GL_TEXTURE_2D, Gl.bgImgGL);
-       loadImage(frame);
+          scroll_fast_forward(None);
 
       if event.key == pygame.K_PAGEDOWN:
        if mods & pygame.KMOD_SHIFT:
-        frame-=1;
+        scroll_prev_by_frame(None);
        else:
-        frame-=100;
-       if (frame < 1):
-        frame=1;
-       #for i in range( len(cur_spark_color)):
-       #  old_spark_color[i] = cur_spark_color[i];
-       glBindTexture(GL_TEXTURE_2D, Gl.bgImgGL);
-       loadImage(frame);
+        scroll_fast_prev(None);
 
       if event.key == pygame.K_p:
         size=5;
@@ -1249,8 +1382,13 @@ def main():
            pass
      #
      elif event.type == pygame.MOUSEBUTTONUP:
-      for wnd in glwindows:
-        wnd.update_mouse_up(mousex,mousey,event.button)
+      for i in range( len(glwindows)-1, -1 , -1):
+        #print("process mouse up on windiws id: ", i);
+        if glwindows[i].update_mouse_up(mousex,mousey,event.button) == 1:
+          mouseOnWindows=True;
+          resort=True;
+          break;
+        
       #
       if ( event.button == 1 ):
         keygrab = 0;
@@ -1259,10 +1397,15 @@ def main():
         keygrab = 0;
      #
      elif event.type == pygame.MOUSEBUTTONDOWN:
-      for wnd in glwindows:
-        if wnd.update_mouse_down(mousex,mousey,event.button) == 1:
+      resort=False;
+      for i in range( len(glwindows)-1, -1 , -1):
+        #print("process mouse down on windiws id: ", i);
+        if glwindows[i].update_mouse_down(mousex,mousey,event.button) == 1:
           mouseOnWindows=True;
-
+          resort=True;
+          break;
+      if resort:
+        glwindows.sort(key=lambda x: x.active, reverse=False);
 #      print event.button;
       if ( event.button == 4 ):
         prefs.whitekey_width+=0.05;

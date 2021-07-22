@@ -24,8 +24,8 @@ class prefs:
     use_alternate_keys = False
     rollcheck = False
 
-    keyp_colors_channel =      [ 0,0, 1,1, 2,2, 3,3, 4,4, 5,5, 6,6, 7,7, 8,8 ]; # MIDI channel per color
-    keyp_colors_channel_prog = [ 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0 ]; # MIDI program ID per channel
+    keyp_colors_channel =      [ 0,0, 1,1, 2,2, 3,3, 4,4, 5,5, 6,6, 7,7, 8,8, 9,9, 10,10, 11,11 ]; # MIDI channel per color
+    keyp_colors_channel_prog = [ 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0,  0, 0,  0, 0 ]; # MIDI program ID per channel
 
     xoffset_whitekeys = 60
     yoffset_whitekeys = 673
@@ -49,10 +49,13 @@ class prefs:
     [0  ,  0,  0], [  0,  0,  0],
     [0  ,  0,  0], [  0,  0,  0],
     [0  ,  0,  0], [  0,  0,  0],
+    [0  ,  0,  0], [  0,  0,  0],
+    [0  ,  0,  0], [  0,  0,  0],
+    [0  ,  0,  0], [  0,  0,  0],
     [0  ,  0,  0], [  0,  0,  0]
     # .....
     ];
-    keyp_colors_sparks_sensitivity = [50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50]
+    keyp_colors_sparks_sensitivity = [50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50]
 
     keys_pos=[]
     #
