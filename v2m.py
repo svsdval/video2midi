@@ -11,12 +11,13 @@ import os;
 filepath='';
 if ( len(sys.argv) < 2 ):
   if sys.platform.startswith('win'):
-    import win32ui;
-    dlg = win32ui.CreateFileDialog(1);
-    dlg.DoModal();
-    print('get file name');
-    filepath = dlg.GetPathName();
-    print("file exists [" + filepath +"]");
+    from tkinter import Tk
+    from tkinter import filedialog as fd 
+    root=Tk()
+    root.withdraw()
+    filepath= fd.askopenfilename(filetypes=(("Video Files", ".mpg .mkv .avi .webm .mp4"),   ("All Files", "*.*")))
+    root.destroy()    
+    print("get file [" + filepath +"]");
   else:
     print("halt, no args");
     sys.exit( 0 ) ;
@@ -574,13 +575,13 @@ def btndown_load_settings(sender):
 
 # 
 wh = ( (len(prefs.keyp_colors) // 2)+2 ) * 24 - 24;
-colorWindow = GLWindow(24, 16, 274, wh, "color map")
-settingsWindow = GLWindow(24+275, 50, 550, 310, "Settings");
-helpWindow = GLWindow(24+270, 16, 750, 475, "help");
+colorWindow = GLWindow(24, 50, 274, wh, "color map")
+settingsWindow = GLWindow(24+275, 80, 550, 310, "Settings");
+helpWindow = GLWindow(24+270, 50, 750, 475, "help");
 
-extraWindow = GLWindow(24+270+750+6, 16, 510, 250, "extra/experimental");
+extraWindow = GLWindow(24+270+550+6, 80, 510, 250, "extra/experimental");
 
-sparksWindow = GLWindow(24+270+750+6, 250, 510, 185, "sparks & color settings");
+sparksWindow = GLWindow(24+270+550+6, 300, 510, 185, "sparks & color settings");
 
 
 glwindows = [];
