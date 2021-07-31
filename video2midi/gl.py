@@ -236,8 +236,11 @@ def GenFontTexture():
   #surface
   texture_buffer_surf = pygame.Surface((512, 512))
   texture_buffer_surf.fill(pygame.Color('black'))  
-  
-  font = pygame.font.Font(None, fontSize )
+  if sys.platform.startswith('win'):
+    font = pygame.font.SysFont( 'Arial' , fontSize-10 );
+  else:
+    font = pygame.font.Font( None , fontSize );
+
   x = 2;
   y = 0;
   for i in range(len(fontChars)):

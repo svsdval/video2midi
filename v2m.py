@@ -5,10 +5,32 @@
 # jabber : svsd_val@jabber.ru
 # mail to: svsdval@gmail.com
 
+import sys;
+import os;
+
+filepath='';
+if ( len(sys.argv) < 2 ):
+  if sys.platform.startswith('win'):
+    import win32ui;
+    dlg = win32ui.CreateFileDialog(1);
+    dlg.DoModal();
+    print('get file name');
+    filepath = dlg.GetPathName();
+    print("file exists [" + filepath +"]");
+  else:
+    print("halt, no args");
+    sys.exit( 0 ) ;
+else:
+  filepath = sys.argv[1];
+
+if not os.path.exists( filepath ):
+  print("file not exists [" + filepath +"]");
+  sys.exit( 0 ) ;
+
+
 import math;
 import cv2;
 from midiutil.MidiFile import MIDIFile;
-import os;
 import ntpath;
 
 import pygame;
@@ -20,6 +42,19 @@ import time;
 
 from os.path import expanduser
 
+
+
+print("open file [" + filepath + "]");
+vidcap = cv2.VideoCapture( filepath );
+
+outputmid= ntpath.basename( filepath ) + "_output.mid";
+fileid=0;
+while os.path.exists( outputmid ):
+ outputmid = ntpath.basename( filepath ) + "_"+str(fileid)+ "_output.mid";
+ fileid+=1;
+ if ( fileid > 99 ): break;
+#
+settingsfile= filepath + ".ini";
 
 import video2midi.settings as settings
 from video2midi.prefs import prefs
@@ -35,26 +70,6 @@ keygrab=0;
 keygrabid=-1;
 lastkeygrabid=-1;
 
-if ( len(sys.argv) < 2 ):
-  print("halt, no args");
-  sys.exit( 0 ) ;
-
-filepath = sys.argv[1];
-if not os.path.exists( filepath ):
-  print("file not exists [" + filepath +"]");
-  sys.exit( 0 ) ;
-
-print("open file " + filepath);
-vidcap = cv2.VideoCapture( filepath );
-
-outputmid= ntpath.basename( filepath ) + "_output.mid";
-fileid=0;
-while os.path.exists( outputmid ):
- outputmid = ntpath.basename( filepath ) + "_"+str(fileid)+ "_output.mid";
- fileid+=1;
- if ( fileid > 99 ): break;
-#
-settingsfile= filepath + ".ini";
 #
 frame= 0;
 printed_for_frame=0;
@@ -1238,7 +1253,7 @@ def main():
   lastkeygrabid=-1;
 
   pygame.init();
-  pyfont = pygame.font.SysFont('Sans', 20)
+  #pyfont = pygame.font.SysFont('Sans', 20)
   screen = pygame.display.set_mode( (width,height) , DOUBLEBUF|OPENGL);
   pygame.display.set_caption(filepath)
 
