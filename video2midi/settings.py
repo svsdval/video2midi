@@ -28,6 +28,7 @@ def savesettings(settingsfile):
  config.set(section, 'use_sparks', str( int(prefs.use_sparks) ));
  # extra
  config.set(section, 'rollcheck', str( int(prefs.rollcheck) ));
+ config.set(section, 'rollcheck_priority', str( int(prefs.rollcheck_priority) ));
  config.set(section, 'use_alternate_keys', str( int(prefs.use_alternate_keys) ));
  
  skeyp_colors_channel = "";
@@ -205,6 +206,8 @@ def loadsettings( cfgfile ):
      prefs.keyp_colors_alternate_sensitivity.append( int(cur) );
   if config.has_option(section, 'rollcheck'):
    prefs.rollcheck = config.getboolean(section, 'rollcheck')
+  if config.has_option(section, 'rollcheck_priority'):
+   prefs.rollcheck_priority = config.getboolean(section, 'rollcheck_priority')
 
   if config.has_option(section, 'use_percolor_sensitivity'):
    prefs.use_percolor_delta = config.getboolean(section, 'use_percolor_sensitivity')

@@ -187,6 +187,7 @@ notes_db=[];
 notes_de=[];
 notes_channel=[];
 notes_tmp=[];
+notes_pressed_color=[];
 
 colorWindow_colorBtns_channel_labels=[];
 colorWindow_colorBtns_channel_btns=[];
@@ -241,7 +242,8 @@ def loadsettings(cfgfile):
     sparks_switch.switch_status = prefs.use_sparks;
     sparks_slider_delta.value = 0;
     sparks_slider_delta.id =-1;
-    extraWindow_rollcheck_button.switch_status = prefs.rollcheck;
+    settingsWindow_rollcheck_button.switch_status = prefs.rollcheck;
+    settingsWindow_rollcheck_priority_button.switch_status = prefs.rollcheck_priority;
     use_percolor_delta.switch_status = prefs.use_percolor_delta;
     notes_overlap_btn.switch_status = prefs.notes_overlap;
     ignore_notes_with_minimal_duration_btn.switch_status = prefs.ignore_minimal_duration;
@@ -256,6 +258,7 @@ for i in range(127):
   notes_de.append(0);
   notes_channel.append(0);
   notes_tmp.append(0);
+  notes_pressed_color.append([0,0,0]);
   #
   prefs.keyp_colors_alternate.append([0,0,0]);
   prefs.keyp_colors_alternate_sensitivity.append(0);
@@ -416,6 +419,8 @@ def change_use_sparks(sender):
 def change_rollcheck(sender):
    prefs.rollcheck = sender.switch_status;
 
+def change_rollcheck_priority(sender):
+   prefs.rollcheck_priority = sender.switch_status;
 
 def updatecolor(sender):
    if (lastkeygrabid != -1):
@@ -679,6 +684,11 @@ settingsWindow_slider5 = GLSlider(1,215, 240,18, 0,1000,prefs.blackkey_relative_
 settingsWindow_slider5.round=0;
 settingsWindow.appendChild(settingsWindow_slider5);
 
+settingsWindow_rollcheck_button = GLButton(260,160 ,140,22,1, [128,128,128], "roll check" ,change_rollcheck,switch=1, switch_status=prefs.rollcheck );
+settingsWindow.appendChild(settingsWindow_rollcheck_button);
+
+settingsWindow_rollcheck_priority_button = GLButton(260,180 ,222,22,1, [128,128,128], "rollcheck white keys priority" ,change_rollcheck_priority,switch=1, switch_status=prefs.rollcheck_priority );
+settingsWindow.appendChild(settingsWindow_rollcheck_priority_button);
 
 
 
@@ -726,8 +736,6 @@ extraWindow_slider2 = GLSlider(5,155, 240,18, 0,2000, line_height, update_line_h
 extraWindow_slider2.round=0;
 extraWindow.appendChild(extraWindow_slider2);
 
-extraWindow_rollcheck_button = GLButton(250,155 ,100,22,1, [128,128,128], "roll check" ,change_rollcheck,switch=1, switch_status=prefs.rollcheck );
-extraWindow.appendChild(extraWindow_rollcheck_button);
 
 
 
@@ -771,7 +779,12 @@ def getkeyp_pixel_pos( x, y ):
     if ( pixy > video_height-1 ): pixy= video_height-1;
   return [pixx,pixy];
 
-
+def iswhitekey( key_num ):
+  j = key_num % 12;
+  if (j == 1) or ( j ==3 ) or ( j == 6 ) or ( j == 8) or ( j == 10 ):
+    return 1;
+  else:
+    return 0;
  
 def drawframe():
  global pyfont;
@@ -782,6 +795,7 @@ def drawframe():
  global frame;
  global printed_for_frame;
  global notes_tmp;
+ global notes_pressed_color;
  #global old_spark_color;
  #global cur_spark_color;
  print_for_frame_debug = False
@@ -870,6 +884,7 @@ def drawframe():
          if ( abs( int(key[0]) - keyc[0] ) < delta ) and ( abs( int(key[1]) - keyc[1] ) < delta ) and ( abs( int(key[2]) - keyc[2] ) < delta ):
           keypressed=1;
           pressedcolor = keyc;
+          notes_pressed_color[i] = keyc;
           if prefs.use_sparks:
             #unpressed_by_spark_delta = ( abs( int(sparkkey[0]) - keyc[0] ) < spark_delta ) and ( abs( int(sparkkey[1]) - keyc[1] ) < spark_delta ) and ( abs( int(sparkkey[2]) - keyc[2] ) < spark_delta );
             has_spark_delta = ((sparkkey[0] - keyc[0] ) > spark_delta ) or ((sparkkey[1] - keyc[1] ) > spark_delta ) or ((sparkkey[2] - keyc[2] ) > spark_delta );
@@ -881,18 +896,28 @@ def drawframe():
              keypressed=2;
   notes_tmp[i] = keypressed;
 
-  j = i % 12;
-  if prefs.rollcheck and (i >1):
-
-      if (j == 1) or ( j ==3 ) or ( j == 6 ) or ( j == 8) or ( j == 10 ):
-        if notes_tmp[i-1] >0:
-            keypressed =0;
+ if prefs.rollcheck:
+  for i in range(1, len( prefs.keys_pos) -1 ):
+      if prefs.rollcheck_priority == 0:
+        if not iswhitekey(i):
+        # Priority on Black keys;
+          if notes_tmp[i+1] >0: notes_tmp[i] = 0;
+          if notes_tmp[i-1] >0: notes_tmp[i] = 0;
+      else:
+        if iswhitekey(i):
+        # Priority on White keys;
+          if notes_tmp[i+1] >0: notes_tmp[i] = 0;
+          if notes_tmp[i-1] >0: notes_tmp[i] = 0;
             
+ for i in range( len( prefs.keys_pos) ):
+  keypressed = notes_tmp[i];
+  pressedcolor = notes_pressed_color[i];
+
   glPushMatrix();
   glTranslatef(prefs.keys_pos[i][0],prefs.keys_pos[i][1],0);
 
   glColor4f(1,1,1,0.5);
-  if (j == 1) or ( j ==3 ) or ( j == 6 ) or ( j == 8) or ( j == 10 ):
+  if iswhitekey(i):
     glColor4f(0.57,0.57,0.57,0.55);
   DrawQuad(-0.5,-line_height,0.5, line_height );
   if ( keypressed != 0 ):
@@ -1112,17 +1137,28 @@ def processmidi():
           else:
             notes_channel[ note ] = 1
             
-
-      if prefs.rollcheck and ( note >1):
-          notes_tmp[ note ] = keypressed;
-          j = note % 12;
-          if (j == 1) or ( j ==3 ) or ( j == 6 ) or ( j == 8) or ( j == 10 ):
-            if notes_tmp[ note -1] >0:
-                keypressed =0;
-            
       # always update to last press state
       notes[ note ] = keypressed;
-
+    notes_tmp[ note] = keypressed;
+ # save fall notes and then we can check for a near keys with priority...
+  if prefs.rollcheck:
+    for i in range(1, len( prefs.keys_pos)-1 ):
+      if notes[ i ] != 0:
+        if prefs.rollcheck_priority == 0:
+          if not iswhitekey(i):
+          # Priority on Black keys;
+            if notes[i+1] >0: notes[i] = 0;
+            if notes[i-1] >0: notes[i] = 0;
+        else:
+          if iswhitekey(i):
+          # Priority on White keys;
+            if notes[i+1] >0: notes[i] = 0;
+            if notes[i-1] >0: notes[i] = 0;
+  #
+  for i in range( len( prefs.keys_pos) ):
+    note=i;
+    keypressed =  notes[ note ];
+    if notes_tmp[ i ] != 0:
       if ( notes[note] != 0 ) and ( notes_channel[ note ] != note_channel ) and ( prefs.notes_overlap == 1 ):
         # case if one key over other
         time = notes_db[note] / fps;

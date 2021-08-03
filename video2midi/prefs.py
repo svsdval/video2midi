@@ -23,6 +23,7 @@ class prefs:
 
     use_alternate_keys = False
     rollcheck = False
+    rollcheck_priority = 0;
 
     keyp_colors_channel =      [ 0,0, 1,1, 2,2, 3,3, 4,4, 5,5, 6,6, 7,7, 8,8, 9,9, 10,10, 11,11 ]; # MIDI channel per color
     keyp_colors_channel_prog = [ 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0,  0, 0,  0, 0 ]; # MIDI program ID per channel
