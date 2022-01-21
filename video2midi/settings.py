@@ -22,6 +22,7 @@ def savesettings(settingsfile):
  config.set(section, 'sensitivity', str(int(prefs.keyp_delta)));
  config.set(section, 'octave', str(int(prefs.octave)));
  config.set(section, 'output_midi_tempo', str(int(prefs.tempo)));
+ config.set(section, 'frame_start', str(int(prefs.startframe)));
  config.set(section, 'blackkey_relative_position', str(float(prefs.blackkey_relative_position)));
  #Sparks 
  config.set(section, 'keyp_spark_y_pos', str(int(prefs.keyp_spark_y_pos)));
@@ -132,6 +133,8 @@ def loadsettings( cfgfile ):
    print(midi_file_format);
   if config.has_option(section, 'output_midi_tempo'):
    prefs.tempo = config.getint(section, 'output_midi_tempo')
+  if config.has_option(section, 'frame_start'):
+   prefs.startframe = config.getint(section, 'frame_start')
   if config.has_option(section, 'blackkey_relative_position'):
    prefs.blackkey_relative_position = config.getfloat(section, 'blackkey_relative_position')
      

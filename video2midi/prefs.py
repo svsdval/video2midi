@@ -15,6 +15,7 @@ class prefs:
 
     octave = 3
     tempo = 120
+    startframe = 1
 
     blackkey_relative_position = 0.4
 
