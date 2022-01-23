@@ -119,7 +119,6 @@ fps    = float(vidcap.get(CAP_PROP_FPS));
 width = video_width;
 height = video_height;
 
-startframe = 1;
 endframe = length;
 
 def resize_window():
@@ -236,6 +235,8 @@ def loadsettings(cfgfile):
   update_size
 
   if 'glwindows' in globals():
+    glBindTexture(GL_TEXTURE_2D, Gl.bgImgGL);
+    loadImage(prefs.startframe)
     settingsWindow_slider1.setvalue(prefs.keyp_delta);
     settingsWindow_slider2.setvalue(prefs.minimal_duration * 100);
     settingsWindow_slider3.setvalue(prefs.tempo);
@@ -489,12 +490,11 @@ def start_recreate_midi(sender):
   pass;
 
 def set_start_frame_to_current_frame(sender):
-  global startframe;
   if sender.index == 0:
-    startframe = int(round(vidcap.get(1)));
+    prefs.startframe = int(round(vidcap.get(1)));
   else:
-    startframe = 0;
-  print("set start frame = "+ str(startframe));
+    prefs.startframe = 0;
+  print("set start frame = "+ str(prefs.startframe));
   pass;
 
 def sef_end_frame_to_current_frame(sender):
@@ -997,7 +997,6 @@ def processmidi():
  global notes_channel;
 
  global success,image;
- global startframe;
  global separate_note_id;
 
  print("video " + str(width) + "x" + str(height));
@@ -1016,8 +1015,8 @@ def processmidi():
  for i in range(len(prefs.keyp_colors_channel)):
   mf.addProgramChange(track, prefs.keyp_colors_channel[i], 0, prefs.keyp_colors_channel_prog[i]);
   
- print("starting from frame:" + str(startframe));
- getFrame( startframe );
+ print("starting from frame:" + str(prefs.startframe));
+ getFrame( prefs.startframe );
  notecnt=0
  while success:
 
@@ -1272,7 +1271,6 @@ def main():
   global keyp_colormap_colors_pos;
   global keyp_colormap_pos;
   global success,image;
-  global startframe;
   global endframe;
   global basenote;
   global glwindows;
@@ -1339,10 +1337,10 @@ def main():
    
       if event.key == pygame.K_s:
        if mods & pygame.KMOD_SHIFT:
-        startframe = 0;
+        prefs.startframe = 0;
        else:
-        startframe = int(round(vidcap.get(1)));
-       print("set start frame = "+ str(startframe));
+        prefs.startframe = int(round(vidcap.get(1)));
+       print("set start frame = "+ str(prefs.startframe));
 
       if event.key == pygame.K_e:
        if mods & pygame.KMOD_SHIFT:
@@ -1546,7 +1544,7 @@ def main():
 
 main();
 helpWindow.hidden=1;
-frame=startframe;
+frame=prefs.startframe;
 t1 = datetime.datetime.now();
 processmidi();
 t2 = datetime.datetime.now();
