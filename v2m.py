@@ -267,6 +267,10 @@ for i in range(127):
 
 
 
+def v_rotate(v, ang):
+  radAng = ang * math.pi/180;
+  return [ (v[1] * math.cos(radAng)) - (v[0] * math.sin(radAng)), (v[1] * math.sin(radAng)) + (v[0] * math.cos(radAng)) ];
+
 def updatekeys( append=0 ):
  xx=0;
  for i in range(9):
@@ -289,7 +293,10 @@ def updatekeys( append=0 ):
      prefs.keys_pos[i*12+j][0] = int(round( xx  + prefs.whitekey_width * (1.0 - prefs.blackkey_relative_position) ));
      
    xx += prefs.whitekey_width;
-  pass;
+ for i in range(len(prefs.keys_pos)):
+   prefs.keys_pos[i] = v_rotate( prefs.keys_pos[i] , prefs.keys_angle );
+   prefs.keys_pos[i][0] = - prefs.keys_pos[i][0];
+ pass;
 
 
 
@@ -582,7 +589,7 @@ def btndown_load_settings(sender):
 wh = ( (len(prefs.keyp_colors) // 2)+2 ) * 24 - 24;
 colorWindow = GLWindow(24, 50, 274, wh, "color map")
 settingsWindow = GLWindow(24+275, 80, 550, 310, "Settings");
-helpWindow = GLWindow(24+270, 50, 750, 475, "help");
+helpWindow = GLWindow(24+270, 50, 750, 490, "help");
 
 extraWindow = GLWindow(24+270+550+6, 80, 510, 250, "extra/experimental");
 
@@ -617,6 +624,7 @@ CTRL + Left mouse button - update selected color in the color map
 CTRL + 0 - disable selected color in the color map
 Right mouse button - dragging all keys, if the key is selected, the transfer is carried out relative to it.
 Arrows - keys adjustment (mods : shift) ( Atl+Arrows UP/Down - sparks position adjustment )
++(PLUS) / - (MINUS) - rotate keys by 5*
 PageUp/PageDown - scrolling video (mods : shift)
 Home/End - go to the beginning or end of the video
 [ / ] - change base octave
@@ -1368,6 +1376,14 @@ def main():
 
       if event.key == pygame.K_LEFTBRACKET:
         lower_octave()
+
+      if event.key == pygame.K_PLUS or event.key == pygame.K_KP_PLUS or event.key == pygame.K_EQUALS:
+        prefs.keys_angle -= 5;
+        updatekeys();
+      if event.key == pygame.K_MINUS or event.key == pygame.K_KP_MINUS:
+        prefs.keys_angle += 5;
+        updatekeys();
+
 
       if event.key == pygame.K_UP:
        if mods & pygame.KMOD_ALT:
