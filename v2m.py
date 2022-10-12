@@ -49,11 +49,6 @@ print("open file [" + filepath + "]");
 vidcap = cv2.VideoCapture( filepath );
 
 outputmid= ntpath.basename( filepath ) + "_output.mid";
-fileid=0;
-while os.path.exists( outputmid ):
- outputmid = ntpath.basename( filepath ) + "_"+str(fileid)+ "_output.mid";
- fileid+=1;
- if ( fileid > 99 ): break;
 #
 settingsfile= filepath + ".ini";
 
@@ -120,6 +115,8 @@ width = video_width;
 height = video_height;
 
 endframe = length;
+showoutputpath = 0;
+
 
 def resize_window():
   global screen,  width, height
@@ -585,6 +582,19 @@ def btndown_load_settings(sender):
   if (prefs.resize != old_resize):
     resize_window();
 
+def change_autoclose(sender):
+   prefs.autoclose = sender.switch_status;
+
+def rotate_cw(sender):
+  prefs.keys_angle -= 5;
+  updatekeys();
+def rotate_ccw(sender):
+  prefs.keys_angle += 5;
+  updatekeys();
+
+
+
+
 # 
 wh = ( (len(prefs.keyp_colors) // 2)+2 ) * 24 - 24;
 colorWindow = GLWindow(24, 50, 274, wh, "color map")
@@ -642,6 +652,10 @@ ignore_notes_with_minimal_duration_btn = GLButton(260,100 ,272,20,0, [128,128,12
 settingsWindow.appendChild( notes_overlap_btn );
 settingsWindow.appendChild( ignore_notes_with_minimal_duration_btn );
 settingsWindow.appendChild( GLButton(260,120 ,140,20,0, [128,128,128],  "resize window"                     , switch_resize_windows           , hint = "r - hot key") );
+
+exit_switch = GLButton(260+141, 120 ,140,20,1, [128,128,128], "auto-close" ,change_autoclose,switch=1, switch_status= prefs.autoclose, hint = "exit after the completion of the midi reconstruction" );
+settingsWindow.appendChild( exit_switch );
+
 settingsWindow.appendChild( GLButton(260    , 140 ,140,20,0, [128,128,128], "save settings"                  , btndown_save_settings  , hint = "F2 - hot key, save current settings" ) );
 settingsWindow.appendChild( GLButton(260+141, 140 ,140,20,0, [128,128,128], "load settings"                  , btndown_load_settings  , hint = "F3 - hot key, load saved settings" ) );
 
@@ -657,7 +671,12 @@ navbtns_info = [
              {'name' : ">>", 'hint' : 'PageDown - hot key,fast scroll forward',
               'func' : scroll_fast_forward }, 
              {'name' : "  >]", 'hint' : 'End - hot key, go to last frame',
-              'func' : scroll_to_end }
+              'func' : scroll_to_end },
+             {'name' : "R+", 'hint' : 'rotate the keys clockwise, hot key +',
+              'func' : rotate_cw },
+             {'name' : "R-", 'hint' : 'rotate the keys counterclockwise, hot key -',
+              'func' : rotate_ccw }
+
            ];
 #btnfuncs = [ None,  None, None, None,  None, None ];
 for i in range(len( navbtns_info )):
@@ -991,6 +1010,10 @@ def drawframe():
  DrawQuad(-1,-1,1,1);
  glPopMatrix();
 
+ if showoutputpath > time.time():
+  drawHint( width *0.5, height -20, "saved to: %s" % outputmid, True);
+
+
 
 def processmidi():
  global frame;
@@ -1006,6 +1029,7 @@ def processmidi():
 
  global success,image;
  global separate_note_id;
+ global outputmid;
 
  print("video " + str(width) + "x" + str(height));
 
@@ -1262,6 +1286,12 @@ def processmidi():
 
  print("saved notes: " + str(notecnt));
  
+ #search free id for name ...
+ fileid=0;
+ while os.path.exists( outputmid ):
+  outputmid = ntpath.basename( filepath ) + "_"+str(fileid)+ "_output.mid";
+  fileid+=1;
+  if ( fileid > 999 ): break;
 # write midi to disk;
  with open(outputmid, 'wb') as outf:
   mf.writeFile(outf);
@@ -1271,6 +1301,20 @@ def doinit():
   doinitGl()
   loadImage()
   GenFontTexture()
+
+def reconstruct():
+  global frame;
+  global showoutputpath;
+  helpWindow.hidden=1;
+  frame=prefs.startframe;
+  t1 = datetime.datetime.now();
+  processmidi();
+  t2 = datetime.datetime.now();
+  print("""  processing time: {} / {} = {};  """.format( t1,t2, t2-t1 ));
+  frame=prefs.startframe;
+  getFrame(frame);
+  showoutputpath = time.time() + 5;
+
 
 
 def main():
@@ -1335,7 +1379,10 @@ def main():
 
 #      print event.key;
       if event.key == pygame.K_q:
-       running = 0;
+       if prefs.autoclose == 1:
+         running = 0;
+       else:
+         reconstruct();
       if event.key == pygame.K_o:
        #prefs.notes_overlap = not prefs.notes_overlap;
        switch_notes_overlap(None);
@@ -1559,12 +1606,7 @@ def main():
     
 
 main();
-helpWindow.hidden=1;
-frame=prefs.startframe;
-t1 = datetime.datetime.now();
-processmidi();
-t2 = datetime.datetime.now();
-print("""  processing time: {} / {} = {};  """.format( t1,t2, t2-t1 ));
-
+if prefs.autoclose == 1:
+  reconstruct();
 print ("done...");
 

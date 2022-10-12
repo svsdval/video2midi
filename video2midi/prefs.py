@@ -65,3 +65,4 @@ class prefs:
     use_percolor_delta=False;
     #
     percolor_delta=[90]*20;
+    autoclose = 1;

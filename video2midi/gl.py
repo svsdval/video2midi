@@ -298,21 +298,25 @@ def drawText(position, color, textString, size=24):
   pass
 
 
-def drawHint(x,y, hint):
+def drawHint(x:float,y:float, hint:str, middle:bool=False):
   sz = getTextSize( hint );
+  xa = -sz[0] *0.25 ;
+  if middle:
+    xa = sz[0] *0.5;
+    
   glDisable(GL_TEXTURE_2D);
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-  glTranslatef( 0,0, 1);
+  glPushMatrix()
+  glTranslatef( 0 -xa ,0, 1);
   glColor4f(0.1, 0.1, 0.1, 0.8);
-  DrawQuad( x -sz[0] *0.25 , y -20 ,x  + sz[0] *0.80 ,y - 20 + sz[1]);
+  DrawQuad( x , y -20 , x  + sz[0] +7,y - 20 + sz[1]);
   glColor4f(0.1, 0.1, 0.1, 1);
-  DrawRect( x -sz[0] *0.25 , y -20 ,x  + sz[0] *0.80 ,y - 20 + sz[1]);
+  DrawRect( x , y -20 , x  + sz[0] +7,y - 20 + sz[1]);
   #self.mousepos
   
-  glPushMatrix()
-  glTranslatef( x -sz[0] *0.25 +5, y -18 ,0);
-  glColor4f(1.0, 1.0, 1, 0.0);
+  glTranslatef( x +5 , y -18 ,0);
+  glColor4f(1.0, 1.0, 1, 1.0);
   drawText( (0,Label_v_spacer,1),(255,255,255), hint);
   glPopMatrix()  
 
@@ -585,7 +589,9 @@ class GLButton:
   def drawhint(self):
     if self.hint:
       if self.mouse_over_time > 1.5:
-        drawHint(self.x + self.w *0.25,self.y,self.hint);
+#        drawHint(self.x + self.w *0.25,self.y,self.hint);
+        drawHint(self.mousepos[0],self.mousepos[1]-10,self.hint,True);
+        
 
 
 
