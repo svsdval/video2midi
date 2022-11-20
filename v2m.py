@@ -1178,13 +1178,13 @@ def processmidi():
         if prefs.rollcheck_priority == 0:
           if not iswhitekey(i):
           # Priority on Black keys;
-            if notes[i+1] >0: notes[i] = 0;
-            if notes[i-1] >0: notes[i] = 0;
+            if notes[i+1] >0 and notes_tmp[i] >0: notes[i] = 0; 
+            if notes[i-1] >0 and notes_tmp[i] >0: notes[i] = 0; 
         else:
           if iswhitekey(i):
           # Priority on White keys;
-            if notes[i+1] >0: notes[i] = 0;
-            if notes[i-1] >0: notes[i] = 0;
+            if notes[i+1] >0 and notes_tmp[i] >0: notes[i] = 0; 
+            if notes[i-1] >0 and notes_tmp[i] >0: notes[i] = 0; 
   #
   for i in range( len( prefs.keys_pos) ):
     note=i;
