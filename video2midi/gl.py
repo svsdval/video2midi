@@ -192,7 +192,7 @@ def RenderText(x,y, text):
     #    break;
     
     fid = int(ord( i )) - 32;
-    if fid < 0 and fid > len(fonts): continue;
+    if fid < 0 and fid >= len(fonts): continue;
     j = fonts[ fid ];
     if i == ' ' :
       glTranslatef(j.fw,0,0);

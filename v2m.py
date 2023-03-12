@@ -55,6 +55,7 @@ settingsfile= filepath + ".ini";
 import video2midi.settings as settings
 from video2midi.prefs import prefs
 from video2midi.gl import *
+from video2midi.midi import *
 import datetime;
 
 width=640;
@@ -410,6 +411,9 @@ def update_blackkey_relative_position(sender,value):
   prefs.blackkey_relative_position = value * 0.001;
   updatekeys();
 
+def update_sync_notes_start_pos_time_delta(sender,value):
+  prefs.sync_notes_start_pos_time_delta = value *0.001;
+
 def change_use_alternate_keys(sender):
    global extra_label1;
    prefs.use_alternate_keys = not prefs.use_alternate_keys
@@ -518,6 +522,11 @@ def switch_notes_overlap(sender):
     prefs.notes_overlap = notes_overlap_btn.switch_status;
   pass;
 
+def switch_sync_notes_start_pos(sender):
+  prefs.sync_notes_start_pos = sender.switch_status;
+  pass;
+
+
 def switch_ignore_notes_with_minimal_duration(sender):
   if sender == None:
     prefs.ignore_minimal_duration = not prefs.ignore_minimal_duration;
@@ -598,7 +607,7 @@ def rotate_ccw(sender):
 # 
 wh = ( (len(prefs.keyp_colors) // 2)+2 ) * 24 - 24;
 colorWindow = GLWindow(24, 50, 274, wh, "color map")
-settingsWindow = GLWindow(24+275, 80, 550, 310, "Settings");
+settingsWindow = GLWindow(24+275, 80, 550, 340, "Settings");
 helpWindow = GLWindow(24+270, 50, 750, 490, "help");
 
 extraWindow = GLWindow(24+270+550+6, 80, 510, 250, "extra/experimental");
@@ -651,6 +660,8 @@ notes_overlap_btn = GLButton(260, 80 ,140,20,0, [128,128,128],  "notes overlap" 
 ignore_notes_with_minimal_duration_btn = GLButton(260,100 ,272,20,0, [128,128,128],  "ignore notes with minimal duration", switch_ignore_notes_with_minimal_duration, hint = "i - hot key", switch=1, switch_status=0);
 settingsWindow.appendChild( notes_overlap_btn );
 settingsWindow.appendChild( ignore_notes_with_minimal_duration_btn );
+
+settingsWindow.appendChild( GLButton(260+141, 80 ,140,20,0, [128,128,128],  "sync notes"                    , switch_sync_notes_start_pos     , hint = "sync notes start pos", switch=1, switch_status=0) );
 settingsWindow.appendChild( GLButton(260,120 ,140,20,0, [128,128,128],  "resize window"                     , switch_resize_windows           , hint = "r - hot key") );
 
 exit_switch = GLButton(260+141, 120 ,140,20,1, [128,128,128], "auto-close" ,change_autoclose,switch=1, switch_status= prefs.autoclose, hint = "exit after the completion of the midi reconstruction" );
@@ -710,6 +721,11 @@ settingsWindow.appendChild(settingsWindow_slider4);
 settingsWindow_slider5 = GLSlider(1,215, 240,18, 0,1000,prefs.blackkey_relative_position * 1000, update_blackkey_relative_position, label="black key relative pos");
 settingsWindow_slider5.round=0;
 settingsWindow.appendChild(settingsWindow_slider5);
+
+settingsWindow_slider6 = GLSlider(1,255, 240,18, 0,1000,prefs.sync_notes_start_pos_time_delta, update_sync_notes_start_pos_time_delta, label="sync notes time delta (ms)");
+settingsWindow_slider6.round=0;
+settingsWindow.appendChild(settingsWindow_slider6);
+
 
 settingsWindow_rollcheck_button = GLButton(260,160 ,140,22,1, [128,128,128], "roll check" ,change_rollcheck,switch=1, switch_status=prefs.rollcheck );
 settingsWindow.appendChild(settingsWindow_rollcheck_button);
@@ -1011,7 +1027,7 @@ def drawframe():
  glPopMatrix();
 
  if showoutputpath > time.time():
-  drawHint( width *0.5, height -20, "saved to: %s" % outputmid, True);
+  drawHint( width *0.5, height -20, prefs.save_to_disk_message, True);
 
 
 
@@ -1033,19 +1049,16 @@ def processmidi():
 
  print("video " + str(width) + "x" + str(height));
 
- # create  MIDI object;
- mf = MIDIFile(1,file_format=int(midi_file_format)) # only 1 track;
+ mf = midinotes( int(midi_file_format));
  track = 0 # the only track;
  time = 0 # start at the beginning;
  
-
- mf.addTrackName(track, time, prefs.miditrackname);
- mf.addTempo(track, time, prefs.tempo );
+ mf.setup_track(time, prefs.miditrackname, prefs.tempo);
  first_note_time=0;
  
  channel_has_note = [ 0 for x in range(16) ];
  for i in range(len(prefs.keyp_colors_channel)):
-  mf.addProgramChange(track, prefs.keyp_colors_channel[i], 0, prefs.keyp_colors_channel_prog[i]);
+  mf.addProgramChange(track, prefs.keyp_colors_channel[i], prefs.keyp_colors_channel_prog[i]);
   
  print("starting from frame:" + str(prefs.startframe));
  getFrame( prefs.startframe );
@@ -1292,9 +1305,10 @@ def processmidi():
   outputmid = ntpath.basename( filepath ) + "_"+str(fileid)+ "_output.mid";
   fileid+=1;
   if ( fileid > 999 ): break;
-# write midi to disk;
- with open(outputmid, 'wb') as outf:
-  mf.writeFile(outf);
+ if prefs.sync_notes_start_pos:
+   mf.sync_start_pos(prefs.sync_notes_start_pos_time_delta, False);
+ status, prefs.save_to_disk_message = mf.save_to_disk(outputmid);
+ return status;
 
 
 def doinit():
