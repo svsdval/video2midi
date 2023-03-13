@@ -1,4 +1,5 @@
 from midiutil.MidiFile import MIDIFile
+import os;
 
 class midinotes:
   def __init__(self, midi_file_format):
@@ -7,8 +8,9 @@ class midinotes:
     self.miditrackname = "Sample Track"
     self.tempo = 0
     self.track = 0
+    self.midi_file_format = int(midi_file_format);
     print("initialize midifile...");
-    self.mf = MIDIFile(1,file_format=int(midi_file_format))
+    self.mf = MIDIFile(1,file_format=self.midi_file_format)
     print("initialize midifile done.");
 
   def addNote(self,track, channel, note, start_time, duration, volume ):
@@ -45,3 +47,29 @@ class midinotes:
       print("Error on save to disk:%s"% E)
       return -1, "Can't save to disk:%s" % filename
     return 1, "Saved to disk:%s" % filename
+
+  def save_to_disk_per_channel(self, filename):
+    if len(self.notes) < 1:
+      return 0, "No notes to save.."
+    fname,ext =os.path.splitext(filename);
+    for channel in range(16):
+      cnt=0;
+      #
+      print( " processing channel %s"  % channel )
+      self.mf = MIDIFile(1,file_format=self.midi_file_format)
+      self.mf.addTrackName(self.track, 0, "%s channel=%s " % (self.miditrackname, channel+1 ))
+      self.mf.addTempo(self.track, 0, self.tempo )
+      self.mf.addProgramChange(0, channel, 0, 0)
+      for i in self.notes:
+        if i['channel'] == channel:
+          self.mf.addNote( i['track'], i['channel'], i['note'], i['start_time'], i['duration'], i['volume'] )
+          cnt+=1
+      #
+      if cnt >0:
+        try:
+          with open("%s_channel_%s%s" % (fname,channel+1,ext), 'wb') as outf:
+            self.mf.writeFile(outf)
+        except Exception as E:
+          print("Error on save to disk:%s"% E)
+      #  
+    return 1, "Saved to disk: %s_channel_[1..16]%s " % (fname,ext)

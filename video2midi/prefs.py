@@ -69,3 +69,4 @@ class prefs:
     sync_notes_start_pos = False;
     sync_notes_start_pos_time_delta = 1000;
     save_to_disk_message = "";
+    save_to_disk_per_channel = False;

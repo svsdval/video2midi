@@ -526,6 +526,9 @@ def switch_sync_notes_start_pos(sender):
   prefs.sync_notes_start_pos = sender.switch_status;
   pass;
 
+def change_save_to_disk_per_channel(sender):
+  prefs.save_to_disk_per_channel = sender.switch_status;
+  pass;
 
 def switch_ignore_notes_with_minimal_duration(sender):
   if sender == None:
@@ -729,6 +732,8 @@ settingsWindow.appendChild(settingsWindow_slider6);
 
 settingsWindow_rollcheck_button = GLButton(260,160 ,140,22,1, [128,128,128], "roll check" ,change_rollcheck,switch=1, switch_status=prefs.rollcheck );
 settingsWindow.appendChild(settingsWindow_rollcheck_button);
+
+settingsWindow.appendChild( GLButton(260+141, 160 ,140,20,1, [128,128,128], "per channel save" ,change_save_to_disk_per_channel,switch=1, switch_status= prefs.save_to_disk_per_channel, hint = "split the output midi per channels" ) );
 
 settingsWindow_rollcheck_priority_button = GLButton(260,180 ,222,22,1, [128,128,128], "rollcheck white keys priority" ,change_rollcheck_priority,switch=1, switch_status=prefs.rollcheck_priority );
 settingsWindow.appendChild(settingsWindow_rollcheck_priority_button);
@@ -1307,7 +1312,11 @@ def processmidi():
   if ( fileid > 999 ): break;
  if prefs.sync_notes_start_pos:
    mf.sync_start_pos(prefs.sync_notes_start_pos_time_delta, False);
- status, prefs.save_to_disk_message = mf.save_to_disk(outputmid);
+ 
+ if prefs.save_to_disk_per_channel:
+   status, prefs.save_to_disk_message = mf.save_to_disk_per_channel(outputmid);
+ else:
+   status, prefs.save_to_disk_message = mf.save_to_disk(outputmid);
  return status;
 
 
