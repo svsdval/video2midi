@@ -251,7 +251,7 @@ def loadsettings(cfgfile):
 
 update_size
 
-for i in range(127):
+for i in range(144):
   notes.append(0);
   notes_db.append(0);
   notes_de.append(0);
@@ -271,7 +271,7 @@ def v_rotate(v, ang):
 
 def updatekeys( append=0 ):
  xx=0;
- for i in range(9):
+ for i in range(12):
   for j in range(12):
    if (append == 1) or (i*12+j > len(prefs.keys_pos)-1):
     prefs.keys_pos.append( [0,0] );
@@ -907,8 +907,8 @@ def drawframe():
     sparkkey = [0,0,0];
 
   note=i;
-  if ( note > 120 ):
-    print("skip note > 120");
+  if ( note > 144 ):
+    print("skip note > 144");
     continue;
   keypressed=0;
 
@@ -1051,9 +1051,11 @@ def processmidi():
  global success,image;
  global separate_note_id;
  global outputmid;
+ global basenote;
 
  print("video " + str(width) + "x" + str(height));
 
+ basenote = prefs.octave * 12
  mf = midinotes( int(midi_file_format));
  track = 0 # the only track;
  time = 0 # start at the beginning;
@@ -1120,8 +1122,8 @@ def processmidi():
       sparkkey = [0,0,0];
 
     note=i;
-    if ( note > 120 ): 
-      print("skip note > 120");
+    if ( note > 144 ): 
+      print("skip note > 144");
       continue;
 
 

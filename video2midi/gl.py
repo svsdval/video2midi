@@ -150,7 +150,7 @@ def getTextSize(text):
   sizes = [0,0];
   for i in text:
     fid = int(ord( i )) - 32;
-    if fid < 0 and fid > len(fonts): continue;
+    if fid < 0 or fid >= len(fonts): continue;
     j = fonts[ fid ];
     if j.fh > sizes[1]:
       sizes[1] = j.fh;
@@ -192,7 +192,7 @@ def RenderText(x,y, text):
     #    break;
     
     fid = int(ord( i )) - 32;
-    if fid < 0 and fid >= len(fonts): continue;
+    if fid < 0 or fid >= len(fonts): continue;
     j = fonts[ fid ];
     if i == ' ' :
       glTranslatef(j.fw,0,0);
