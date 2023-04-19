@@ -90,29 +90,30 @@ def loadsettings( cfgfile ):
 
   if not os.path.exists( cfgfile ):
     print("cannot find settings file: "+cfgfile)
+    return
+
+  print("reading settings from file: "+cfgfile)
+  config = ConfigParser()
+  config.read( cfgfile )
+  section = 'options'
+  if config.has_option(section, 'midi_track_name'):
+    prefs.miditrackname = config.get(section, 'midi_track_name')
+  if config.has_option(section, 'debug'):
+    prefs.debug = config.getboolean(section, 'debug')
+  if config.has_option(section, 'notes_overlap'):
+    prefs.notes_overlap = config.getboolean(section, 'notes_overlap')
+  if config.has_option(section, 'resize'):
+    prefs.resize = config.getboolean(section, 'resize')
+  if config.has_option(section, 'resize_width'):
+    prefs.resize_width = config.getint(section, 'resize_width')
+  if config.has_option(section, 'resize_height'):
+    prefs.resize_height = config.getint(section, 'resize_height')
+  if config.has_option(section, 'minimal_note_duration'):
+    prefs.minimal_duration = config.getfloat(section, 'minimal_note_duration')
+  if config.has_option(section, 'color_channel_accordance'):
+    clr_chnls = config.get(section, 'color_channel_accordance')
   else:
-    print("reading settings from file: "+cfgfile)
-    config = ConfigParser()
-    config.read( cfgfile )
-    section = 'options'
-    if config.has_option(section, 'midi_track_name'):
-      prefs.miditrackname = config.get(section, 'midi_track_name')
-    if config.has_option(section, 'debug'):
-      prefs.debug = config.getboolean(section, 'debug')
-    if config.has_option(section, 'notes_overlap'):
-      prefs.notes_overlap = config.getboolean(section, 'notes_overlap')
-    if config.has_option(section, 'resize'):
-      prefs.resize = config.getboolean(section, 'resize')
-    if config.has_option(section, 'resize_width'):
-      prefs.resize_width = config.getint(section, 'resize_width')
-    if config.has_option(section, 'resize_height'):
-      prefs.resize_height = config.getint(section, 'resize_height')
-    if config.has_option(section, 'minimal_note_duration'):
-      prefs.minimal_duration = config.getfloat(section, 'minimal_note_duration')
-    if config.has_option(section, 'color_channel_accordance'):
-      clr_chnls = config.get(section, 'color_channel_accordance')
-    else:
-      clr_chnls = ""
+    clr_chnls = ""
 
   if config.has_option(section, 'channel_prog_accordance'):
     clr_chnls_prog = config.get(section, 'channel_prog_accordance')
