@@ -24,14 +24,14 @@ def savesettings(settingsfile):
  config.set(section, 'output_midi_tempo', str(int(prefs.tempo)));
  config.set(section, 'frame_start', str(int(prefs.startframe)));
  config.set(section, 'blackkey_relative_position', str(float(prefs.blackkey_relative_position)));
- #Sparks 
+ #Sparks
  config.set(section, 'keyp_spark_y_pos', str(int(prefs.keyp_spark_y_pos)));
  config.set(section, 'use_sparks', str( int(prefs.use_sparks) ));
  # extra
  config.set(section, 'rollcheck', str( int(prefs.rollcheck) ));
  config.set(section, 'rollcheck_priority', str( int(prefs.rollcheck_priority) ));
  config.set(section, 'use_alternate_keys', str( int(prefs.use_alternate_keys) ));
- 
+
  skeyp_colors_channel = "";
  for i in prefs.keyp_colors_channel:
   skeyp_colors_channel+= str(i)+",";
@@ -66,17 +66,17 @@ def savesettings(settingsfile):
  for i in prefs.keys_pos:
   skeys_pos+= str(int(i[0]))+":"+str(int(i[1]))+",";
  config.set(section, 'keys_pos', skeys_pos[0:-1]);
-  
+
  s="";
  for i in prefs.keyp_colors_alternate:
   s+= str(int(i[0]))+":"+str(int(i[1]))+":"+str(int(i[2]))+",";
  config.set(section, 'keyp_colors_alternate', s[0:-1]);
- # 
+ #
  s="";
  for i in prefs.keyp_colors_alternate_sensitivity:
   s+= str(int(i))+",";
  config.set(section, 'keyp_colors_alternate_sensitivity', s[0:-1]);
-  
+
  with open(settingsfile, 'w') as configfile:
     config.write(configfile);
  pass;
@@ -87,10 +87,10 @@ def savesettings(settingsfile):
 
 def loadsettings( cfgfile ):
  print("starting read settings...")
- 
+
  if not os.path.exists( cfgfile ):
   print("cannot find settings file: "+cfgfile);
- else:  
+ else:
   print("reading settings from file: "+cfgfile);
   config = ConfigParser()
   config.read( cfgfile )
@@ -113,12 +113,12 @@ def loadsettings( cfgfile ):
    clr_chnls = config.get(section, 'color_channel_accordance')
   else:
    clr_chnls = "";
-   
+
   if config.has_option(section, 'channel_prog_accordance'):
    clr_chnls_prog = config.get(section, 'channel_prog_accordance')
   else:
    clr_chnls_prog = "";
-   
+
   if config.has_option(section, 'ignore_notes_with_minimal_duration'):
    prefs.ignore_minimal_duration = config.getboolean(section, 'ignore_notes_with_minimal_duration')
   if config.has_option(section, 'notes_overlap'):
@@ -137,11 +137,11 @@ def loadsettings( cfgfile ):
    prefs.startframe = config.getint(section, 'frame_start')
   if config.has_option(section, 'blackkey_relative_position'):
    prefs.blackkey_relative_position = config.getfloat(section, 'blackkey_relative_position')
-     
-  # Sparks 
+
+  # Sparks
   if config.has_option(section, 'keyp_spark_y_pos'):
    prefs.keyp_spark_y_pos = config.getint(section, 'keyp_spark_y_pos')
-    
+
   if config.has_option(section, 'use_sparks'):
    prefs.use_sparks = config.getint(section, 'use_sparks')
   if config.has_option(section, 'use_alternate_keys'):
@@ -159,11 +159,11 @@ def loadsettings( cfgfile ):
   if config.has_option(section, 'xoffset_whitekeys'):
    prefs.xoffset_whitekeys = config.getint(section, 'xoffset_whitekeys')
   if config.has_option(section, 'yoffset_whitekeys'):
-   prefs.yoffset_whitekeys = config.getint(section, 'yoffset_whitekeys')  
+   prefs.yoffset_whitekeys = config.getint(section, 'yoffset_whitekeys')
   if config.has_option(section, 'yoffset_blackkeys'):
    prefs.yoffset_blackkeys = config.getint(section, 'yoffset_blackkeys')
   if config.has_option(section, 'whitekey_width'):
-   prefs.whitekey_width = config.getint(section, 'whitekey_width')   
+   prefs.whitekey_width = config.getint(section, 'whitekey_width')
 
   if config.has_option(section, 'keyp_colors'):
    skeyp_colors = config.get(section, 'keyp_colors')
@@ -179,8 +179,8 @@ def loadsettings( cfgfile ):
     prefs.keyp_colors_sparks_sensitivity[:] = [];
     for cur in skeyp_colors_sparks_sensitivity.split(","):
      prefs.keyp_colors_sparks_sensitivity.append( float(cur) );
-    
-    
+
+
   if config.has_option(section, 'keys_pos'):
    skeys_pos = config.get(section, 'keys_pos')
    if ( skeys_pos.strip() != "" ):
@@ -196,7 +196,7 @@ def loadsettings( cfgfile ):
    if ( s.strip() != "" ):
     prefs.keyp_colors_alternate[:] = [];
     for cur in s.split(","):
-     
+
      c = cur.split(":")
      print(" Append :" + str(cur));
      prefs.keyp_colors_alternate.append( [ int(c[0]), int(c[1]),int(c[2]) ]);
@@ -223,15 +223,15 @@ def loadsettings( cfgfile ):
 
 
 def compatibleColors(colorBtns):
-  while ( len(prefs.keyp_colors) < len(colorBtns) ):  
+  while ( len(prefs.keyp_colors) < len(colorBtns) ):
     print("Warning, append array keyp_colors", len(prefs.keyp_colors));
     prefs.keyp_colors.append( [0,0,0] );
 
-  while ( len(prefs.keyp_colors_channel) < len(prefs.keyp_colors) ):  
+  while ( len(prefs.keyp_colors_channel) < len(prefs.keyp_colors) ):
     print("Warning, append array keyp_colors_channel", len(prefs.keyp_colors_channel));
-    prefs.keyp_colors_channel.append( len(prefs.keyp_colors_channel) // 2 ); 
+    prefs.keyp_colors_channel.append( len(prefs.keyp_colors_channel) // 2 );
 
-  while ( len(prefs.keyp_colors_channel_prog) < len(prefs.keyp_colors) ):  
+  while ( len(prefs.keyp_colors_channel_prog) < len(prefs.keyp_colors) ):
     print("Warning, append array keyp_colors_channel_prog", len(prefs.keyp_colors_channel_prog));
     prefs.keyp_colors_channel_prog.append(0);
   #

@@ -177,27 +177,27 @@ def RenderText(x,y, text):
   glBlendFunc(GL_ONE, GL_SRC_ALPHA);
   #
   glBindTexture(GL_TEXTURE_2D,Gl.fontTexture);
-  
+
   glPushMatrix();
-  
+
 
   glTranslatef(x,y-21,0);
   glColor4f(1.0, 1.0, 1.0, 1.0);
   for i in text:
-    fid=0;  
+    fid=0;
     #Is this really so terribly slow to find the need charset O_o ?!
     #
     #for fid in range(len(fonts)):
-    #  if i == fonts[fid].char 
+    #  if i == fonts[fid].char
     #    break;
-    
+
     fid = int(ord( i )) - 32;
     if fid < 0 or fid >= len(fonts): continue;
     j = fonts[ fid ];
     if i == ' ' :
       glTranslatef(j.fw,0,0);
       continue;
-      
+
     if j.gllistid == -1 :
 
      #PyOpenGL terribly slow =( so... trying to optimize ...
@@ -213,7 +213,7 @@ def RenderText(x,y, text):
      glTexCoord2f(j.tx, j.ty2)
      glVertex2f(0, j.fh)
      glEnd()
-     
+
      glEndList()
      fonts[fid].gllistid = gllist;
      glCallList(gllist);
@@ -221,7 +221,7 @@ def RenderText(x,y, text):
     else:
 #     print "calling list : ", j.vbo;
      glCallList(j.gllistid);
-         
+
     glTranslatef(j.fw,0,0);
   glPopMatrix();
   glPopAttrib();
@@ -232,10 +232,10 @@ def GenFontTexture():
   global fontChars;
   global fonts;
   global fontSize;
-  
+
   #surface
   texture_buffer_surf = pygame.Surface((512, 512))
-  texture_buffer_surf.fill(pygame.Color('black'))  
+  texture_buffer_surf.fill(pygame.Color('black'))
   if sys.platform.startswith('win'):
     font = pygame.font.SysFont( 'Arial' , fontSize-10 );
   else:
@@ -251,28 +251,28 @@ def GenFontTexture():
     ix, iy = textSurface.get_width(), textSurface.get_height()
     texture_buffer_surf.blit(textSurface, (x, y*fontSize, 0, 0))
     fnt =  GLFont(x / 512.0 ,1 - (y*fontSize -2) / 512.0, (x+ix) / 512.0,1 - (y*fontSize+fontSize-2) / 512.0, ix,fontSize, fontChars[i]);
-   
+
     fonts.append( fnt );
-    
+
     x += ix + 2;
     if (i % 32 == 31 ) and (i != 0): x=2;
-    
+
   tex_data = pygame.image.tostring(texture_buffer_surf, "RGBA", 1)
-  
+
   # fix alpha ...
   l = list( tex_data );
   #
   for y in range(512):
    for x in range(512):
        l[ (y*512+x) * 4 +3 ] =  l[ (y*512+x) * 4 +0 ]
-       
+
   if sys.version_info >= (3, 0):
     tex_data4 = l;
   else:
     tex_data4 = ''.join(l);
   #
   glBindTexture(GL_TEXTURE_2D, Gl.fontTexture)
-    
+
   glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
   glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
   glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
@@ -303,7 +303,7 @@ def drawHint(x:float,y:float, hint:str, middle:bool=False):
   xa = -sz[0] *0.25 ;
   if middle:
     xa = sz[0] *0.5;
-    
+
   glDisable(GL_TEXTURE_2D);
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -314,11 +314,11 @@ def drawHint(x:float,y:float, hint:str, middle:bool=False):
   glColor4f(0.1, 0.1, 0.1, 1);
   DrawRect( x , y -20 , x  + sz[0] +7,y - 20 + sz[1]);
   #self.mousepos
-  
+
   glTranslatef( x +5 , y -18 ,0);
   glColor4f(1.0, 1.0, 1, 1.0);
   drawText( (0,Label_v_spacer,1),(255,255,255), hint);
-  glPopMatrix()  
+  glPopMatrix()
 
 
 class GLSlider:
@@ -378,8 +378,8 @@ class GLSlider:
       glPushMatrix();
       drawText( (0,0,1),(255,255,255), labeltext );
       glPopMatrix()
-        
-    
+
+
     glPopMatrix();
     pass;
 #
@@ -392,7 +392,7 @@ class GLSlider:
     if (self.vmax - self.vmin) != 0:
       self.percent = ((self.value + abs(self.vmin)) / float(self.vmax - self.vmin)) * 100;
     pass;
-    
+
   def update_mouse_move(self, mpx, mpy ):
     self.mousepos[0] = mpx - self.x;
     self.mousepos[1] = mpy;
@@ -410,31 +410,31 @@ class GLSlider:
 #      print "update_mouse_move on slider x:" + str( mpx ) + " y:" + str(mpy) + " self.x:" + str( self.x ) + " self.y:" + str(self.y) + " value : " +str(self.value) ;
 #      if ( self.value > self.vmax ) : self.value = self.vmax;
 #      if ( self.value < self.vmin ) : self.value = self.vmin;
-      
+
     pass;
-    
+
   def update_mouse_down(self,mpx,mpy,btn):
     self.mouseclickpos[0] = mpx - self.x;
     self.mouseclickpos[1] = mpy - self.y;
     #print "update_mouse_down on slider x:" + str( mpx ) + " y:" + str(mpy) + " self.x:" + str( self.x ) + " self.y:" + str(self.y);
-    
+
     if (( mpx > self.x ) and ( mpx < self.x+self.w ) and
         ( mpy > self.y ) and ( mpy < self.y+self.h )):
         #print "update_mouse_down grab on slider x:" + str( mpx ) + " y:" + str(mpy) + " self.x:" + str( self.x ) + " self.y:" + str(self.y);
         self.mousegrab = 1;
     self.update();
     pass;
-    
+
   def update_mouse_up(self,mpx,mpy,btn):
     self.mousegrab = 0;
     self.mouseclickpos[0] = mpx - self.x;
     self.mouseclickpos[1] = mpy - self.y;
     #print "update_mouse_up on slider x:" + str( mpx ) + " y:" + str(mpy) + " self.x:" + str( self.x ) + " self.y:" + str(self.y);
     pass;
-    
+
   def update_key_down(self, keycode ):
     pass;
-    
+
   def update_key_up(self, keycode ):
     pass;
 
@@ -462,15 +462,15 @@ class GLColorButton:
 
     glTranslatef( self.x, self.y ,0);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
- 
+
     if ( Gl.keyp_colormap_id == self.index ):
       glColor4f(1.0, 1.0, 1.0, 1);
-      
+
       DrawQuad(0,0,self.w,self.h);
     else:
       glColor4f(0.5, 0.5, 0.5, 1);
       DrawQuad(2,2,self.w-2,self.h-2);
- 
+
     glColor4f(0.0, 0.0, 0.0, 1);
     DrawQuad(3,3,self.w-3,self.h-3);
 
@@ -489,7 +489,7 @@ class GLColorButton:
     if (self.mousegrab == 1):
       pass;
     pass;
-    
+
   def update_mouse_down(self,mpx,mpy,btn):
     self.mouseclickpos[0] = mpx - self.x;
     self.mouseclickpos[1] = mpy - self.y;
@@ -497,7 +497,7 @@ class GLColorButton:
 #        ( mpy > self.y ) and ( mpy < self.y+self.h )):
 #        keyp_colormap_id = self.index
 #        print "color button: update_mouse_down set index = " + str(keyp_colormap_id);
-    
+
     if (( mpx > self.x ) and ( mpx < self.x+self.w ) and
         ( mpy > self.y ) and ( mpy < self.y+self.h )):
         self.mousegrab = 1;
@@ -559,7 +559,7 @@ class GLButton:
 
     glTranslatef( self.x, self.y ,0);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
- 
+
     glColor4f(0.5, 0.5, 0.5, 1);
     DrawQuad(1,1,self.w-1,self.h-1);
 
@@ -574,7 +574,7 @@ class GLButton:
     glColor4ub(self.color[0],self.color[1],self.color[2], 255);
     DrawQuad(3,3,self.w-3,self.h-3);
     glPopMatrix();
-    
+
     glPushMatrix()
     glTranslatef( self.x+5, self.y ,0);
     glColor4f(1.0, 1.0, 1, 0.0);
@@ -585,13 +585,13 @@ class GLButton:
       glTranslatef(0,Label_v_spacer,0);
     glPopMatrix()
     pass;
-  
+
   def drawhint(self):
     if self.hint:
       if self.mouse_over_time > 1.5:
 #        drawHint(self.x + self.w *0.25,self.y,self.hint);
         drawHint(self.mousepos[0],self.mousepos[1]-10,self.hint,True);
-        
+
 
 
 
@@ -621,7 +621,7 @@ class GLButton:
 
     #self.mouse_over_time = self.mouse_over_time + ;
     pass;
-    
+
   def update_mouse_down(self,mpx,mpy,btn):
     self.mouseclickpos[0] = mpx - self.x;
     self.mouseclickpos[1] = mpy - self.y;
@@ -629,7 +629,7 @@ class GLButton:
 #        ( mpy > self.y ) and ( mpy < self.y+self.h )):
 #        keyp_colormap_id = self.index
 #        print "color button: update_mouse_down set index = " + str(keyp_colormap_id);
-    
+
     if (( mpx > self.x ) and ( mpx < self.x+self.w ) and
         ( mpy > self.y ) and ( mpy < self.y+self.h )):
         self.mousegrab = 1;
@@ -742,7 +742,7 @@ class GLWindow:
     if ( not self.hidden ):
       glColor4f(0.1, 0.1, 0.1, 0.9);
       DrawRect(self.x,self.y+self.titleheight,self.x+self.w,self.y+self.h-self.titleheight);
-      
+
     glBlendFunc(GL_ONE, GL_SRC_ALPHA);
     drawText( (self.x+4,self.y+self.titleheight-2,1),(255,255,255), self.title );
     glTranslatef(self.clientrect[0],self.clientrect[1],0);
@@ -776,19 +776,19 @@ class GLWindow:
     self.clientrect[1] = self.y + self.borderwidth + self.titleheight;
     self.clientrect[2] = self.x + self.w - self.borderwidth;
     self.clientrect[3] = self.y + self.h - self.titleheight - self.borderwidth;
-    
+
     if ( not self.hidden ):
       for i in self.child:
         if hasattr(i, 'update'):
           i.update();
-    
+
     pass;
-    
+
   def getclientrect(self):
     self.update()
     return self.clientrect;
     pass;
-    
+
   def update_mouse_move(self, mpx, mpy ):
     if self.fullhidden:
       return;
@@ -799,14 +799,14 @@ class GLWindow:
     if (self.mousegrab == 1):
       self.x = mpx - self.mouseclickpos[0];
       self.y = mpy - self.mouseclickpos[1];
-    
+
     if ( not self.hidden ):
       for i in self.child:
         if hasattr(i, 'update_mouse_move'):
           i.update_mouse_move(mpx - self.x,mpy - self.y- self.titleheight);
-      
+
     pass;
-    
+
   def update_mouse_down(self,mpx,mpy,btn):
     if self.fullhidden:
       return 0;
@@ -826,13 +826,13 @@ class GLWindow:
           self.active = 1;
       else:
           self.active = 0;
-        
+
 
     if (( mpx > self.x+self.titlewidth-16 ) and ( mpx < self.x + self.w ) and
         ( mpy > self.y ) and ( mpy < self.y + self.titleheight )):
         self.hidden = not self.hidden;
         return self.hidden;
-        
+
 
     if (( mpx > self.x ) and ( mpx < self.x + self.titlewidth ) and
         ( mpy > self.y ) and ( mpy < self.y + self.titleheight )):
@@ -846,8 +846,8 @@ class GLWindow:
     self.update();
     return self.active;
     pass;
-    
-    
+
+
   def update_mouse_up(self,mpx,mpy,btn):
     self.mousegrab = 0;
     self.mouseclickpos[0] = mpx - self.x;
@@ -872,15 +872,15 @@ class GLWindow:
           i.update_mouse_up(mpx - self.clientrect[0],mpy - self.clientrect[1] ,btn);
     return self.active;
     pass;
-    
+
   def update_key_down(self, keycode ):
     if self.fullhidden:
       return 0;
 
     mpx = self.mousepos[0];
     mpy = self.mousepos[1];
-    
-            
+
+
     if not self.hidden:
       if (( mpx > self.x ) and ( mpx < self.x + self.w ) and
           ( mpy > self.y ) and ( mpy < self.y + self.h - self.titleheight)):
@@ -896,7 +896,7 @@ class GLWindow:
       for i in self.child:
         if hasattr(i, 'update_key_down'):
           i.update_key_down(keycode);
-      
+
     pass;
   def update_key_up(self, keycode ):
     if self.fullhidden:

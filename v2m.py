@@ -12,11 +12,11 @@ filepath='';
 if ( len(sys.argv) < 2 ):
   if sys.platform.startswith('win'):
     from tkinter import Tk
-    from tkinter import filedialog as fd 
+    from tkinter import filedialog as fd
     root=Tk()
     root.withdraw()
     filepath= fd.askopenfilename(filetypes=(("Video Files", ".mpg .mkv .avi .webm .mp4"),   ("All Files", "*.*")))
-    root.destroy()    
+    root.destroy()
     print("get file [" + filepath +"]");
   else:
     print("halt, no args");
@@ -96,7 +96,7 @@ else:
  CAP_PROP_FRAME_WIDTH  = cv2.CAP_PROP_FRAME_WIDTH;
  CAP_PROP_FRAME_HEIGHT = cv2.CAP_PROP_FRAME_HEIGHT;
  CAP_PROP_FPS          = cv2.CAP_PROP_FPS;
- 
+
 COLOR_BGR2RGB         = cv2.COLOR_BGR2RGB;
 
 #
@@ -275,21 +275,21 @@ def updatekeys( append=0 ):
   for j in range(12):
    if (append == 1) or (i*12+j > len(prefs.keys_pos)-1):
     prefs.keys_pos.append( [0,0] );
-   
+
    prefs.keys_pos[i*12+j][0] = int(round( xx ));
    prefs.keys_pos[i*12+j][1] = 0;
    if (j == 1) or ( j ==3 ) or ( j == 6 ) or ( j == 8) or ( j == 10 ):
      prefs.keys_pos[i*12+j][1] = prefs.yoffset_blackkeys;
      xx += -prefs.whitekey_width;
 #     keys_pos[i*12+j][0] = int(round( xx  + whitekey_width *0.5 ));
-   # tune by wuzhuoqing  
+   # tune by wuzhuoqing
    if (j == 1) or ( j == 6 ):
      prefs.keys_pos[i*12+j][0] = int(round( xx  + prefs.whitekey_width * prefs.blackkey_relative_position ));
    if (j == 8 ):
      prefs.keys_pos[i*12+j][0] = int(round( xx  + prefs.whitekey_width * 0.5 ));
    if ( j ==3 ) or ( j == 10 ):
      prefs.keys_pos[i*12+j][0] = int(round( xx  + prefs.whitekey_width * (1.0 - prefs.blackkey_relative_position) ));
-     
+
    xx += prefs.whitekey_width;
  for i in range(len(prefs.keys_pos)):
    prefs.keys_pos[i] = v_rotate( prefs.keys_pos[i] , prefs.keys_angle );
@@ -368,7 +368,7 @@ def disable_color(sender):
    if sender.index < len(prefs.keyp_colors):
     prefs.keyp_colors[ sender.index ] = [0,0,0];
 #     prefs.keyp_colors_channel[i]= prefs.keyp_colors_channel[i] + 1;
-  
+
 
 def readkeycolor(i):
    pixx=int(prefs.xoffset_whitekeys + prefs.keys_pos[i][0]);
@@ -389,7 +389,7 @@ def readkeycolor(i):
    key=[ keybgr[2], keybgr[1],keybgr[0] ];
 
    prefs.keyp_colors_alternate[i] = key;
-    
+
 
 def readcolors(sender):
    for i in range( len(prefs.keys_pos) ):
@@ -399,14 +399,14 @@ def update_alternate_sensitivity(sender,value):
    global lastkeygrabid;
    if ( lastkeygrabid != -1 ):
      prefs.keyp_colors_alternate_sensitivity[ lastkeygrabid ] = value;
-     
+
 def update_sparks_delta(sender,value):
    if (sender.id == -1):
      return;
    if (sender.id < len(prefs.keyp_colors))  :
     prefs.keyp_colors_sparks_sensitivity[sender.id] = sender.value
     #print("keyp_colors_sparks_sensitivity["+str(sender.id)+"] = "+ str(sender.value) );
-     
+
 def update_blackkey_relative_position(sender,value):
   prefs.blackkey_relative_position = value * 0.001;
   updatekeys();
@@ -441,16 +441,16 @@ def update_sparks_y_pos (sender):
    else:
      prefs.keyp_spark_y_pos =  prefs.keyp_spark_y_pos +1;
    pass;
-   
+
 def update_line_height(sender,value):
   global line_height;
   line_height = value;
-   
+
 
 def snap_notes_to_the_grid(sender):
     global use_snap_notes_to_grid;
     use_snap_notes_to_grid = sender.switch_status;
- 
+
 def raise_octave(*args):
   global basenote
   prefs.octave += 1
@@ -609,7 +609,7 @@ def rotate_ccw(sender):
 
 
 
-# 
+#
 wh = ( (len(prefs.keyp_colors) // 2)+2 ) * 24 - 24;
 colorWindow = GLWindow(24, 50, 274, wh, "color map")
 settingsWindow = GLWindow(24+275, 80, 550, 340, "Settings");
@@ -677,15 +677,15 @@ settingsWindow.appendChild( GLButton(260+141, 140 ,140,20,0, [128,128,128], "loa
 
 navbtns_info = [
              {'name' : "[<", 'hint' : 'Home - hot key, go to first frame',
-              'func' : scroll_to_start }, 
+              'func' : scroll_to_start },
              {'name' : "<<", 'hint' : 'PageDown - hot key, fast scroll backward',
-              'func' : scroll_fast_prev }, 
+              'func' : scroll_fast_prev },
              {'name' : " <", 'hint' : 'Shift+PageDown - shortcut, scroll backward by frame',
-              'func' : scroll_prev_by_frame }, 
+              'func' : scroll_prev_by_frame },
              {'name' : " >", 'hint' : 'Shift+PageUp - shortcut, scroll forward by frame',
-              'func' : scroll_forward_by_frame }, 
+              'func' : scroll_forward_by_frame },
              {'name' : ">>", 'hint' : 'PageUp - hot key,fast scroll forward',
-              'func' : scroll_fast_forward }, 
+              'func' : scroll_fast_forward },
              {'name' : "  >]", 'hint' : 'End - hot key, go to last frame',
               'func' : scroll_to_end },
              {'name' : "R+", 'hint' : 'rotate the keys clockwise, hot key +',
@@ -753,7 +753,7 @@ for i in range( len( prefs.keyp_colors ) ):
  colorBtns.append( GLColorButton(offsetx+cx,offsety+cy ,20,20,i, prefs.keyp_colors[i], onPallete_click ) );
  colorWindow.appendChild(colorBtns[i]);
  colorWindow_label1 = GLLabel(offsetx+25+cx,offsety+cy , "Ch:" + str(prefs.keyp_colors_channel[i]+1) );
- 
+
  colorWindow_colorBtns_channel_labels.append( colorWindow_label1 );
  colorWindow.appendChild(colorWindow_label1);
  #
@@ -810,16 +810,16 @@ sparksWindow.appendChild( use_percolor_delta );
 
 #extra_slider2.showvalue=True;
 #extra.appendChild(extra_label2);
- 
 
-#loadsettings( settingsfile );    
+
+#loadsettings( settingsfile );
 #frame=801
 
 def getkeyp_pixel_pos( x, y ):
   pixx=int(prefs.xoffset_whitekeys + x);
   pixy=int(prefs.yoffset_whitekeys + y);
 
-  if ( pixx >= width ) or ( pixy >= height ) or ( pixx < 0 ) or ( pixy < 0 ): 
+  if ( pixx >= width ) or ( pixy >= height ) or ( pixx < 0 ) or ( pixy < 0 ):
     return [-1,-1];
 
   if ( prefs.resize == 1 ):
@@ -835,7 +835,7 @@ def iswhitekey( key_num ):
     return 1;
   else:
     return 0;
- 
+
 def drawframe():
  global pyfont;
  global helptext;
@@ -871,8 +871,8 @@ def drawframe():
  glBindTexture(GL_TEXTURE_2D, Gl.bgImgGL);
  glEnable(GL_TEXTURE_2D);
  DrawQuad(0,0,width,height);
- 
- 
+
+
  glEnable(GL_BLEND);
  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -886,7 +886,7 @@ def drawframe():
 
   if (pixpos[0] == -1) and (pixpos[1] == -1):
      continue;
-  
+
   keybgr=image[ pixpos[1], pixpos[0] ];
   key= [ keybgr[2], keybgr[1],keybgr[0] ];
 
@@ -900,7 +900,7 @@ def drawframe():
      sparkpixpos = getkeyp_pixel_pos(prefs.keys_pos[i][0],prefs.keyp_spark_y_pos - spark_y_add_pos );
      if not ((sparkpixpos[0] == -1) and (sparkpixpos[1] == -1)):
        keybgr   = image[ sparkpixpos[1], sparkpixpos[0] ];
-       sparkkey = [ sparkkey[0] + keybgr[2], 
+       sparkkey = [ sparkkey[0] + keybgr[2],
                     sparkkey[1] + keybgr[1],
                     sparkkey[2] + keybgr[0] ];
     sparkkey = [ sparkkey[0] / sh,  sparkkey[1] / sh,sparkkey[2] / sh];
@@ -916,11 +916,11 @@ def drawframe():
 
   pressedcolor=[0,0,0];
   if prefs.use_alternate_keys:
-    delta = prefs.keyp_delta + prefs.keyp_colors_alternate_sensitivity[i];  
+    delta = prefs.keyp_delta + prefs.keyp_colors_alternate_sensitivity[i];
     if ( abs( int(key[0]) - prefs.keyp_colors_alternate[i][0] ) > delta ) and ( abs( int(key[1]) - prefs.keyp_colors_alternate[i][1] ) > delta ) and ( abs( int(key[2]) - prefs.keyp_colors_alternate[i][2] ) > delta ):
       keypressed=1;
       pressedcolor=prefs.keyp_colors_alternate[i];
-  else: 
+  else:
       for key_id in range( len(prefs.keyp_colors) ):
        keyc = prefs.keyp_colors[key_id];
        spark_delta = prefs.keyp_colors_sparks_sensitivity[key_id];
@@ -939,7 +939,7 @@ def drawframe():
             #unpressed_by_spark_delta = ( abs( int(sparkkey[0]) - keyc[0] ) < spark_delta ) and ( abs( int(sparkkey[1]) - keyc[1] ) < spark_delta ) and ( abs( int(sparkkey[2]) - keyc[2] ) < spark_delta );
             has_spark_delta = ((sparkkey[0] - keyc[0] ) > spark_delta ) or ((sparkkey[1] - keyc[1] ) > spark_delta ) or ((sparkkey[2] - keyc[2] ) > spark_delta );
             #unpressed_by_spark_fade = ( cur_spark_color[i][0] <  old_spark_color[i][0]) and ( cur_spark_color[i][1] <  old_spark_color[i][1]) and ( cur_spark_color[i][2] <  old_spark_color[i][2]) ;
-            #unpressed_by_spark_fade_delta = ( abs( cur_spark_color[i][0] - old_spark_color[i][0]) > 20 ) 			
+            #unpressed_by_spark_fade_delta = ( abs( cur_spark_color[i][0] - old_spark_color[i][0]) > 20 )
             if print_for_frame_debug:
              print("note %d key_id %d spark_delta %d sparkkey vs keyc %d %d, %d %d, %d %d" % (note, key_id, spark_delta, sparkkey[0], keyc[0], sparkkey[1], keyc[1], sparkkey[2], keyc[2]))
             if ( not has_spark_delta ):
@@ -958,7 +958,7 @@ def drawframe():
         # Priority on White keys;
           if notes_tmp[i+1] >0: notes_tmp[i] = 0;
           if notes_tmp[i-1] >0: notes_tmp[i] = 0;
-            
+
  for i in range( len( prefs.keys_pos) ):
   keypressed = notes_tmp[i];
   pressedcolor = notes_pressed_color[i];
@@ -987,11 +987,11 @@ def drawframe():
   if ( lastkeygrabid == i ):
     glColor4f(0.0, 0.5, 1.0, 0.7);
     DrawQuad(-4,-4,4,4);
-  
+
   if ( separate_note_id == i ):
     glColor4f(0,1,0,1);
     DrawRect(-7,-12,7,12,2);
-    
+
   DrawQuad(-1,-1,1,1);
   glPopMatrix();
   glColor4f(0.0, 1.0, 1.0, 0.7);
@@ -1002,7 +1002,7 @@ def drawframe():
     glColor4f(0.5, 1, 1.0, 0.7);
     DrawQuad(-1,-1,1,1);
     DrawQuad(-0.5,-sparks_slider_height.value ,0.5,0);
-    
+
     glPopMatrix();
 
  glPopMatrix();
@@ -1010,11 +1010,11 @@ def drawframe():
  glDisable(GL_BLEND);
  glDisable(GL_TEXTURE_2D);
 
- for i in range(len(glwindows)): 
+ for i in range(len(glwindows)):
    glwindows[i].draw();
 
  # drawing hints over all windows
- for i in range(len(glwindows)): 
+ for i in range(len(glwindows)):
    glwindows[i].drawhint();
 
  prefs.keyp_delta = int(settingsWindow_slider1.value);
@@ -1061,14 +1061,14 @@ def processmidi():
  mf = midinotes( int(midi_file_format));
  track = 0 # the only track;
  time = 0 # start at the beginning;
- 
+
  mf.setup_track(time, prefs.miditrackname, prefs.tempo);
  first_note_time=0;
- 
+
  channel_has_note = [ 0 for x in range(16) ];
  for i in range(len(prefs.keyp_colors_channel)):
   mf.addProgramChange(track, prefs.keyp_colors_channel[i], prefs.keyp_colors_channel_prog[i]);
-  
+
  print("starting from frame:" + str(prefs.startframe));
  getFrame( prefs.startframe );
  notecnt=0
@@ -1116,7 +1116,7 @@ def processmidi():
        sparkpixpos = getkeyp_pixel_pos(prefs.keys_pos[i][0],prefs.keyp_spark_y_pos - spark_y_add_pos );
        if not ((sparkpixpos[0] == -1) and (sparkpixpos[1] == -1)):
          keybgr   = image[ sparkpixpos[1], sparkpixpos[0] ];
-         sparkkey = [ sparkkey[0] + keybgr[2], 
+         sparkkey = [ sparkkey[0] + keybgr[2],
                       sparkkey[1] + keybgr[1],
                       sparkkey[2] + keybgr[0] ];
      sparkkey = [ sparkkey[0] / sh,  sparkkey[1] / sh,sparkkey[2] / sh];
@@ -1124,7 +1124,7 @@ def processmidi():
       sparkkey = [0,0,0];
 
     note=i;
-    if ( note > 144 ): 
+    if ( note > 144 ):
       print("skip note > 144");
       continue;
 
@@ -1137,11 +1137,11 @@ def processmidi():
 
     deltaid = 0
     if prefs.use_alternate_keys:
-      delta = prefs.keyp_delta + prefs.keyp_colors_alternate_sensitivity[i];  
+      delta = prefs.keyp_delta + prefs.keyp_colors_alternate_sensitivity[i];
       if ( abs( int(key[0]) - prefs.keyp_colors_alternate[i][0] ) > delta ) and ( abs( int(key[1]) - prefs.keyp_colors_alternate[i][1] ) > delta ) and ( abs( int(key[2]) - prefs.keyp_colors_alternate[i][2] ) > delta ):
         keypressed = 1;
         pressedcolor = prefs.keyp_colors_alternate[i];
-    else: 
+    else:
       for j in range(len(prefs.keyp_colors)):
        delta = prefs.keyp_delta;
        if prefs.use_percolor_delta:
@@ -1161,7 +1161,7 @@ def processmidi():
            #if ( abs( int(sparkkey[0]) - keyp_colors[j][0] ) < keyp_colors_sparks_sensitivity[j] ) and ( abs( int(sparkkey[1]) - keyp_colors[j][1] ) < keyp_colors_sparks_sensitivity[j] ) and ( abs( int(sparkkey[2]) - keyp_colors[j][2] ) < keyp_colors_sparks_sensitivity[j] ):
            if ( not has_spark_delta ):
              keypressed=2;
-         
+
     #
     if ( keypressed != 0 ):
        note_channel=prefs.keyp_colors_channel[ deltaid ];
@@ -1189,7 +1189,7 @@ def processmidi():
             notes_channel[ note ] = 0
           else:
             notes_channel[ note ] = 1
-            
+
       # always update to last press state
       notes[ note ] = keypressed;
     notes_tmp[ note] = keypressed;
@@ -1200,13 +1200,13 @@ def processmidi():
         if prefs.rollcheck_priority == 0:
           if not iswhitekey(i):
           # Priority on Black keys;
-            if notes[i+1] >0 and notes_tmp[i] >0: notes[i] = 0; 
-            if notes[i-1] >0 and notes_tmp[i] >0: notes[i] = 0; 
+            if notes[i+1] >0 and notes_tmp[i] >0: notes[i] = 0;
+            if notes[i-1] >0 and notes_tmp[i] >0: notes[i] = 0;
         else:
           if iswhitekey(i):
           # Priority on White keys;
-            if notes[i+1] >0 and notes_tmp[i] >0: notes[i] = 0; 
-            if notes[i-1] >0 and notes_tmp[i] >0: notes[i] = 0; 
+            if notes[i+1] >0 and notes_tmp[i] >0: notes[i] = 0;
+            if notes[i-1] >0 and notes_tmp[i] >0: notes[i] = 0;
   #
   for i in range( len( prefs.keys_pos) ):
     note=i;
@@ -1221,8 +1221,8 @@ def processmidi():
           time = snap_to_grid( time - first_note_time , notes_grid_size ) + 1;
           duration = snap_to_grid( duration , notes_grid_size );
           #print ("1 time after:", time , "after before:",duration)
-          
-          
+
+
         ignore = 0
         if ( duration < prefs.minimal_duration ):
           if ( debug_keys == 1 ):
@@ -1230,7 +1230,7 @@ def processmidi():
           duration = prefs.minimal_duration;
           if ( prefs.ignore_minimal_duration == 1 ):
             ignore=1;
-            
+
 
         if ( debug_keys == 1 ):
           print("keys (one over other), note released :" + str(note) + " de = " + str(notes_de[note]) + "- db =" + str(notes_db[note]));
@@ -1250,14 +1250,14 @@ def processmidi():
         notes_de[ note ] = frame;
         time = notes_db[note] / fps;
         duration = ( notes_de[note] - notes_db[note] ) / fps;
-        
+
         if (use_snap_notes_to_grid):
           if (first_note_time == 0):
             first_note_time = time;
           #print ("2 time:", time , "first_note_time:",first_note_time)
           time = snap_to_grid( time - first_note_time , notes_grid_size ) + 1;
           duration = snap_to_grid( duration , notes_grid_size );
-          
+
         ignore=0
         if ( duration < prefs.minimal_duration ):
           if ( debug_keys == 1 ):
@@ -1307,7 +1307,7 @@ def processmidi():
      quit();
 
  print("saved notes: " + str(notecnt));
- 
+
  #search free id for name ...
  fileid=0;
  while os.path.exists( outputmid ):
@@ -1316,7 +1316,7 @@ def processmidi():
   if ( fileid > 999 ): break;
  if prefs.sync_notes_start_pos:
    mf.sync_start_pos(prefs.sync_notes_start_pos_time_delta, False);
- 
+
  if prefs.save_to_disk_per_channel:
    status, prefs.save_to_disk_message = mf.save_to_disk_per_channel(outputmid);
  else:
@@ -1372,20 +1372,20 @@ def main():
   pygame.display.set_caption(filepath)
 
   doinit();
-  
+
   clock = pygame.time.Clock()
   #
   # set start frame;
   vidcap.set(CAP_PROP_POS_FRAMES, frame);
 
-  
+
   while running==1:
     mouseOnWindows = False;
 #    mousex, mousey = pygame.mouse.get_pos();
     drawframe();
     mods = pygame.key.get_mods();
     for event in pygame.event.get():
-     if event.type == pygame.QUIT: 
+     if event.type == pygame.QUIT:
       running = 0;
       pygame.quit();
       quit();
@@ -1396,7 +1396,7 @@ def main():
 #       width = resize_width;
 #       height = resize_height;
 #       screen = pygame.display.set_mode( (width,height) , DOUBLEBUF|OPENGL|pygame.RESIZABLE);
-       
+
      elif event.type == pygame.KEYUP:
       for wnd in glwindows:
        wnd.update_key_up(event.key);
@@ -1416,7 +1416,7 @@ def main():
       if event.key == pygame.K_i:
        #prefs.ignore_minimal_duration = not prefs.ignore_minimal_duration;
        switch_ignore_notes_with_minimal_duration(None);
-   
+
       if event.key == pygame.K_s:
        if mods & pygame.KMOD_SHIFT:
         prefs.startframe = 0;
@@ -1462,7 +1462,7 @@ def main():
       if event.key == pygame.K_UP:
        if mods & pygame.KMOD_ALT:
          prefs.keyp_spark_y_pos -= 1;
-         
+
        else:
          if mods & pygame.KMOD_SHIFT:
           prefs.yoffset_blackkeys -= 1;
@@ -1535,7 +1535,7 @@ def main():
           mouseOnWindows=True;
           resort=True;
           break;
-        
+
       #
       if ( event.button == 1 ):
         keygrab = 0;
@@ -1590,7 +1590,7 @@ def main():
         size=5;
         if (mods & pygame.KMOD_CTRL):
           lastkeygrabid=-1;
-            
+
         for i in range( len( prefs.keys_pos) ):
          if (abs( mousex - (prefs.keys_pos[i][0] + prefs.xoffset_whitekeys) )< size) and (abs( mousey - (prefs.keys_pos[i][1] + prefs.yoffset_whitekeys) )< size):
           keygrab=1;
@@ -1630,10 +1630,9 @@ def main():
     #framerate();
     #limit fps to 60 and get the frame time in milliseconds
     ms = clock.tick(60)
-    
+
 
 main();
 if prefs.autoclose == 1:
   reconstruct();
 print ("done...");
-

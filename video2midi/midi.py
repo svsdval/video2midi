@@ -74,5 +74,5 @@ class midinotes:
             self.mf.writeFile(outf)
         except Exception as E:
           print("Error on save to disk:%s"% E)
-      #  
+      #
     return 1, "Saved to disk: %s_channel_[1..16]%s " % (fname,ext)
