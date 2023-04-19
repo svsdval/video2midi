@@ -493,8 +493,10 @@ def showOrhideallwindows(sender):
 
 def start_recreate_midi(sender):
   global running;
-  running=0;
-
+  if prefs.autoclose == 1:
+    running = 0;
+  else:
+    reconstruct();
   pass;
 
 def set_start_frame_to_current_frame(sender):
