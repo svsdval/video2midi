@@ -1,5 +1,5 @@
 from midiutil.MidiFile import MIDIFile
-import os;
+import os
 
 class midinotes:
   def __init__(self, midi_file_format):
@@ -8,13 +8,13 @@ class midinotes:
     self.miditrackname = "Sample Track"
     self.tempo = 0
     self.track = 0
-    self.midi_file_format = int(midi_file_format);
-    print("initialize midifile...");
+    self.midi_file_format = int(midi_file_format)
+    print("initialize midifile...")
     self.mf = MIDIFile(1,file_format=self.midi_file_format,
           removeDuplicates=True,
           deinterleave=False,
           adjust_origin=False)
-    print("initialize midifile done.");
+    print("initialize midifile done.")
 
   def addNote(self,track, channel, note, start_time, duration, volume ):
     self.notes.append( {'track' : track, 'channel' : channel, 'note' : note, 'start_time' : start_time, 'duration' : duration, 'volume' : volume } )
@@ -54,9 +54,9 @@ class midinotes:
   def save_to_disk_per_channel(self, filename):
     if len(self.notes) < 1:
       return 0, "No notes to save.."
-    fname,ext =os.path.splitext(filename);
+    fname,ext =os.path.splitext(filename)
     for channel in range(16):
-      cnt=0;
+      cnt=0
       #
       print( " processing channel %s"  % channel )
       self.mf = MIDIFile(1,file_format=self.midi_file_format)
@@ -74,5 +74,5 @@ class midinotes:
             self.mf.writeFile(outf)
         except Exception as E:
           print("Error on save to disk:%s"% E)
-      #  
+      #
     return 1, "Saved to disk: %s_channel_[1..16]%s " % (fname,ext)
