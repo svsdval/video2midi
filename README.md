@@ -34,12 +34,12 @@ sudo apt install python-opencv python-pygame python-midiutil python-opengl
 
 #### Arch Linux:
 ```bash
-sudo pacman -S hdf5 opencv python-pygame python-opengl
+sudo pacman -S hdf5 python-opencv python-pygame python-opengl
 sudo pip install midiutil
 ```
-Or thanks to C0rn3j you can install video2midi just from AUR now:
+Or thanks to C0rn3j you can install video2midi just from AUR now using your favorite AUR helper:
 ```
-sudo pacman -S video2midi-git
+yay -S video2midi-git
 ```
 
 #### Windows + Anaconda2 (python 2.7)/Anaconda3 (python 3.7):
@@ -131,7 +131,7 @@ sudo apt install python-opencv python-pygame python-midiutil python-opengl
 
 #### Arch Linux:
 ```bash
-sudo pacman -S hdf5 opencv python-pygame python-opengl
+sudo pacman -S hdf5 python-opencv python-pygame python-opengl
 sudo pip install midiutil
 ```
 
