@@ -37,6 +37,10 @@ sudo apt install python-opencv python-pygame python-midiutil python-opengl
 sudo pacman -S hdf5 opencv python-pygame python-opengl
 sudo pip install midiutil
 ```
+Or thanks to C0rn3j you can install video2midi just from AUR now:
+```
+sudo pacman -S video2midi-git
+```
 
 #### Windows + Anaconda2 (python 2.7)/Anaconda3 (python 3.7):
  - [Read this instruction to using video2midi from github on Windows](https://github.com/svsdval/video2midi/wiki/Using-video2midi-from-github-on-Windows)
