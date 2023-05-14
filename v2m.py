@@ -340,14 +340,32 @@ def loadImage(idframe=130):
   glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
   glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
   glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL)
-  if ( convertCvtColor == 1 ):
-    #print ("Loading RGB texture")
-#    glTexImage2D(GL_TEXTURE_2D, 0, 3, int(video_width/4), int(video_height/4), 0, GL_RGB, GL_UNSIGNED_BYTE, cv2.cvtColor(image2,COLOR_BGR2RGB) )
-    glTexImage2D(GL_TEXTURE_2D, 0, 3, video_width, video_height, 0, GL_RGB, GL_UNSIGNED_BYTE, cv2.cvtColor(image,COLOR_BGR2RGB) )
-  else:
-    #print ("Loading BGR texture")
-    glTexImage2D(GL_TEXTURE_2D, 0, 3, video_width, video_height, 0, GL_BGR, GL_UNSIGNED_BYTE, image )
-#    glTexImage2D(GL_TEXTURE_2D, 0, 3, int(video_width/4), int(video_height/4), 0, GL_BGR, GL_UNSIGNED_BYTE, image2 )
+  error_on_load=False
+  try:
+    if ( convertCvtColor == 1 ):
+      #print ("Loading RGB texture")
+      glTexImage2D(GL_TEXTURE_2D, 0, 3, video_width, video_height, 0, GL_RGB, GL_UNSIGNED_BYTE, cv2.cvtColor(image,COLOR_BGR2RGB) )
+    else:
+      #print ("Loading BGR texture")
+      glTexImage2D(GL_TEXTURE_2D, 0, 3, video_width, video_height, 0, GL_BGR, GL_UNSIGNED_BYTE, image )
+    return
+  except Exception as E:
+     error_on_load=True
+     print("Can't load image from video to OpenGL: %s" % E);
+  
+  if error_on_load:
+    rvideo_width, rvideo_height = 512, 512
+    print("Trying resize video image to %sx%s" % (rvideo_width, rvideo_height));
+    try:
+       rimage = cv2.resize(image  , (rvideo_width, rvideo_height))
+       if ( convertCvtColor == 1 ):
+         glTexImage2D(GL_TEXTURE_2D, 0, 3, rvideo_width, rvideo_height, 0, GL_RGB, GL_UNSIGNED_BYTE, cv2.cvtColor(rimage,COLOR_BGR2RGB) )
+       else:
+         glTexImage2D(GL_TEXTURE_2D, 0, 3, rvideo_width, rvideo_height, 0, GL_BGR, GL_UNSIGNED_BYTE, rimage )
+    except Exception as E:
+      print("Can't load image from video to OpenGL: %s" % E);
+    
+
   pass
 
 def update_channels(sender):
@@ -652,7 +670,7 @@ Arrows - keys adjustment (mods : shift) ( Atl+Arrows UP/Down - sparks position a
 PageUp/PageDown - scrolling video (mods : shift)
 Home/End - go to the beginning or end of the video
 [ / ] - change base octave
-F2 / F3 - save / load settings
+F2 / F3 - save / load settings, F4 - move all windows to the mouse point
 Escape - quit, TAB - Show/Hide all windows
 Space - abort re-creation and save midi file to disk""")
 
@@ -1441,6 +1459,14 @@ def main():
 
       if event.key == pygame.K_F3:
         btndown_load_settings(None)
+
+      if event.key == pygame.K_F4:
+        for i in range(len(glwindows)):
+#          if isinstance(glwindows[i],GLButton):
+#             continue
+          glwindows[i].x = mousex;
+          glwindows[i].y = mousey;
+
 
       if event.key == pygame.K_r:
         switch_resize_windows(None)
