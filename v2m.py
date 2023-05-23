@@ -115,6 +115,21 @@ fps    = float(vidcap.get(CAP_PROP_FPS))
 width = video_width
 height = video_height
 
+def fit_to_the_screen():
+  global width, height
+  infoObject = pygame.display.Info()
+  if (width > infoObject.current_w) or ( height > infoObject.current_h):
+    print("try fit window to the screen")
+    print("curent window size: %sx%s" %(width,height))
+    print("curent screen size: %0.2fx%s" %(infoObject.current_w, infoObject.current_h))
+    ratio  = ( width / infoObject.current_w)
+    width = int(width / ratio * 0.9 )
+    height = int(height / ratio *0.9)
+    print("new window size: %sx%s" %(width,height))
+
+pygame.init()
+fit_to_the_screen()
+
 endframe = length
 showoutputpath = 0
 
@@ -128,7 +143,8 @@ def resize_window():
   else:
     width = video_width
     height = video_height
-  screen = pygame.display.set_mode((width,height), DOUBLEBUF|OPENGL)
+    fit_to_the_screen()
+  screen = pygame.display.set_mode((width,height), DOUBLEBUF|OPENGL|pygame.RESIZABLE)
   #
   doinit()
 
@@ -219,6 +235,8 @@ def update_size():
   if ( prefs.resize == 1 ):
     width = prefs.resize_width
     height = prefs.resize_height
+  else:
+    fit_to_the_screen()
 
 def loadsettings(cfgfile):
   global colorBtns, colorWindow_colorBtns_channel_labels
@@ -840,9 +858,10 @@ def getkeyp_pixel_pos( x, y ):
   if ( pixx >= width ) or ( pixy >= height ) or ( pixx < 0 ) or ( pixy < 0 ):
     return [-1,-1]
 
-  if ( prefs.resize == 1 ):
-    pixx= int(round( pixx * ( video_width / float(prefs.resize_width) )))
-    pixy= int(round( pixy * ( video_height / float(prefs.resize_height) )))
+  #if ( prefs.resize == 1 ):
+  if 1==1: #disabled
+    pixx= int(round( pixx * ( video_width / float(width) )))
+    pixy= int(round( pixy * ( video_height / float(height) )))
     if ( pixx > video_width -1 ): pixx = video_width-1
     if ( pixy > video_height-1 ): pixy= video_height-1
   return [pixx,pixy]
@@ -1384,9 +1403,9 @@ def main():
   keygrabaddx=0
   lastkeygrabid=-1
 
-  pygame.init()
   #pyfont = pygame.font.SysFont('Sans', 20)
-  screen = pygame.display.set_mode( (width,height) , DOUBLEBUF|OPENGL)
+  #pygame.RESIZABLE
+  screen = pygame.display.set_mode( (width,height) , DOUBLEBUF|OPENGL|pygame.RESIZABLE)
   pygame.display.set_caption(filepath)
 
   doinit()
@@ -1407,14 +1426,13 @@ def main():
       running = 0
       pygame.quit()
       quit()
-#     elif event.type == pygame.VIDEORESIZE:
-#       resize = 1
-#       resize_width = event.w
-#       resize_height = event.h
-#       width = resize_width
-#       height = resize_height
-#       screen = pygame.display.set_mode( (width,height) , DOUBLEBUF|OPENGL|pygame.RESIZABLE)
-
+     elif event.type == pygame.VIDEORESIZE:
+       prefs.resize = 1
+       prefs.resize_width = event.w
+       prefs.resize_height = event.h
+       width =  prefs.resize_width
+       height =  prefs.resize_height
+       screen = pygame.display.set_mode( (width,height) , DOUBLEBUF|OPENGL|pygame.RESIZABLE)
      elif event.type == pygame.KEYUP:
       for wnd in glwindows:
        wnd.update_key_up(event.key)
