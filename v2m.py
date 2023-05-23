@@ -120,8 +120,8 @@ def fit_to_the_screen():
   infoObject = pygame.display.Info()
   if (width > infoObject.current_w) or ( height > infoObject.current_h):
     print("try fit window to the screen")
-    print("curent window size: %sx%s" %(width,height))
-    print("curent screen size: %0.2fx%s" %(infoObject.current_w, infoObject.current_h))
+    print("current window size: %sx%s" %(width,height))
+    print("current screen size: %sx%s" %(infoObject.current_w, infoObject.current_h))
     ratio  = ( width / infoObject.current_w)
     width = int(width / ratio * 0.9 )
     height = int(height / ratio *0.9)
