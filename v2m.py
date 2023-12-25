@@ -873,7 +873,7 @@ def iswhitekey( key_num ):
   else:
     return 0
 
-def drawframe():
+def drawframe( lastimage = None):
  global pyfont
  global helptext
  global mousex, mousey
@@ -923,8 +923,10 @@ def drawframe():
 
   if (pixpos[0] == -1) and (pixpos[1] == -1):
      continue
-
-  keybgr=image[ pixpos[1], pixpos[0] ]
+  if lastimage is not None:
+    keybgr=lastimage[ pixpos[1], pixpos[0] ]
+  else:
+    keybgr=image[ pixpos[1], pixpos[0] ]
   key= [ keybgr[2], keybgr[1],keybgr[0] ]
 
   keybgr=[0,0,0]
@@ -1109,17 +1111,19 @@ def processmidi():
  print("starting from frame:" + str(prefs.startframe))
  getFrame( prefs.startframe )
  notecnt=0
+ lastimage = image
  while success:
 
   if (frame % 10 == 0):
+   glBindTexture(GL_TEXTURE_2D, Gl.bgImgGL)
    if (frame % 200 == 0):
-      glBindTexture(GL_TEXTURE_2D, Gl.bgImgGL)
-      loadImage(frame)
+     loadImage(frame)
+     lastimage = image
    #glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
    #glTexImage2D(GL_TEXTURE_2D, 0, 3, video_width, video_height, 0, GL_BGR, GL_UNSIGNED_BYTE, image )
    #glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
-      glEnable(GL_TEXTURE_2D)
-      drawframe()
+   glEnable(GL_TEXTURE_2D)
+   drawframe( lastimage )
 
    glColor4f(1.0, 0.5, 1.0, 0.5)
    glDisable(GL_TEXTURE_2D)
