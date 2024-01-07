@@ -1030,6 +1030,10 @@ def drawframe( lastimage = None):
   if ( separate_note_id == i ):
     glColor4f(0,1,0,1)
     DrawRect(-7,-12,7,12,2)
+  if prefs.octave * 12 == i:
+    glColor4f(1,0,0,1)
+    DrawRect(-9,9,9,12,3)
+
 
   DrawQuad(-1,-1,1,1)
   glPopMatrix()
@@ -1201,7 +1205,7 @@ def processmidi():
            has_spark_delta = ((sparkkey[0] - prefs.keyp_colors[j][0] ) > prefs.keyp_colors_sparks_sensitivity[j] ) or ((sparkkey[1] - prefs.keyp_colors[j][1] ) > prefs.keyp_colors_sparks_sensitivity[j] ) or ((sparkkey[2] - prefs.keyp_colors[j][2] ) > prefs.keyp_colors_sparks_sensitivity[j] )
            #if ( abs( int(sparkkey[0]) - keyp_colors[j][0] ) < keyp_colors_sparks_sensitivity[j] ) and ( abs( int(sparkkey[1]) - keyp_colors[j][1] ) < keyp_colors_sparks_sensitivity[j] ) and ( abs( int(sparkkey[2]) - keyp_colors[j][2] ) < keyp_colors_sparks_sensitivity[j] ):
            if ( not has_spark_delta ):
-             keypressed=2
+             keypressed=0
 
     #
     if ( keypressed != 0 ):
