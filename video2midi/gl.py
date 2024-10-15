@@ -245,9 +245,10 @@ def GenFontTexture() -> None:
 		fonts.append( fnt )
 
 		x += ix + 2
-		if (i % 32 == 31 ) and (i != 0): x=2
+		if (i % 32 == 31 ) and (i != 0):
+			x = 2
 
-	tex_data = pygame.image.tostring(texture_buffer_surf, "RGBA", 1)
+	tex_data = pygame.image.tostring(texture_buffer_surf, 'RGBA', True)
 
 	# fix alpha ...
 	l = list( tex_data )
