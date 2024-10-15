@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 # by svsd_val
 # jabber : svsd_val@jabber.ru
@@ -39,7 +38,7 @@ if not os.path.exists( filepath ):
     yt = YouTube( filepath )
     videos = [ { 'itag' : i.itag, 'res' : int(re.sub('[^0-9]','', i.resolution)), 'progressive' : int(i.is_progressive) }  for i in yt.streams.filter(file_extension='mp4') if i.mime_type.find("video") != -1 ]
     print(videos)
-    videos = sorted( videos , key = lambda d : ( -d['progressive'], - d['res']) ) 
+    videos = sorted( videos , key = lambda d : ( -d['progressive'], - d['res']) )
     print('sorted by progressive (has video & audio in same file) and video resolution')
     for i in videos:
       print('processing: %s' % i)
@@ -391,7 +390,7 @@ def loadImage(idframe=130):
   except Exception as E:
      error_on_load=True
      print("Can't load image from video to OpenGL: %s" % E);
-  
+
   if error_on_load:
     rvideo_width, rvideo_height = 512, 512
     print("Trying resize video image to %sx%s" % (rvideo_width, rvideo_height));
@@ -403,7 +402,7 @@ def loadImage(idframe=130):
          glTexImage2D(GL_TEXTURE_2D, 0, 3, rvideo_width, rvideo_height, 0, GL_BGR, GL_UNSIGNED_BYTE, rimage )
     except Exception as E:
       print("Can't load image from video to OpenGL: %s" % E);
-    
+
 
   pass
 
