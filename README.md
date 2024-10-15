@@ -35,14 +35,15 @@ sudo apt install python-opencv python-pygame python-midiutil python-opengl
 #### Arch Linux:
 ```bash
 sudo pacman -S hdf5 python-opencv python-pygame python-opengl
-sudo pip install midiutil
+# Venv
+pip install midiutil
 ```
 Or thanks to C0rn3j you can install video2midi just from AUR now using your favorite AUR helper:
-```
+```bash
 yay -S video2midi-git
 ```
 
-#### Windows + Anaconda2 (python 2.7)/Anaconda3 (python 3.7):
+#### Windows + Anaconda (python 3.9+):
  - [Read this instruction to using video2midi from github on Windows](https://github.com/svsdval/video2midi/wiki/Using-video2midi-from-github-on-Windows)
 
 # usage
@@ -54,7 +55,7 @@ yay -S video2midi-git
   ./v2m.py ./synthesia_video.mkv
   ```
 
-##### Windows+Anaconda2 (python 2.7)/Anaconda3 (python 3.7):
+##### Windows + Anaconda (python 3.9+):
  in start menu search and open Anaconda command prompt:
   ```bash
   cd path to v2m.py
@@ -83,7 +84,7 @@ yay -S video2midi-git
   * **Escape** - quit
   * **Space** - abort re-creation and save midi file to disk
 
-  
+
 # how it works
 
 Frame by frame we scan the virtual keyboard and write the keys to the midi file...
@@ -109,8 +110,7 @@ You can customize the channel mapping to a MIDI instrument. To do this, in the v
 The default all channels is 0 midi instrument.
 
 ```python
-channel_prog_accordance = 0,0, 0,0, 0,0, 0,0, 0,0, 0,0 
-
+channel_prog_accordance = 0,0, 0,0, 0,0, 0,0, 0,0, 0,0
 ```
 
 # RU:
@@ -132,10 +132,11 @@ sudo apt install python-opencv python-pygame python-midiutil python-opengl
 #### Arch Linux:
 ```bash
 sudo pacman -S hdf5 python-opencv python-pygame python-opengl
-sudo pip install midiutil
+# Venv
+pip install midiutil
 ```
 
-#### Windows + Anaconda2 (python 2.7)/Anaconda3 (python 3.7):
+#### Windows + Anaconda (python 3.9+):
  - [Читаем эту инструкцию что бы юзать video2midi под Windows](https://github.com/svsdval/video2midi/wiki/Using-video2midi-from-github-on-Windows)
 
 ## использование
@@ -147,7 +148,7 @@ sudo pip install midiutil
   ./v2m.py ./synthesia_video.mkv
   ```
 
-##### Windows+Anaconda2 (python 2.7)/Anaconda3 (python 3.7):
+##### Windows + Anaconda (python 3.9+):
  in start menu search and open Anaconda command prompt:
   ```bash
   cd path to v2m.py
@@ -166,16 +167,16 @@ sudo pip install midiutil
   * **Mouse wheel** - подстройка клавиш
   * **Левая кнопка мыши** - перетаскивание выбранной клавиши / выбор цвета из карты цветов.
   * **CTRL + Левая кнопка мыши** - обновить выбранный цвет к карте цветов.
-  * **Правая кнопка мыши** - перетаскивание всех клавиш, если клавиша выбрана, перенос осуществляется относительно неё 
+  * **Правая кнопка мыши** - перетаскивание всех клавиш, если клавиша выбрана, перенос осуществляется относительно неё
   * **CTRL + 0** - Выключить выбранный цвет.
-  * **Стрелки** - подстройка клавиш  (модификатор: shift)
+  * **Стрелки** - подстройка клавиш (модификатор: shift)
   * **PageUp/PageDown** - прокрутка видео (модификатор: shift, шаг по кадру)
   * **Home/End** - переход в начало или конец видео
   * **[ / ]** - изменить базовую октаву
   * **F2/F3** - записать / загрузить настройки.
   * **ESCAPE** - выход / quit
   * **SPACE** - прервать воссоздание и записать midi файл на диск / abort re-creation and save midi file to disk
-  
+
 ## как это работает
 
 Кадр за кадром сканируется видео поток отслеживая изменения виртуальной клавиатуры после всё что зафиксировано дампим на винт.
@@ -186,7 +187,7 @@ sudo pip install midiutil
 
 Все настройки вынесены в файл ini файл который может использоваться как общий для всех каталогов если находится в домашнем каталоге ~/.v2m.ini либо отдельный локальный для каталога ./v2m.ini.
 
-Вы можете настроить разбиение на каналы в зависимости от цвета клавиши. Для этого в файле v2m.ini нужно поправить соответствие цвета каналу midi трека. 
+Вы можете настроить разбиение на каналы в зависимости от цвета клавиши. Для этого в файле v2m.ini нужно поправить соответствие цвета каналу midi трека.
 По умолчанию каждый цвет активирующий клавишу будет записан в собственный канал, таким образом если хотите объединить каналы просто укажите для разных цветов одинаковые номера.
 
 ```python
@@ -195,10 +196,9 @@ color_channel_accordance = 0,0, 1,1, 2,2, 3,3, 4,4, 5,5
 
 ![Alt text](docs/multichannel.png?raw=true "multi channel midi export")
 
-Вы можете настроить соотнесение канала к MIDI инструменту. Для этого в файле v2m.ini нужно поправить соответствие канала midi инструменту. 
+Вы можете настроить соотнесение канала к MIDI инструменту. Для этого в файле v2m.ini нужно поправить соответствие канала midi инструменту.
 По умолчанию канал равен 0 midi инструменту
 
 ```python
-channel_prog_accordance = 0,0, 0,0, 0,0, 0,0, 0,0, 0,0 
-
+channel_prog_accordance = 0,0, 0,0, 0,0, 0,0, 0,0, 0,0
 ```
