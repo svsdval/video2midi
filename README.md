@@ -18,14 +18,14 @@ youtube synthesia video to midi, just for fun )
 GH already added new [discuss functionality](https://github.com/svsdval/video2midi/discussions) so we can talk without opening an issue... if you have any questions or comments, [you can open discuss](https://github.com/svsdval/video2midi/discussions) or you can write to [whatsapp](https://api.whatsapp.com/send/?phone=79635368469&text&app_absent=0) / [telegram](https://t.me/svsd_val) , i'll try to answer / help  ;)
 
 # EN:
-# dependency
+# Dependencies
 
 - python-opengl
 - python-opencv
 - python-pygame
 - python-midiutil
 
-# install dependency
+# Install dependencies
 
 #### Debian based Linux:
 ```bash
@@ -43,26 +43,26 @@ Or thanks to C0rn3j you can install video2midi just from AUR now using your favo
 yay -S video2midi-git
 ```
 
-#### Windows + Anaconda (python 3.9+):
- - [Read this instruction to using video2midi from github on Windows](https://github.com/svsdval/video2midi/wiki/Using-video2midi-from-github-on-Windows)
+#### Windows + Anaconda (Python 3.9+):
+- [Read these instructions to use video2midi from GitHub on Windows](https://github.com/svsdval/video2midi/wiki/Using-video2midi-from-github-on-Windows)
 
-# usage
+# Usage
 
- Download the video with your favorite melody (I recommend 720p), launch the program, adjust the keys in it, press Q and after the completion of the work a midi file will be created.
+Download the video with your favorite melody (I recommend 720p), launch the program, adjust the keys in it, press Q and after the processing completes a MIDI file will be created.
 
 ##### GNU/Linux:
-  ```bash
-  ./v2m.py ./synthesia_video.mkv
-  ```
+```bash
+./v2m.py ./synthesia_video.mkv
+```
 
-##### Windows + Anaconda (python 3.9+):
- in start menu search and open Anaconda command prompt:
+##### Windows + Anaconda (Python 3.9+):
+  In the Start menu, search for and open Anaconda command prompt:
   ```bash
   cd path to v2m.py
   python v2m.py synthesia_video.mkv
   ```
 
-  Control:
+  Controls:
   * **h** - show/hide this help
   * **q** - begin to recreate midi
   * **s** - set start frame, (mods : shift, set processing start frame to the beginning)
@@ -85,24 +85,22 @@ yay -S video2midi-git
   * **Space** - abort re-creation and save midi file to disk
 
 
-# how it works
+# How it works
 
-Frame by frame we scan the virtual keyboard and write the keys to the midi file...
+We scan the virtual keyboard, frame by frame, and write the keys to a MIDI file...
 
 ![Alt text](docs/frame47.jpg?raw=true "input from image")
 
 # Additional features
 
+All settings are loaded from an INI file, a global one can be defined in the home directory (`~/.v2m.ini`) or you can define a separate local one in the current directory (`./v2m.ini`).
 
-All settings are moved to an ini file which can be used as common for all directories if it is located in the home directory (~/.v2m.ini) or as a separate for local directory (./v2m.ini).
-
-You can also customize the separation into channels depending on the color of the key. To do this, in the v2m.ini file, you need to modify the color matching to the midi channel of the track.
-By default, each color key will be recorded in its own channel, so if you want to combine the channels, simply specify the same numbers for different colors.
+You can also customize the separation into channels depending on the color of the key. To do this, you need to modify the color matching to the midi channel of the track in the `v2m.ini` file.
+By default, each key color will be recorded in its own channel, so if you want to combine the channels, simply specify the same numbers for different colors.
 
 ```python
 color_channel_accordance = 0,0, 1,1, 2,2, 3,3, 4,4, 5,5
 ```
-
 
 ![Alt text](docs/multichannel.png?raw=true "multi channel midi export")
 
