@@ -4,8 +4,8 @@ requires-python = '>=3.9'
 # Target non-EOL releases at minimum, or later if needed
 # https://devguide.python.org/versions/
 target-version = 'py39'
-# Do soft 80, and hard break at 120
-line-length = 120
+# Ideally do soft 80, and hard break at 127 as that's the GitHub editor length
+line-length = 127
 
 [tool.ruff.lint.flake8-quotes]
 # Note that CI runs some flake8 tests itself
