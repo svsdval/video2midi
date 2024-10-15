@@ -8,6 +8,7 @@ target-version = 'py39'
 line-length = 120
 
 [tool.ruff.lint.flake8-quotes]
+# Note that CI runs some flake8 tests itself
 inline-quotes = 'single'
 multiline-quotes = 'single'
 
