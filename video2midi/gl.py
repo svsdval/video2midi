@@ -11,7 +11,7 @@ from .prefs import prefs
 
 Label_v_spacer=21
 fontSize=24
-fontChars = u''' !"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz><'''
+fontChars = ''' !"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz><'''
 
 class Gl:
 	fontTexture = -1
