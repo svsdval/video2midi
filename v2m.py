@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 # by svsd_val
 # jabber : svsd_val@jabber.ru
@@ -39,7 +38,7 @@ if not os.path.exists( filepath ):
     yt = YouTube( filepath )
     videos = [ { 'itag' : i.itag, 'res' : int(re.sub('[^0-9]','', i.resolution)), 'progressive' : int(i.is_progressive) }  for i in yt.streams.filter(file_extension='mp4') if i.mime_type.find("video") != -1 ]
     print(videos)
-    videos = sorted( videos , key = lambda d : ( -d['progressive'], - d['res']) ) 
+    videos = sorted( videos , key = lambda d : ( -d['progressive'], - d['res']) )
     print('sorted by progressive (has video & audio in same file) and video resolution')
     for i in videos:
       print('processing: %s' % i)
@@ -51,33 +50,30 @@ if not os.path.exists( filepath ):
     sys.exit( 0 )
 
 import math
-import cv2
-from midiutil.MidiFile import MIDIFile
 import ntpath
-
-import pygame
-from pygame.locals import *
-
-from OpenGL.GL import *
-from OpenGL.GLU import *
 import time
-
 from os.path import expanduser
 
+import cv2
+import pygame
+from midiutil.MidiFile import MIDIFile
+from OpenGL.GL import *
+from OpenGL.GLU import *
+from pygame.locals import *
 
-
-print("open file [" + filepath + "]")
+print(f'open file [{filepath}]')
 vidcap = cv2.VideoCapture( filepath )
 
-outputmid= ntpath.basename( filepath ) + "_output.mid"
-#
-settingsfile= filepath + ".ini"
+outputmid= ntpath.basename( filepath ) + '_output.mid'
+
+settingsfile= filepath + '.ini'
+
+import datetime
 
 import video2midi.settings as settings
-from video2midi.prefs import prefs
 from video2midi.gl import *
 from video2midi.midi import *
-import datetime
+from video2midi.prefs import prefs
 
 width=640
 height=480
@@ -88,7 +84,7 @@ keygrab=0
 keygrabid=-1
 lastkeygrabid=-1
 
-#
+
 frame= 0
 printed_for_frame=0
 convertCvtColor=1
@@ -103,24 +99,22 @@ COLOR_BGR2RGB        =0
 print("OpenCV version:" + cv2.__version__ )
 
 if cv2.__version__.startswith('2.'):
- CAP_PROP_FRAME_COUNT  = cv2.cv.CV_CAP_PROP_FRAME_COUNT
- CAP_PROP_POS_FRAMES   = cv2.cv.CV_CAP_PROP_POS_FRAMES
- CAP_PROP_POS_MSEC     = cv2.cv.CV_CAP_PROP_POS_MSEC
- CAP_PROP_FRAME_WIDTH  = cv2.cv.CV_CAP_PROP_FRAME_WIDTH
- CAP_PROP_FRAME_HEIGHT = cv2.cv.CV_CAP_PROP_FRAME_HEIGHT
- CAP_PROP_FPS          = cv2.cv.CV_CAP_PROP_FPS
+  CAP_PROP_FRAME_COUNT  = cv2.cv.CV_CAP_PROP_FRAME_COUNT
+  CAP_PROP_POS_FRAMES   = cv2.cv.CV_CAP_PROP_POS_FRAMES
+  CAP_PROP_POS_MSEC     = cv2.cv.CV_CAP_PROP_POS_MSEC
+  CAP_PROP_FRAME_WIDTH  = cv2.cv.CV_CAP_PROP_FRAME_WIDTH
+  CAP_PROP_FRAME_HEIGHT = cv2.cv.CV_CAP_PROP_FRAME_HEIGHT
+  CAP_PROP_FPS          = cv2.cv.CV_CAP_PROP_FPS
 else:
- # 3, 4 , etc ...
- CAP_PROP_FRAME_COUNT  = cv2.CAP_PROP_FRAME_COUNT
- CAP_PROP_POS_FRAMES   = cv2.CAP_PROP_POS_FRAMES
- CAP_PROP_POS_MSEC     = cv2.CAP_PROP_POS_MSEC
- CAP_PROP_FRAME_WIDTH  = cv2.CAP_PROP_FRAME_WIDTH
- CAP_PROP_FRAME_HEIGHT = cv2.CAP_PROP_FRAME_HEIGHT
- CAP_PROP_FPS          = cv2.CAP_PROP_FPS
+  # 3, 4 , etc ...
+  CAP_PROP_FRAME_COUNT  = cv2.CAP_PROP_FRAME_COUNT
+  CAP_PROP_POS_FRAMES   = cv2.CAP_PROP_POS_FRAMES
+  CAP_PROP_POS_MSEC     = cv2.CAP_PROP_POS_MSEC
+  CAP_PROP_FRAME_WIDTH  = cv2.CAP_PROP_FRAME_WIDTH
+  CAP_PROP_FRAME_HEIGHT = cv2.CAP_PROP_FRAME_HEIGHT
+  CAP_PROP_FPS          = cv2.CAP_PROP_FPS
 
 COLOR_BGR2RGB         = cv2.COLOR_BGR2RGB
-
-#
 
 vidcap.set(CAP_PROP_POS_FRAMES, frame)
 vidcap.set(cv2.CAP_PROP_BUFFERSIZE, 2)
@@ -136,7 +130,7 @@ fps    = float(vidcap.get(CAP_PROP_FPS))
 width = video_width
 height = video_height
 
-def fit_to_the_screen():
+def fit_to_the_screen() -> None:
   global width, height
   infoObject = pygame.display.Info()
   if (width > infoObject.current_w) or ( height > infoObject.current_h):
@@ -155,8 +149,8 @@ endframe = length
 showoutputpath = 0
 
 
-def resize_window():
-  global screen,  width, height
+def resize_window() -> None:
+  global screen, width, height
 
   if prefs.resize:
     width = prefs.resize_width
@@ -166,11 +160,11 @@ def resize_window():
     height = video_height
     fit_to_the_screen()
   screen = pygame.display.set_mode((width,height), DOUBLEBUF|OPENGL|pygame.RESIZABLE)
-  #
+
   doinit()
 
 # set start frame
-def getFrame( framenum =-1 ):
+def getFrame(framenum:int = -1) -> None:
   global image
   global success
   global width
@@ -180,7 +174,7 @@ def getFrame( framenum =-1 ):
 
 
   if ( fps == 0 ):
-   return
+    return
 
   if ( framenum != -1 ):
     #vidcap.set(CAP_PROP_POS_FRAMES, int(framenum) )
@@ -195,19 +189,18 @@ def getFrame( framenum =-1 ):
       success = vidcap.set(CAP_PROP_POS_FRAMES, int(oldframenum) )
     curframe = vidcap.get(CAP_PROP_POS_FRAMES)
     if (curframe != framenum ):
-     print("OpenCV bug, Requesting frame " + str(framenum) + " but get position on " +str(curframe))
+      print("OpenCV bug, Requesting frame " + str(framenum) + " but get position on " +str(curframe))
 
 
   success,image = vidcap.read()
 #  if ( resize == 1 ):
 #    image = cv2.resize(image, (resize_width , resize_height))
 #    print "resize to "+str(resize_width) + "x"+ str(resize_height)
-  pass
 
 getFrame()
 
 
-#
+
 print("video " + str(width) + "x" + str(height) +" fps: " + str(fps))
 
 # add some notes
@@ -238,9 +231,9 @@ colorBtns = []
 #quantized notes to the grid.
 use_snap_notes_to_grid = False
 notes_grid_size=32
-#
+
 midi_file_format = 0
-#
+
 line_height = 20
 running = 1
 
@@ -251,7 +244,7 @@ if os.path.exists( 'v2m.ini' ):
   inifile="v2m.ini"
   print("local config file exists.")
 
-def update_size():
+def update_size() -> None:
   global width, height
   if ( prefs.resize == 1 ):
     width = prefs.resize_width
@@ -259,7 +252,7 @@ def update_size():
   else:
     fit_to_the_screen()
 
-def loadsettings(cfgfile):
+def loadsettings(cfgfile: str) -> None:
   global colorBtns, colorWindow_colorBtns_channel_labels
 
   settings.loadsettings(cfgfile)
@@ -286,7 +279,6 @@ def loadsettings(cfgfile):
     notes_overlap_btn.switch_status = prefs.notes_overlap
     ignore_notes_with_minimal_duration_btn.switch_status = prefs.ignore_minimal_duration
 
-  pass
 
 update_size
 
@@ -297,10 +289,10 @@ for i in range(144):
   notes_channel.append(0)
   notes_tmp.append(0)
   notes_pressed_color.append([0,0,0])
-  #
+
   prefs.keyp_colors_alternate.append([0,0,0])
   prefs.keyp_colors_alternate_sensitivity.append(0)
-#
+
 
 
 
@@ -333,7 +325,6 @@ def updatekeys( append=0 ):
  for i in range(len(prefs.keys_pos)):
    prefs.keys_pos[i] = v_rotate( prefs.keys_pos[i] , prefs.keys_angle )
    prefs.keys_pos[i][0] = - prefs.keys_pos[i][0]
- pass
 
 
 
@@ -391,7 +382,7 @@ def loadImage(idframe=130):
   except Exception as E:
      error_on_load=True
      print("Can't load image from video to OpenGL: %s" % E);
-  
+
   if error_on_load:
     rvideo_width, rvideo_height = 512, 512
     print("Trying resize video image to %sx%s" % (rvideo_width, rvideo_height));
@@ -403,9 +394,6 @@ def loadImage(idframe=130):
          glTexImage2D(GL_TEXTURE_2D, 0, 3, rvideo_width, rvideo_height, 0, GL_BGR, GL_UNSIGNED_BYTE, rimage )
     except Exception as E:
       print("Can't load image from video to OpenGL: %s" % E);
-    
-
-  pass
 
 def update_channels(sender):
    print( 'update_channels...' +str(sender.index))
@@ -449,18 +437,18 @@ def readkeycolor(i):
 
 
 def readcolors(sender):
-   for i in range( len(prefs.keys_pos) ):
+  for i in range( len(prefs.keys_pos) ):
     readkeycolor(i)
 
 def update_alternate_sensitivity(sender,value):
-   global lastkeygrabid
-   if ( lastkeygrabid != -1 ):
-     prefs.keyp_colors_alternate_sensitivity[ lastkeygrabid ] = value
+  global lastkeygrabid
+  if ( lastkeygrabid != -1 ):
+    prefs.keyp_colors_alternate_sensitivity[ lastkeygrabid ] = value
 
 def update_sparks_delta(sender,value):
-   if (sender.id == -1):
-     return
-   if (sender.id < len(prefs.keyp_colors))  :
+  if (sender.id == -1):
+    return
+  if (sender.id < len(prefs.keyp_colors))  :
     prefs.keyp_colors_sparks_sensitivity[sender.id] = sender.value
     #print("keyp_colors_sparks_sensitivity["+str(sender.id)+"] = "+ str(sender.value) )
 
@@ -472,32 +460,31 @@ def update_sync_notes_start_pos_time_delta(sender,value):
   prefs.sync_notes_start_pos_time_delta = value *0.001
 
 def change_use_alternate_keys(sender):
-   global extra_label1
-   prefs.use_alternate_keys = not prefs.use_alternate_keys
-   update_alternate_label()
+  global extra_label1
+  prefs.use_alternate_keys = not prefs.use_alternate_keys
+  update_alternate_label()
 
 def update_alternate_label():
   extra_label1.text = "Use alternate:"+str(prefs.use_alternate_keys)
 
 def change_use_sparks(sender):
-   prefs.use_sparks = sender.switch_status
+  prefs.use_sparks = sender.switch_status
 #   sender.text = "use sparks:"+str(use_sparks)
 def change_rollcheck(sender):
-   prefs.rollcheck = sender.switch_status
+  prefs.rollcheck = sender.switch_status
 
 def change_rollcheck_priority(sender):
-   prefs.rollcheck_priority = sender.switch_status
+  prefs.rollcheck_priority = sender.switch_status
 
 def updatecolor(sender):
-   if (lastkeygrabid != -1):
+  if (lastkeygrabid != -1):
     readkeycolor(lastkeygrabid)
 
 def update_sparks_y_pos (sender):
-   if (sender.text == "y+"):
-     prefs.keyp_spark_y_pos =  prefs.keyp_spark_y_pos -1
-   else:
-     prefs.keyp_spark_y_pos =  prefs.keyp_spark_y_pos +1
-   pass
+  if (sender.text == 'y+'):
+    prefs.keyp_spark_y_pos = prefs.keyp_spark_y_pos -1
+  else:
+    prefs.keyp_spark_y_pos = prefs.keyp_spark_y_pos +1
 
 def update_line_height(sender,value):
   global line_height
@@ -505,8 +492,8 @@ def update_line_height(sender,value):
 
 
 def snap_notes_to_the_grid(sender):
-    global use_snap_notes_to_grid
-    use_snap_notes_to_grid = sender.switch_status
+  global use_snap_notes_to_grid
+  use_snap_notes_to_grid = sender.switch_status
 
 def raise_octave(*args):
   global basenote
@@ -540,7 +527,7 @@ def update_percolor_delta(sender,value):
     #print("changed percolor delta for color with id ["+str(sender.id)+"] = "+ str(sender.value) )
 
 def showOrhideallwindows(sender):
-  if sender == None:
+  if sender is None:
     ShowHideButton.switch_status = not ShowHideButton.switch_status
   print('switch hidden for all windows')
   for i in glwindows:
@@ -554,7 +541,6 @@ def start_recreate_midi(sender):
     running = 0
   else:
     reconstruct()
-  pass
 
 def set_start_frame_to_current_frame(sender):
   if sender.index == 0:
@@ -562,7 +548,6 @@ def set_start_frame_to_current_frame(sender):
   else:
     prefs.startframe = 0
   print("set start frame = "+ str(prefs.startframe))
-  pass
 
 def sef_end_frame_to_current_frame(sender):
   global endframe
@@ -571,36 +556,30 @@ def sef_end_frame_to_current_frame(sender):
   else:
     endframe = length
   print("set end frame = "+ str(endframe), sender.index)
-  pass
 
 def switch_notes_overlap(sender):
-  if sender == None:
+  if sender is None:
     prefs.notes_overlap = not prefs.notes_overlap
     notes_overlap_btn.switch_status = prefs.notes_overlap
   else:
     prefs.notes_overlap = notes_overlap_btn.switch_status
-  pass
 
 def switch_sync_notes_start_pos(sender):
   prefs.sync_notes_start_pos = sender.switch_status
-  pass
 
 def change_save_to_disk_per_channel(sender):
   prefs.save_to_disk_per_channel = sender.switch_status
-  pass
 
 def switch_ignore_notes_with_minimal_duration(sender):
-  if sender == None:
+  if sender is None:
     prefs.ignore_minimal_duration = not prefs.ignore_minimal_duration
     ignore_notes_with_minimal_duration_btn.switch_status = prefs.ignore_minimal_duration
   else:
     prefs.ignore_minimal_duration = ignore_notes_with_minimal_duration_btn.switch_status
-  pass
 
 def switch_resize_windows(sender):
   prefs.resize = not prefs.resize
   resize_window()
-  pass
 
 def scroll_by_steps( steps ):
   global frame
@@ -611,37 +590,30 @@ def scroll_by_steps( steps ):
     frame=1
   glBindTexture(GL_TEXTURE_2D, Gl.bgImgGL)
   loadImage(frame)
-  pass
 
 def scroll_forward_by_frame(sender):
   scroll_by_steps(1)
-  pass
 
 def scroll_fast_forward(sender):
   scroll_by_steps(100)
-  pass
 
 def scroll_prev_by_frame(sender):
   scroll_by_steps(-1)
-  pass
 
 def scroll_fast_prev(sender):
   scroll_by_steps(-100)
-  pass
 
 def scroll_to_start(sender):
   global frame
   frame=0
   glBindTexture(GL_TEXTURE_2D, Gl.bgImgGL)
   loadImage(frame)
-  pass
 
 def scroll_to_end(sender):
   global frame
   frame=length-100
   glBindTexture(GL_TEXTURE_2D, Gl.bgImgGL)
   loadImage(frame)
-  pass
 
 def btndown_save_settings(sender):
   settings.savesettings(settingsfile)
@@ -654,7 +626,7 @@ def btndown_load_settings(sender):
     resize_window()
 
 def change_autoclose(sender):
-   prefs.autoclose = sender.switch_status
+  prefs.autoclose = sender.switch_status
 
 def rotate_cw(sender):
   prefs.keys_angle -= 5
@@ -664,9 +636,6 @@ def rotate_ccw(sender):
   updatekeys()
 
 
-
-
-#
 wh = ( (len(prefs.keyp_colors) // 2)+2 ) * 24 - 24
 colorWindow = GLWindow(24, 50, 274, wh, "color map")
 settingsWindow = GLWindow(24+275, 80, 550, 340, "Settings")
@@ -813,7 +782,7 @@ for i in range( len( prefs.keyp_colors ) ):
 
  colorWindow_colorBtns_channel_labels.append( colorWindow_label1 )
  colorWindow.appendChild(colorWindow_label1)
- #
+
  colorWindow_colorBtns_channel_btns.append( GLButton(offsetx+cx+70,offsety+cy ,20,20,(i+1), [128,128,128], "+" ,update_channels) )
  colorWindow_colorBtns_channel_btns.append( GLButton(offsetx+cx+70+20,offsety+cy ,20,20,-(i+1), [128,128,128], "-" ,update_channels) )
  colorWindow_colorBtns_channel_btns.append( GLButton(offsetx+cx+70+40,offsety+cy ,20,20,i, [128,128,128], "x" ,disable_color, hint="ctrl+0 - shortcut, disable selected color") )
@@ -872,7 +841,7 @@ sparksWindow.appendChild( use_percolor_delta )
 #loadsettings( settingsfile )
 #frame=801
 
-def getkeyp_pixel_pos( x, y ):
+def getkeyp_pixel_pos( x:int, y:int ) -> list[int]:
   pixx=int(prefs.xoffset_whitekeys + x)
   pixy=int(prefs.yoffset_whitekeys + y)
 
@@ -887,12 +856,11 @@ def getkeyp_pixel_pos( x, y ):
     if ( pixy > video_height-1 ): pixy= video_height-1
   return [pixx,pixy]
 
-def iswhitekey( key_num ):
+def iswhitekey( key_num: int ) -> int:
   j = key_num % 12
   if (j == 1) or ( j ==3 ) or ( j == 6 ) or ( j == 8) or ( j == 10 ):
     return 1
-  else:
-    return 0
+  return 0
 
 def drawframe( lastimage = None):
  global pyfont
@@ -1228,7 +1196,7 @@ def processmidi():
            if ( not has_spark_delta ):
              keypressed=0
 
-    #
+
     if ( keypressed != 0 ):
        note_channel=prefs.keyp_colors_channel[ deltaid ]
 
@@ -1440,7 +1408,7 @@ def main():
   doinit()
 
   clock = pygame.time.Clock()
-  #
+
   # set start frame
   vidcap.set(CAP_PROP_POS_FRAMES, frame)
 
@@ -1599,8 +1567,7 @@ def main():
         for i in range( len( prefs.keys_pos) ):
          if (abs( mousex - (prefs.keys_pos[i][0] + prefs.xoffset_whitekeys) )< size) and (abs( mousey - (prefs.keys_pos[i][1] + prefs.yoffset_whitekeys) )< size):
            separate_note_id=i
-           pass
-     #
+
      elif event.type == pygame.MOUSEBUTTONUP:
       for i in range( len(glwindows)-1, -1 , -1):
         #print("process mouse up on windiws id: ", i)
@@ -1609,13 +1576,13 @@ def main():
           resort=True
           break
 
-      #
+
       if ( event.button == 1 ):
         keygrab = 0
         keygrabid = -1
       if ( event.button == 3 ):
         keygrab = 0
-     #
+
      elif event.type == pygame.MOUSEBUTTONDOWN:
       resort=False
       for i in range( len(glwindows)-1, -1 , -1):
@@ -1636,7 +1603,7 @@ def main():
         prefs.whitekey_width-=0.05
 #        print "whitekey_width="+str(whitekey_width)
         updatekeys( )
-#
+
       if ( event.button == 1 ):
         if mods & pygame.KMOD_CTRL and Gl.keyp_colormap_id != -1:
          pixx = int(mousex)
@@ -1658,8 +1625,6 @@ def main():
          if not colorWindow.active and not mouseOnWindows:
             Gl.keyp_colormap_id = -1
          #keyp_colormap_id = -1
-         pass
-        #
         size=5
         if (mods & pygame.KMOD_CTRL):
           lastkeygrabid=-1
@@ -1673,7 +1638,6 @@ def main():
           extra_slider1.setvalue( prefs.keyp_colors_alternate_sensitivity[i] )
           print("ok click found on : "+str(keygrabid))
           break
-        pass
 #      if ( event.button == 2 ):
 #        lastkeygrabid=-1
       if ( event.button == 3 ):
@@ -1708,4 +1672,4 @@ def main():
 main()
 if prefs.autoclose == 1:
   reconstruct()
-print ("done...")
+print ('done...')

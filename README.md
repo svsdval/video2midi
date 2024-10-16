@@ -18,14 +18,14 @@ youtube synthesia video to midi, just for fun )
 GH already added new [discuss functionality](https://github.com/svsdval/video2midi/discussions) so we can talk without opening an issue... if you have any questions or comments, [you can open discuss](https://github.com/svsdval/video2midi/discussions) or you can write to [whatsapp](https://api.whatsapp.com/send/?phone=79635368469&text&app_absent=0) / [telegram](https://t.me/svsd_val) , i'll try to answer / help  ;)
 
 # EN:
-# dependency
+# Dependencies
 
 - python-opengl
 - python-opencv
 - python-pygame
 - python-midiutil
 
-# install dependency
+# Install dependencies
 
 #### Debian based Linux:
 ```bash
@@ -35,33 +35,34 @@ sudo apt install python-opencv python-pygame python-midiutil python-opengl
 #### Arch Linux:
 ```bash
 sudo pacman -S hdf5 python-opencv python-pygame python-opengl
-sudo pip install midiutil
+# Venv
+pip install midiutil
 ```
 Or thanks to C0rn3j you can install video2midi just from AUR now using your favorite AUR helper:
-```
+```bash
 yay -S video2midi-git
 ```
 
-#### Windows + Anaconda2 (python 2.7)/Anaconda3 (python 3.7):
- - [Read this instruction to using video2midi from github on Windows](https://github.com/svsdval/video2midi/wiki/Using-video2midi-from-github-on-Windows)
+#### Windows + Anaconda (Python 3.9+):
+- [Read these instructions to use video2midi from GitHub on Windows](https://github.com/svsdval/video2midi/wiki/Using-video2midi-from-github-on-Windows)
 
-# usage
+# Usage
 
- Download the video with your favorite melody (I recommend 720p), launch the program, adjust the keys in it, press Q and after the completion of the work a midi file will be created.
+Download the video with your favorite melody (I recommend 720p), launch the program, adjust the keys in it, press Q and after the processing completes a MIDI file will be created.
 
 ##### GNU/Linux:
-  ```bash
-  ./v2m.py ./synthesia_video.mkv
-  ```
+```bash
+./v2m.py ./synthesia_video.mkv
+```
 
-##### Windows+Anaconda2 (python 2.7)/Anaconda3 (python 3.7):
- in start menu search and open Anaconda command prompt:
+##### Windows + Anaconda (Python 3.9+):
+  In the Start menu, search for and open Anaconda command prompt:
   ```bash
   cd path to v2m.py
   python v2m.py synthesia_video.mkv
   ```
 
-  Control:
+  Controls:
   * **h** - show/hide this help
   * **q** - begin to recreate midi
   * **s** - set start frame, (mods : shift, set processing start frame to the beginning)
@@ -83,25 +84,23 @@ yay -S video2midi-git
   * **Escape** - quit
   * **Space** - abort re-creation and save midi file to disk
 
-  
-# how it works
 
-Frame by frame we scan the virtual keyboard and write the keys to the midi file...
+# How it works
+
+We scan the virtual keyboard, frame by frame, and write the keys to a MIDI file...
 
 ![Alt text](docs/frame47.jpg?raw=true "input from image")
 
 # Additional features
 
+All settings are loaded from an INI file, a global one can be defined in the home directory (`~/.v2m.ini`) or you can define a separate local one in the current directory (`./v2m.ini`).
 
-All settings are moved to an ini file which can be used as common for all directories if it is located in the home directory (~/.v2m.ini) or as a separate for local directory (./v2m.ini).
-
-You can also customize the separation into channels depending on the color of the key. To do this, in the v2m.ini file, you need to modify the color matching to the midi channel of the track.
-By default, each color key will be recorded in its own channel, so if you want to combine the channels, simply specify the same numbers for different colors.
+You can also customize the separation into channels depending on the color of the key. To do this, you need to modify the color matching to the midi channel of the track in the `v2m.ini` file.
+By default, each key color will be recorded in its own channel, so if you want to combine the channels, simply specify the same numbers for different colors.
 
 ```python
 color_channel_accordance = 0,0, 1,1, 2,2, 3,3, 4,4, 5,5
 ```
-
 
 ![Alt text](docs/multichannel.png?raw=true "multi channel midi export")
 
@@ -109,8 +108,7 @@ You can customize the channel mapping to a MIDI instrument. To do this, in the v
 The default all channels is 0 midi instrument.
 
 ```python
-channel_prog_accordance = 0,0, 0,0, 0,0, 0,0, 0,0, 0,0 
-
+channel_prog_accordance = 0,0, 0,0, 0,0, 0,0, 0,0, 0,0
 ```
 
 # RU:
@@ -132,10 +130,11 @@ sudo apt install python-opencv python-pygame python-midiutil python-opengl
 #### Arch Linux:
 ```bash
 sudo pacman -S hdf5 python-opencv python-pygame python-opengl
-sudo pip install midiutil
+# Venv
+pip install midiutil
 ```
 
-#### Windows + Anaconda2 (python 2.7)/Anaconda3 (python 3.7):
+#### Windows + Anaconda (python 3.9+):
  - [Читаем эту инструкцию что бы юзать video2midi под Windows](https://github.com/svsdval/video2midi/wiki/Using-video2midi-from-github-on-Windows)
 
 ## использование
@@ -147,7 +146,7 @@ sudo pip install midiutil
   ./v2m.py ./synthesia_video.mkv
   ```
 
-##### Windows+Anaconda2 (python 2.7)/Anaconda3 (python 3.7):
+##### Windows + Anaconda (python 3.9+):
  in start menu search and open Anaconda command prompt:
   ```bash
   cd path to v2m.py
@@ -166,16 +165,16 @@ sudo pip install midiutil
   * **Mouse wheel** - подстройка клавиш
   * **Левая кнопка мыши** - перетаскивание выбранной клавиши / выбор цвета из карты цветов.
   * **CTRL + Левая кнопка мыши** - обновить выбранный цвет к карте цветов.
-  * **Правая кнопка мыши** - перетаскивание всех клавиш, если клавиша выбрана, перенос осуществляется относительно неё 
+  * **Правая кнопка мыши** - перетаскивание всех клавиш, если клавиша выбрана, перенос осуществляется относительно неё
   * **CTRL + 0** - Выключить выбранный цвет.
-  * **Стрелки** - подстройка клавиш  (модификатор: shift)
+  * **Стрелки** - подстройка клавиш (модификатор: shift)
   * **PageUp/PageDown** - прокрутка видео (модификатор: shift, шаг по кадру)
   * **Home/End** - переход в начало или конец видео
   * **[ / ]** - изменить базовую октаву
   * **F2/F3** - записать / загрузить настройки.
   * **ESCAPE** - выход / quit
   * **SPACE** - прервать воссоздание и записать midi файл на диск / abort re-creation and save midi file to disk
-  
+
 ## как это работает
 
 Кадр за кадром сканируется видео поток отслеживая изменения виртуальной клавиатуры после всё что зафиксировано дампим на винт.
@@ -186,7 +185,7 @@ sudo pip install midiutil
 
 Все настройки вынесены в файл ini файл который может использоваться как общий для всех каталогов если находится в домашнем каталоге ~/.v2m.ini либо отдельный локальный для каталога ./v2m.ini.
 
-Вы можете настроить разбиение на каналы в зависимости от цвета клавиши. Для этого в файле v2m.ini нужно поправить соответствие цвета каналу midi трека. 
+Вы можете настроить разбиение на каналы в зависимости от цвета клавиши. Для этого в файле v2m.ini нужно поправить соответствие цвета каналу midi трека.
 По умолчанию каждый цвет активирующий клавишу будет записан в собственный канал, таким образом если хотите объединить каналы просто укажите для разных цветов одинаковые номера.
 
 ```python
@@ -195,10 +194,9 @@ color_channel_accordance = 0,0, 1,1, 2,2, 3,3, 4,4, 5,5
 
 ![Alt text](docs/multichannel.png?raw=true "multi channel midi export")
 
-Вы можете настроить соотнесение канала к MIDI инструменту. Для этого в файле v2m.ini нужно поправить соответствие канала midi инструменту. 
+Вы можете настроить соотнесение канала к MIDI инструменту. Для этого в файле v2m.ini нужно поправить соответствие канала midi инструменту.
 По умолчанию канал равен 0 midi инструменту
 
 ```python
-channel_prog_accordance = 0,0, 0,0, 0,0, 0,0, 0,0, 0,0 
-
+channel_prog_accordance = 0,0, 0,0, 0,0, 0,0, 0,0, 0,0
 ```

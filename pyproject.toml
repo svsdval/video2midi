@@ -1,0 +1,29 @@
+[project]
+requires-python = '>=3.9'
+[tool.ruff]
+# Target non-EOL releases at minimum, or later if needed
+# https://devguide.python.org/versions/
+target-version = 'py39'
+# Ideally do soft 80, and hard break at 127 as that's the GitHub editor length
+line-length = 127
+
+[tool.ruff.lint.flake8-quotes]
+# Note that CI runs some flake8 tests itself
+inline-quotes = 'single'
+multiline-quotes = 'single'
+
+[tool.ruff.format]
+quote-style = 'single'
+indent-style = 'tab'
+
+[tool.ruff.lint]
+select = ['ALL']
+ignore = [
+	'W191',   # We use tabs for indents, disabling this atrocious PEP 8 recommendation
+	'D206',   # ^
+	'D401',   # non-imperative-mood - Wants docstrings in imperative language but it's really not foolproof, disable
+	'ERA001', # Test for commented out code, but it has way too many false positives, so disable
+	'FBT001', # boolean-type-hint-positional-argument     - Allow positional booleans in functions, it's not really that much of an issue
+	'FBT002', # boolean-default-value-positional-argument - ^
+	'FBT003', # boolean-positional-value-in-call          - ^
+]
