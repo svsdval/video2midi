@@ -175,18 +175,22 @@ def getFrame(framenum:int = -1) -> None:
 
   if ( fps == 0 ):
     return
+  goto_frame_by_msec=False
 
   if ( framenum != -1 ):
     #vidcap.set(CAP_PROP_POS_FRAMES, int(framenum) )
     # problems with mpeg formats ...
-    oldframenum = int(round(vidcap.get(1)))
+    if goto_frame_by_msec:
+      oldframenum = int(round(vidcap.get(1)))
+      frametime =  framenum * 1000.0 / fps
+      print("go to frame time :" + str(frametime))
+      success = vidcap.set(CAP_PROP_POS_MSEC, frametime)
+      if not success:
+        print("Cannot set frame position from video file at " + str(framenum))
+        success = vidcap.set(CAP_PROP_POS_FRAMES, int(oldframenum) )
+    else:
+      success = vidcap.set(CAP_PROP_POS_FRAMES, framenum )
 
-    frametime =  framenum * 1000.0 / fps
-    print("go to frame time :" + str(frametime))
-    success = vidcap.set(CAP_PROP_POS_MSEC, frametime)
-    if not success:
-      print("Cannot set frame position from video file at " + str(framenum))
-      success = vidcap.set(CAP_PROP_POS_FRAMES, int(oldframenum) )
     curframe = vidcap.get(CAP_PROP_POS_FRAMES)
     if (curframe != framenum ):
       print("OpenCV bug, Requesting frame " + str(framenum) + " but get position on " +str(curframe))
@@ -868,7 +872,7 @@ def drawframe( lastimage = None):
  global mousex, mousey
  global keyp_colormap_colors_pos
  global keyp_colormap_pos
- global frame
+ global frame, image
  global printed_for_frame
  global notes_tmp
  global notes_pressed_color
@@ -1104,14 +1108,14 @@ def processmidi():
  print("starting from frame:" + str(prefs.startframe))
  getFrame( prefs.startframe )
  notecnt=0
- lastimage = image
+ lastimage = image.copy()
  while success:
 
   if (frame % 10 == 0):
    glBindTexture(GL_TEXTURE_2D, Gl.bgImgGL)
    if (frame % 200 == 0):
      loadImage(frame)
-     lastimage = image
+     lastimage = image.copy()
    #glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
    #glTexImage2D(GL_TEXTURE_2D, 0, 3, video_width, video_height, 0, GL_BGR, GL_UNSIGNED_BYTE, image )
    #glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
