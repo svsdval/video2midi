@@ -58,6 +58,8 @@ class prefs:
 	]
 	keyp_colors_sparks_sensitivity = [50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50]
 
+	keys_pos_cnt=89
+
 	keys_pos=[]
 	keys_angle = 90
 

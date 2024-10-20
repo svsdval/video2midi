@@ -274,6 +274,7 @@ def loadsettings(cfgfile: str) -> None:
     settingsWindow_slider1.setvalue(prefs.keyp_delta)
     settingsWindow_slider2.setvalue(prefs.minimal_duration * 100)
     settingsWindow_slider3.setvalue(prefs.tempo)
+    settingsWindow_slider7.setvalue(prefs.keys_pos_cnt)
     sparks_switch.switch_status = prefs.use_sparks
     sparks_slider_delta.value = 0
     sparks_slider_delta.id =-1
@@ -282,6 +283,7 @@ def loadsettings(cfgfile: str) -> None:
     use_percolor_delta.switch_status = prefs.use_percolor_delta
     notes_overlap_btn.switch_status = prefs.notes_overlap
     ignore_notes_with_minimal_duration_btn.switch_status = prefs.ignore_minimal_duration
+
 
 
 update_size
@@ -306,8 +308,15 @@ def v_rotate(v, ang):
 
 def updatekeys( append=0 ):
  xx=0
- for i in range(12):
-  for j in range(12):
+ if append == 1:
+  print(f'clear keys, set to {prefs.keys_pos_cnt}')
+  prefs.keys_pos = []
+   
+ for idx in range (prefs.keys_pos_cnt):
+   i = idx // 12
+   j = idx % 12
+#  for i in range(12):
+#   for j in range(12):
    if (append == 1) or (i*12+j > len(prefs.keys_pos)-1):
     prefs.keys_pos.append( [0,0] )
 
@@ -639,10 +648,40 @@ def rotate_ccw(sender):
   prefs.keys_angle += 5
   updatekeys()
 
+def update_keys_pos_cnt(sender,value):
+  prefs.keys_pos_cnt=int(value)
+  
+def change_cnt(sender):
+  print('change count')
+  updatekeys(1)
+
+def vertical_align_keys( separate_black_keys = 1 ):
+  print(f"lastkeygrabid {lastkeygrabid}")
+  if lastkeygrabid < 0 or lastkeygrabid > len(prefs.keys_pos):
+    return
+
+  y = prefs.keys_pos[lastkeygrabid][1]
+  j = lastkeygrabid % 12
+  selected_black_key = (j == 1) or ( j == 3 ) or ( j == 6 ) or ( j == 8) or ( j == 10 )
+  
+
+  for idx in range (len(prefs.keys_pos)):
+    j = idx % 12
+    if separate_black_keys == 1:
+      if selected_black_key:
+        if (j == 1) or ( j == 3 ) or ( j == 6 ) or ( j == 8) or ( j == 10 ):
+          prefs.keys_pos[idx][1] = y
+      else:
+        if not ((j == 1) or ( j == 3 ) or ( j == 6 ) or ( j == 8) or ( j == 10 )):
+          prefs.keys_pos[idx][1] = y
+          
+def valign(sender):
+  vertical_align_keys()
+
 
 wh = ( (len(prefs.keyp_colors) // 2)+2 ) * 24 - 24
 colorWindow = GLWindow(24, 50, 274, wh, "color map")
-settingsWindow = GLWindow(24+275, 80, 550, 340, "Settings")
+settingsWindow = GLWindow(24+275, 80, 550, 380, "Settings")
 helpWindow = GLWindow(24+270, 50, 750, 490, "help")
 
 extraWindow = GLWindow(24+270+550+6, 80, 510, 250, "extra/experimental")
@@ -728,6 +767,10 @@ navbtns_info = [
 for i in range(len( navbtns_info )):
   settingsWindow.appendChild( GLButton(260 + i * 32,230 ,32,20,0, [128,128,128],  navbtns_info[i]['name'] , navbtns_info[i]['func'], hint = navbtns_info[i]['hint']) )
 
+settingsWindow.appendChild( GLButton(260    , 295 ,140,20,0, [128,128,128], "update count", change_cnt  , hint = "Change keys count" ) )
+settingsWindow.appendChild( GLButton(260+141, 295 ,140,20,0, [128,128,128], "v. align", valign  , hint = "vertical alignment of keys to the selected key" ) )
+
+
 helpWindow.appendChild(helpWindow_label1)
 
 settingsWindow_label1 = GLLabel(1,0, "base octave: " + str(prefs.octave))
@@ -761,6 +804,9 @@ settingsWindow_slider6 = GLSlider(1,255, 240,18, 0,1000,prefs.sync_notes_start_p
 settingsWindow_slider6.round=0
 settingsWindow.appendChild(settingsWindow_slider6)
 
+settingsWindow_slider7 = GLSlider(1,295, 240,18, 12,144,prefs.keys_pos_cnt,update_keys_pos_cnt, label="Keys count")
+settingsWindow_slider7.round=0
+settingsWindow.appendChild(settingsWindow_slider7)
 
 settingsWindow_rollcheck_button = GLButton(260,160 ,140,22,1, [128,128,128], "roll check" ,change_rollcheck,switch=1, switch_status=prefs.rollcheck )
 settingsWindow.appendChild(settingsWindow_rollcheck_button)
@@ -1571,6 +1617,22 @@ def main():
         for i in range( len( prefs.keys_pos) ):
          if (abs( mousex - (prefs.keys_pos[i][0] + prefs.xoffset_whitekeys) )< size) and (abs( mousey - (prefs.keys_pos[i][1] + prefs.yoffset_whitekeys) )< size):
            separate_note_id=i
+
+      if event.key == pygame.K_KP4:
+        if lastkeygrabid >0 and lastkeygrabid < len(prefs.keys_pos):
+          prefs.keys_pos[lastkeygrabid][0] -= 1
+      if event.key == pygame.K_KP6:
+        if lastkeygrabid >0 and lastkeygrabid < len(prefs.keys_pos):
+          prefs.keys_pos[lastkeygrabid][0] += 1
+      if event.key == pygame.K_KP8:
+        if lastkeygrabid >0 and lastkeygrabid < len(prefs.keys_pos):
+          prefs.keys_pos[lastkeygrabid][1] -= 1
+      if event.key == pygame.K_KP2:
+        if lastkeygrabid >0 and lastkeygrabid < len(prefs.keys_pos):
+          prefs.keys_pos[lastkeygrabid][1] += 1
+      if event.key == pygame.K_KP5:
+        vertical_align_keys()
+
 
      elif event.type == pygame.MOUSEBUTTONUP:
       for i in range( len(glwindows)-1, -1 , -1):
