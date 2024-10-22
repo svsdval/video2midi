@@ -655,34 +655,40 @@ def change_cnt(sender):
   print('change count')
   updatekeys(1)
 
-def vertical_align_keys( separate_black_keys = 1 ):
+def is_black_key(key_id : int) -> bool:
+  j = key_id % 12
+  return (j == 1) or ( j == 3 ) or ( j == 6 ) or ( j == 8) or ( j == 10 )
+
+
+def vertical_align_keys( separate_black_keys = 1, align = 1 ):
   print(f"lastkeygrabid {lastkeygrabid}")
   if lastkeygrabid < 0 or lastkeygrabid > len(prefs.keys_pos):
     return
 
-  y = prefs.keys_pos[lastkeygrabid][1]
-  j = lastkeygrabid % 12
-  selected_black_key = (j == 1) or ( j == 3 ) or ( j == 6 ) or ( j == 8) or ( j == 10 )
+  y = prefs.keys_pos[lastkeygrabid][align]
+  selected_black_key = is_black_key(lastkeygrabid)
   
-
   for idx in range (len(prefs.keys_pos)):
-    j = idx % 12
     if separate_black_keys == 1:
       if selected_black_key:
-        if (j == 1) or ( j == 3 ) or ( j == 6 ) or ( j == 8) or ( j == 10 ):
-          prefs.keys_pos[idx][1] = y
+        if is_black_key(idx):
+          prefs.keys_pos[idx][align] = y
       else:
-        if not ((j == 1) or ( j == 3 ) or ( j == 6 ) or ( j == 8) or ( j == 10 )):
-          prefs.keys_pos[idx][1] = y
+        if not is_black_key(idx):
+          prefs.keys_pos[idx][align] = y
+    else:
+          prefs.keys_pos[idx][align] = y
           
 def valign(sender):
-  vertical_align_keys()
+  vertical_align_keys(align=1)
+def halign(sender):
+  vertical_align_keys(align=0)
 
 
 wh = ( (len(prefs.keyp_colors) // 2)+2 ) * 24 - 24
 colorWindow = GLWindow(24, 50, 274, wh, "color map")
 settingsWindow = GLWindow(24+275, 80, 550, 380, "Settings")
-helpWindow = GLWindow(24+270, 50, 750, 490, "help")
+helpWindow = GLWindow(24+270, 50, 750, 535, "help")
 
 extraWindow = GLWindow(24+270+550+6, 80, 510, 250, "extra/experimental")
 
@@ -723,7 +729,9 @@ Home/End - go to the beginning or end of the video
 [ / ] - change base octave
 F2 / F3 - save / load settings, F4 - move all windows to the mouse point
 Escape - quit, TAB - Show/Hide all windows
-Space - abort re-creation and save midi file to disk""")
+Space - abort re-creation and save midi file to disk
+4,6,8,2 on numpad - move the selected key by 1 pixel on each axis
+1,3 - vertical / horizontal alignment""")
 
 
 settingsWindow.appendChild( GLButton(260, 20 ,140,20,0    , [128,128,128], "start recreate midi"               , start_recreate_midi             , hint = "q - hot key") )
@@ -768,7 +776,8 @@ for i in range(len( navbtns_info )):
   settingsWindow.appendChild( GLButton(260 + i * 32,230 ,32,20,0, [128,128,128],  navbtns_info[i]['name'] , navbtns_info[i]['func'], hint = navbtns_info[i]['hint']) )
 
 settingsWindow.appendChild( GLButton(260    , 295 ,140,20,0, [128,128,128], "update count", change_cnt  , hint = "Change keys count" ) )
-settingsWindow.appendChild( GLButton(260+141, 295 ,140,20,0, [128,128,128], "v. align", valign  , hint = "vertical alignment of keys to the selected key" ) )
+settingsWindow.appendChild( GLButton(260+141, 295 ,70,20,0, [128,128,128], "v. align", valign  , hint = "vertical alignment of keys to the selected key" ) )
+settingsWindow.appendChild( GLButton(260+141+70, 295 ,70,20,0, [128,128,128], "h. align", halign  , hint = "horizontal alignment of keys to the selected key" ) )
 
 
 helpWindow.appendChild(helpWindow_label1)
@@ -861,8 +870,6 @@ extraWindow.appendChild( extra_label3 )
 extraWindow_slider2 = GLSlider(5,155, 240,18, 0,2000, line_height, update_line_height, label="length of vertical key lines")
 extraWindow_slider2.round=0
 extraWindow.appendChild(extraWindow_slider2)
-
-
 
 
 sparks_slider_height = GLSlider(160,25, 150,18, 1,60,1,None, label="Sparks height")
@@ -1630,8 +1637,10 @@ def main():
       if event.key == pygame.K_KP2:
         if lastkeygrabid >0 and lastkeygrabid < len(prefs.keys_pos):
           prefs.keys_pos[lastkeygrabid][1] += 1
-      if event.key == pygame.K_KP5:
-        vertical_align_keys()
+      if event.key == pygame.K_KP1:
+        vertical_align_keys(1, 1)
+      if event.key == pygame.K_KP3:
+        vertical_align_keys(1, 0)
 
 
      elif event.type == pygame.MOUSEBUTTONUP:
