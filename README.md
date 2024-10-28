@@ -14,6 +14,7 @@ youtube synthesia video to midi, just for fun )
 
 [Manual "How to" Or "How to use video2midi after installing"](https://github.com/svsdval/video2midi/wiki/First-steps,-or-How-to-use-after-installing)
 
+[Mo Beigi's (محمد قاسم بیگی), article in which the author describes in detail his process of recreating the perfect midi.](https://mobeigi.com/blog/music/creating-perfect-midi-files-from-synthesia-piano-videos/)  (Thanks to Mo Beigi for permission to add this good article.)
 
 GH already added new [discuss functionality](https://github.com/svsdval/video2midi/discussions) so we can talk without opening an issue... if you have any questions or comments, [you can open discuss](https://github.com/svsdval/video2midi/discussions) or you can write to [whatsapp](https://api.whatsapp.com/send/?phone=79635368469&text&app_absent=0) / [telegram](https://t.me/svsd_val) , i'll try to answer / help  ;)
 
