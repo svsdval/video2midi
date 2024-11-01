@@ -18,6 +18,8 @@ youtube synthesia video to midi, just for fun )
 
 GH already added new [discuss functionality](https://github.com/svsdval/video2midi/discussions) so we can talk without opening an issue... if you have any questions or comments, [you can open discuss](https://github.com/svsdval/video2midi/discussions) or you can write to [whatsapp](https://api.whatsapp.com/send/?phone=79635368469&text&app_absent=0) / [telegram](https://t.me/svsd_val) , i'll try to answer / help  ;)
 
+!!! I wrote a small web hosting site where anyone can share their MIDI files. [http://midishare.svsdval.ru/](http://midishare.svsdval.ru/) (no authentication required)
+
 # EN:
 # Dependencies
 
