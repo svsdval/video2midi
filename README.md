@@ -4,6 +4,10 @@ youtube synthesia video to midi, just for fun )
 Воссоздание midi с видео роликов synthesia и ей подобным..
 ![Alt text](docs/mainwindow.png?raw=true "main window")
 
+!!! 01 Nov 2024 I wrote a small site where everyone can share their MIDI files. So you can share your recreated MIDI on it. So everyone can use your MIDI for example for learning or just listening. And we can create a big database with good midi.. [https://midishare.svsdval.ru/](https://midishare.svsdval.ru/) (no authentication required)
+
+[Mo Beigi's (محمد قاسم بیگی), article in which the author describes in detail his process of recreating the perfect midi.](https://mobeigi.com/blog/music/creating-perfect-midi-files-from-synthesia-piano-videos/)  (Thanks to Mo Beigi for permission to add this good article.)
+
 [Video example on YouTube, creating midi from hybrid synthesia video & real piano video2midi 0.4.5.2](https://www.youtube.com/watch?v=5M-Q62Rhk54)
 
 [Video example on YouTube, creating 2 channels midi, version video2midi 0.3.9.1](https://www.youtube.com/watch?v=NkAPkb7i2Ec)
@@ -14,11 +18,8 @@ youtube synthesia video to midi, just for fun )
 
 [Manual "How to" Or "How to use video2midi after installing"](https://github.com/svsdval/video2midi/wiki/First-steps,-or-How-to-use-after-installing)
 
-[Mo Beigi's (محمد قاسم بیگی), article in which the author describes in detail his process of recreating the perfect midi.](https://mobeigi.com/blog/music/creating-perfect-midi-files-from-synthesia-piano-videos/)  (Thanks to Mo Beigi for permission to add this good article.)
-
 GH already added new [discuss functionality](https://github.com/svsdval/video2midi/discussions) so we can talk without opening an issue... if you have any questions or comments, [you can open discuss](https://github.com/svsdval/video2midi/discussions) or you can write to [whatsapp](https://api.whatsapp.com/send/?phone=79635368469&text&app_absent=0) / [telegram](https://t.me/svsd_val) , i'll try to answer / help  ;)
 
-!!! I wrote a small web hosting site where anyone can share their MIDI files. [http://midishare.svsdval.ru/](http://midishare.svsdval.ru/) (no authentication required)
 
 # EN:
 # Dependencies
