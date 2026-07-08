@@ -4,7 +4,7 @@ youtube synthesia video to midi, just for fun )
 Воссоздание midi с видео роликов synthesia и ей подобным..
 ![Alt text](docs/mainwindow.png?raw=true "main window")
 
-!!! 08 Jul 2026 Cheack out ! Created web version with editor [https://video2midi.svsdval.ru/](https://video2midi.svsdval.ru/)
+!!! 08 Jul 2026 Cheack out ! Created web version with note editor [https://video2midi.svsdval.ru/](https://video2midi.svsdval.ru/)
 
 !!! 21 May 2026 Creaded version for android: [https://github.com/svsdval/video2midi_android](https://github.com/svsdval/video2midi_android)
 
