@@ -4,6 +4,8 @@ youtube synthesia video to midi, just for fun )
 Воссоздание midi с видео роликов synthesia и ей подобным..
 ![Alt text](docs/mainwindow.png?raw=true "main window")
 
+!!! 08 Jul 2026 Cheack out ! Created web version with editor [https://video2midi.svsdval.ru/](https://video2midi.svsdval.ru/)
+
 !!! 21 May 2026 Creaded version for android: [https://github.com/svsdval/video2midi_android](https://github.com/svsdval/video2midi_android)
 
 !!! 01 Nov 2024 I wrote a small site where everyone can share their MIDI files. So you can share your recreated MIDI on it. So everyone can use your MIDI for example for learning or just listening. And we can create a big database with good midi.. [https://midishare.svsdval.ru/](https://midishare.svsdval.ru/) (no authentication required)
