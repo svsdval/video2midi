@@ -47,13 +47,12 @@ def DrawQuad(vx,vy,vx2,vy2) -> None:
 		glEnd()
 
 		glEndList()
-		glCallList(Gl.listQuad1)
-	else:
-		glPushMatrix()
-		glTranslatef(vx,vy,0)
-		glScalef(vx2-vx,vy2-vy,1)
-		glCallList(Gl.listQuad1)
-		glPopMatrix()
+
+	glPushMatrix()
+	glTranslatef(vx,vy,0)
+	glScalef(vx2-vx,vy2-vy,1)
+	glCallList(Gl.listQuad1)
+	glPopMatrix()
 
 def DrawQuad_old(x,y,x2,y2, texx=1, texy=-1) -> None:
 	glBegin(GL_QUADS)
@@ -84,13 +83,12 @@ def DrawRect(vx,vy,vx2,vy2,w=1) -> None:
 		glVertex2f(x, y2)
 		glEnd()
 		glEndList()
-		glCallList(Gl.listRect1)
-	else:
-		glPushMatrix()
-		glTranslatef(vx,vy,0)
-		glScalef(vx2-vx,vy2-vy,1)
-		glCallList(Gl.listRect1)
-		glPopMatrix()
+
+	glPushMatrix()
+	glTranslatef(vx,vy,0)
+	glScalef(vx2-vx,vy2-vy,1)
+	glCallList(Gl.listRect1)
+	glPopMatrix()
 
 def DrawRect_old(x,y,x2,y2,w=1) -> None:
 	glLineWidth(w)

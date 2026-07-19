@@ -266,7 +266,7 @@ def loadsettings(cfgfile: str) -> None:
    for i in range(len(colorBtns)):
      colorWindow_colorBtns_channel_labels[i].text = "Ch:" + str(prefs.keyp_colors_channel[i]+1)
 
-  update_size
+  update_size()
 
   if 'glwindows' in globals():
     glBindTexture(GL_TEXTURE_2D, Gl.bgImgGL)
@@ -286,7 +286,7 @@ def loadsettings(cfgfile: str) -> None:
 
 
 
-update_size
+update_size()
 
 for i in range(144):
   notes.append(0)
