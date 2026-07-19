@@ -31,6 +31,7 @@ def savesettings(settingsfile: str) -> None:
 	config.set(section, 'rollcheck', str( int(prefs.rollcheck) ))
 	config.set(section, 'rollcheck_priority', str( int(prefs.rollcheck_priority) ))
 	config.set(section, 'use_alternate_keys', str( int(prefs.use_alternate_keys) ))
+	config.set(section, 'use_hsv_compare', str( int(prefs.use_hsv_compare) ))
 
 	skeyp_colors_channel = ''
 	for i in prefs.keyp_colors_channel:
@@ -149,6 +150,8 @@ def loadsettings(cfgfile: str) -> None:
 		prefs.use_sparks = config.getint(section, 'use_sparks')
 	if config.has_option(section, 'use_alternate_keys'):
 		prefs.use_alternate_keys = config.getboolean(section, 'use_alternate_keys')
+	if config.has_option(section, 'use_hsv_compare'):
+		prefs.use_hsv_compare = config.getboolean(section, 'use_hsv_compare')
 
 	if ( clr_chnls != "" ):
 		prefs.keyp_colors_channel = [ int(x) for x in clr_chnls.split(',') ]

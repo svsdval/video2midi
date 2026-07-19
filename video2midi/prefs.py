@@ -64,6 +64,7 @@ class prefs:
 	keys_angle = 90
 
 	use_percolor_delta=False
+	use_hsv_compare=False
 
 	percolor_delta=[90]*20
 	autoclose = 1

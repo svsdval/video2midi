@@ -49,6 +49,7 @@ if not os.path.exists( filepath ):
     print("file not exists [" + filepath +"], and no pytube has installed..., exit.")
     sys.exit( 0 )
 
+import colorsys
 import math
 import ntpath
 import time
@@ -281,6 +282,7 @@ def loadsettings(cfgfile: str) -> None:
     settingsWindow_rollcheck_button.switch_status = prefs.rollcheck
     settingsWindow_rollcheck_priority_button.switch_status = prefs.rollcheck_priority
     use_percolor_delta.switch_status = prefs.use_percolor_delta
+    use_hsv_compare_btn.switch_status = prefs.use_hsv_compare
     notes_overlap_btn.switch_status = prefs.notes_overlap
     ignore_notes_with_minimal_duration_btn.switch_status = prefs.ignore_minimal_duration
 
@@ -531,6 +533,9 @@ def onPallete_click(sender, index):
 
 def change_use_percolor_delta(sender):
   prefs.use_percolor_delta = sender.switch_status
+
+def change_use_hsv_compare(sender):
+  prefs.use_hsv_compare = sender.switch_status
 
 def update_percolor_delta(sender,value):
   if (Gl.keyp_colormap_id == -1):
@@ -824,6 +829,8 @@ settingsWindow.appendChild( GLButton(260+141, 160 ,140,20,1, [128,128,128], "per
 
 settingsWindow_rollcheck_priority_button = GLButton(260,180 ,222,22,1, [128,128,128], "rollcheck white keys priority" ,change_rollcheck_priority,switch=1, switch_status=prefs.rollcheck_priority )
 settingsWindow.appendChild(settingsWindow_rollcheck_priority_button)
+use_hsv_compare_btn = GLButton(260,260 ,190,22,1, [128,128,128], "use HSV compare" ,change_use_hsv_compare,switch=1, switch_status=prefs.use_hsv_compare, hint = "compare key colors in HSV space instead of RGB" )
+settingsWindow.appendChild( use_hsv_compare_btn )
 
 
 
@@ -919,6 +926,13 @@ def iswhitekey( key_num: int ) -> int:
     return 1
   return 0
 
+def rgb_for_compare( rgb ) -> list[float]:
+  r, g, b = int(rgb[0]), int(rgb[1]), int(rgb[2])
+  if not prefs.use_hsv_compare:
+    return [r, g, b]
+  h, s, v = colorsys.rgb_to_hsv(r / 255.0, g / 255.0, b / 255.0)
+  return [h * 255.0, s * 255.0, v * 255.0]
+
 def drawframe( lastimage = None):
  global pyfont
  global helptext
@@ -1000,14 +1014,17 @@ def drawframe( lastimage = None):
   keypressed=0
 
   pressedcolor=[0,0,0]
+  key_cmp = rgb_for_compare(key)
   if prefs.use_alternate_keys:
     delta = prefs.keyp_delta + prefs.keyp_colors_alternate_sensitivity[i]
-    if ( abs( int(key[0]) - prefs.keyp_colors_alternate[i][0] ) > delta ) and ( abs( int(key[1]) - prefs.keyp_colors_alternate[i][1] ) > delta ) and ( abs( int(key[2]) - prefs.keyp_colors_alternate[i][2] ) > delta ):
+    altcolor_cmp = rgb_for_compare(prefs.keyp_colors_alternate[i])
+    if ( abs( key_cmp[0] - altcolor_cmp[0] ) > delta ) and ( abs( key_cmp[1] - altcolor_cmp[1] ) > delta ) and ( abs( key_cmp[2] - altcolor_cmp[2] ) > delta ):
       keypressed=1
       pressedcolor=prefs.keyp_colors_alternate[i]
   else:
       for key_id in range( len(prefs.keyp_colors) ):
        keyc = prefs.keyp_colors[key_id]
+       keyc_cmp = rgb_for_compare(keyc)
        spark_delta = prefs.keyp_colors_sparks_sensitivity[key_id]
        delta = prefs.keyp_delta
        if prefs.use_percolor_delta:
@@ -1016,7 +1033,7 @@ def drawframe( lastimage = None):
 
 
        if (keyc[0] != 0 ) or (keyc[1] != 0 ) or (keyc[2] != 0 ) :
-         if ( abs( int(key[0]) - keyc[0] ) < delta ) and ( abs( int(key[1]) - keyc[1] ) < delta ) and ( abs( int(key[2]) - keyc[2] ) < delta ):
+         if ( abs( key_cmp[0] - keyc_cmp[0] ) < delta ) and ( abs( key_cmp[1] - keyc_cmp[1] ) < delta ) and ( abs( key_cmp[2] - keyc_cmp[2] ) < delta ):
           keypressed=1
           pressedcolor = keyc
           notes_pressed_color[i] = keyc
@@ -1227,9 +1244,11 @@ def processmidi():
     deltaclr = prefs.keyp_delta*prefs.keyp_delta*prefs.keyp_delta
 
     deltaid = 0
+    key_cmp = rgb_for_compare(key)
     if prefs.use_alternate_keys:
       delta = prefs.keyp_delta + prefs.keyp_colors_alternate_sensitivity[i]
-      if ( abs( int(key[0]) - prefs.keyp_colors_alternate[i][0] ) > delta ) and ( abs( int(key[1]) - prefs.keyp_colors_alternate[i][1] ) > delta ) and ( abs( int(key[2]) - prefs.keyp_colors_alternate[i][2] ) > delta ):
+      altcolor_cmp = rgb_for_compare(prefs.keyp_colors_alternate[i])
+      if ( abs( key_cmp[0] - altcolor_cmp[0] ) > delta ) and ( abs( key_cmp[1] - altcolor_cmp[1] ) > delta ) and ( abs( key_cmp[2] - altcolor_cmp[2] ) > delta ):
         keypressed = 1
         pressedcolor = prefs.keyp_colors_alternate[i]
     else:
@@ -1239,10 +1258,11 @@ def processmidi():
          if j < len( prefs.percolor_delta ):
            delta =  prefs.percolor_delta[ j ]
        deltaclr = delta*delta*delta
+       keyc_cmp = rgb_for_compare(prefs.keyp_colors[j])
 
        if (prefs.keyp_colors[j][0] != 0 ) or ( prefs.keyp_colors[j][1] != 0 ) or ( prefs.keyp_colors[j][2] != 0 ):
-        if ( abs( int(key[0]) - prefs.keyp_colors[j][0] ) < delta ) and ( abs( int(key[1]) - prefs.keyp_colors[j][1] ) < delta ) and ( abs( int(key[2]) - prefs.keyp_colors[j][2] ) < delta ):
-         delta = abs( int(key[0]) - prefs.keyp_colors[j][0] ) +  abs( int(key[1]) - prefs.keyp_colors[j][1] ) + abs( int(key[2]) - prefs.keyp_colors[j][2] )
+        if ( abs( key_cmp[0] - keyc_cmp[0] ) < delta ) and ( abs( key_cmp[1] - keyc_cmp[1] ) < delta ) and ( abs( key_cmp[2] - keyc_cmp[2] ) < delta ):
+         delta = abs( key_cmp[0] - keyc_cmp[0] ) +  abs( key_cmp[1] - keyc_cmp[1] ) + abs( key_cmp[2] - keyc_cmp[2] )
          if ( delta < deltaclr ):
           deltaclr = delta
           deltaid = j
