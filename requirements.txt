@@ -1,4 +1,6 @@
 MIDIUtil>=1.2.1
 opencv-python>=4.2.0.34
 pygame>=2.0.1
+# Only needed for the default OpenGL renderer; run with --no-opengl to use
+# native pygame rendering instead when PyOpenGL/GL drivers aren't available.
 PyOpenGL>=3.1.0

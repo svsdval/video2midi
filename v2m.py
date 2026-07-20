@@ -8,6 +8,10 @@ import sys
 import os
 import re
 
+no_opengl_flag = '--no-opengl' in sys.argv
+if no_opengl_flag:
+  sys.argv.remove('--no-opengl')
+
 filepath=''
 if ( len(sys.argv) < 2 ):
   if sys.platform.startswith('win'):
@@ -58,8 +62,6 @@ from os.path import expanduser
 import cv2
 import pygame
 from midiutil.MidiFile import MIDIFile
-from OpenGL.GL import *
-from OpenGL.GLU import *
 from pygame.locals import *
 
 print(f'open file [{filepath}]')
@@ -71,10 +73,17 @@ settingsfile= filepath + '.ini'
 
 import datetime
 
+import video2midi.gfx as gfx
 import video2midi.settings as settings
 from video2midi.gl import *
 from video2midi.midi import *
 from video2midi.prefs import prefs
+
+gfx.USE_OPENGL = (not no_opengl_flag) and gfx.gl_available()
+if no_opengl_flag:
+  print('--no-opengl requested: using native pygame software rendering.')
+elif not gfx.USE_OPENGL:
+  print(f'OpenGL unavailable ({gfx.gl_import_error()}); falling back to native pygame software rendering.')
 
 width=640
 height=480
@@ -150,6 +159,11 @@ endframe = length
 showoutputpath = 0
 
 
+def get_display_flags():
+  if gfx.USE_OPENGL:
+    return DOUBLEBUF|OPENGL|pygame.RESIZABLE
+  return DOUBLEBUF|pygame.RESIZABLE
+
 def resize_window() -> None:
   global screen, width, height
 
@@ -160,7 +174,7 @@ def resize_window() -> None:
     width = video_width
     height = video_height
     fit_to_the_screen()
-  screen = pygame.display.set_mode((width,height), DOUBLEBUF|OPENGL|pygame.RESIZABLE)
+  screen = pygame.display.set_mode((width,height), get_display_flags())
 
   doinit()
 
@@ -270,7 +284,6 @@ def loadsettings(cfgfile: str) -> None:
   update_size()
 
   if 'glwindows' in globals():
-    glBindTexture(GL_TEXTURE_2D, Gl.bgImgGL)
     loadImage(prefs.startframe)
     settingsWindow_slider1.setvalue(prefs.keyp_delta)
     settingsWindow_slider2.setvalue(prefs.minimal_duration * 100)
@@ -372,14 +385,38 @@ def framerate():
         frames = 0
 
 
+bg_surface = None
+_bg_surface_scaled = None
+_bg_surface_scaled_key = None
+
+def get_scaled_background_surface():
+  global _bg_surface_scaled, _bg_surface_scaled_key
+  if bg_surface is None:
+    return None
+  key = (id(bg_surface), int(width), int(height))
+  if key != _bg_surface_scaled_key:
+    _bg_surface_scaled = pygame.transform.scale(bg_surface, (int(width), int(height)))
+    _bg_surface_scaled_key = key
+  return _bg_surface_scaled
+
 def loadImage(idframe=130):
   global image
   global convertCvtColor
+  global bg_surface
   if running != 0:
     getFrame(idframe)
   #image2=cv2.resize(image, (int(video_width/4) , int(video_height/4)))
 
   print("load image from video " + str(width) + "x" + str(height) + " frame: "+ str(idframe))
+
+  if not gfx.USE_OPENGL:
+    if image is None:
+      print("Can't load image from video: no frame data")
+      return
+    bg_surface = pygame.image.frombuffer(image.tobytes(), (video_width, video_height), 'BGR')
+    return
+
+  glBindTexture(GL_TEXTURE_2D, Gl.bgImgGL)
   glPixelStorei(GL_UNPACK_ALIGNMENT,1)
 
   glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
@@ -606,7 +643,6 @@ def scroll_by_steps( steps ):
     frame=math.trunc(length *0.99)
   if (frame < 1):
     frame=1
-  glBindTexture(GL_TEXTURE_2D, Gl.bgImgGL)
   loadImage(frame)
 
 def scroll_forward_by_frame(sender):
@@ -624,13 +660,11 @@ def scroll_fast_prev(sender):
 def scroll_to_start(sender):
   global frame
   frame=0
-  glBindTexture(GL_TEXTURE_2D, Gl.bgImgGL)
   loadImage(frame)
 
 def scroll_to_end(sender):
   global frame
   frame=length-100
-  glBindTexture(GL_TEXTURE_2D, Gl.bgImgGL)
   loadImage(frame)
 
 def btndown_save_settings(sender):
@@ -953,21 +987,28 @@ def drawframe( lastimage = None):
  scale=1.0
  mousex, mousey = pygame.mouse.get_pos()
 
- glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
- glViewport (0, 0, width, height)
- glMatrixMode (GL_PROJECTION)
- glLoadIdentity ()
- glOrtho(0, width, height, 0, -1, 100)
- glMatrixMode(GL_MODELVIEW)
- glLoadIdentity()
- glDisable(GL_DEPTH_TEST)
+ gfx.set_target_surface(screen)
+ if gfx.USE_OPENGL:
+  glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
+  glViewport (0, 0, width, height)
+  glMatrixMode (GL_PROJECTION)
+  glLoadIdentity ()
+  glOrtho(0, width, height, 0, -1, 100)
+  glMatrixMode(GL_MODELVIEW)
+  glLoadIdentity()
+  glDisable(GL_DEPTH_TEST)
 
- glScale(scale,scale,1)
- glColor4f(1.0, 1.0, 1.0, 1.0)
+  glScale(scale,scale,1)
+  glColor4f(1.0, 1.0, 1.0, 1.0)
 
- glBindTexture(GL_TEXTURE_2D, Gl.bgImgGL)
- glEnable(GL_TEXTURE_2D)
- DrawQuad(0,0,width,height)
+  glBindTexture(GL_TEXTURE_2D, Gl.bgImgGL)
+  glEnable(GL_TEXTURE_2D)
+  DrawQuad(0,0,width,height)
+ else:
+  screen.fill((0,0,0))
+  bg = get_scaled_background_surface()
+  if bg is not None:
+   screen.blit(bg, (0,0))
 
 
  glEnable(GL_BLEND)
@@ -1182,7 +1223,6 @@ def processmidi():
  while success:
 
   if (frame % 10 == 0):
-   glBindTexture(GL_TEXTURE_2D, Gl.bgImgGL)
    if (frame % 200 == 0):
      loadImage(frame)
      lastimage = image.copy()
@@ -1479,7 +1519,7 @@ def main():
 
   #pyfont = pygame.font.SysFont('Sans', 20)
   #pygame.RESIZABLE
-  screen = pygame.display.set_mode( (width,height) , DOUBLEBUF|OPENGL|pygame.RESIZABLE)
+  screen = pygame.display.set_mode( (width,height) , get_display_flags())
   pygame.display.set_caption(filepath)
 
   doinit()
@@ -1506,7 +1546,7 @@ def main():
        prefs.resize_height = event.h
        width =  prefs.resize_width
        height =  prefs.resize_height
-       screen = pygame.display.set_mode( (width,height) , DOUBLEBUF|OPENGL|pygame.RESIZABLE)
+       screen = pygame.display.set_mode( (width,height) , get_display_flags())
      elif event.type == pygame.KEYUP:
       for wnd in glwindows:
        wnd.update_key_up(event.key)

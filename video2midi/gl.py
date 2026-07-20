@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-import sys
 import time
 
 import pygame
-from OpenGL.GL import *
-from OpenGL.GLU import *
 
+from . import gfx
+from .gfx import *
 from .prefs import prefs
 
 Label_v_spacer=21
@@ -22,6 +21,8 @@ class Gl:
 	keyp_colormap_id=-1
 
 def doinitGl() -> None:
+	if not gfx.USE_OPENGL:
+		return
 	Gl.listQuad1=-1
 	for fnt in fonts:
 		fnt.gllistid = -1
@@ -31,6 +32,14 @@ def doinitGl() -> None:
 	glBindTexture(GL_TEXTURE_2D, Gl.bgImgGL)
 
 def DrawQuad(vx,vy,vx2,vy2) -> None:
+	if not gfx.USE_OPENGL:
+		ox, oy = gfx.current_offset()
+		x = ox + min(vx, vx2)
+		y = oy + min(vy, vy2)
+		s = gfx.get_scratch_surface('quad', abs(vx2 - vx), abs(vy2 - vy))
+		s.fill(gfx.current_color())
+		gfx.target_surface().blit(s, (round(x), round(y)))
+		return
 	if Gl.listQuad1 == -1 :
 		Gl.listQuad1 = glGenLists(1)
 		glNewList(Gl.listQuad1, GL_COMPILE)
@@ -67,6 +76,15 @@ def DrawQuad_old(x,y,x2,y2, texx=1, texy=-1) -> None:
 	glEnd()
 
 def DrawRect(vx,vy,vx2,vy2,w=1) -> None:
+	if not gfx.USE_OPENGL:
+		ox, oy = gfx.current_offset()
+		x = ox + min(vx, vx2)
+		y = oy + min(vy, vy2)
+		bw, bh = abs(vx2 - vx), abs(vy2 - vy)
+		s = gfx.get_scratch_surface('rect', bw, bh)
+		pygame.draw.rect(s, gfx.current_color(), s.get_rect(), width=max(1, int(w)))
+		gfx.target_surface().blit(s, (round(x), round(y)))
+		return
 	glLineWidth(w)
 	if Gl.listRect1 == -1 :
 		Gl.listRect1 = glGenLists(1)
@@ -112,15 +130,26 @@ def DrawQuadT(x,y,x2,y2) -> None:
 	glEnd()
 
 def DrawTriangle(x,y, s,r=0) -> None:
-	glBegin(GL_TRIANGLES)
 	if ( r == 0 ):
-		glVertex2f(x , y-s)
-		glVertex2f(x + s, y-s)
-		glVertex2f(x + s*0.5, y)
+		pts = [ (x , y-s), (x + s, y-s), (x + s*0.5, y) ]
 	else:
-		glVertex2f(x , y)
-		glVertex2f(x + s,y)
-		glVertex2f(x + s*0.5, y-s)
+		pts = [ (x , y), (x + s,y), (x + s*0.5, y-s) ]
+
+	if not gfx.USE_OPENGL:
+		ox, oy = gfx.current_offset()
+		minx = min(p[0] for p in pts)
+		miny = min(p[1] for p in pts)
+		maxx = max(p[0] for p in pts)
+		maxy = max(p[1] for p in pts)
+		surf = gfx.get_scratch_surface('tri', maxx - minx, maxy - miny)
+		local_pts = [ (px - minx, py - miny) for px, py in pts ]
+		pygame.draw.polygon(surf, gfx.current_color(), local_pts)
+		gfx.target_surface().blit(surf, (round(ox + minx), round(oy + miny)))
+		return
+
+	glBegin(GL_TRIANGLES)
+	for px, py in pts:
+		glVertex2f(px, py)
 	glEnd()
 
 class GLFont:
@@ -137,6 +166,8 @@ class GLFont:
 fonts = []
 
 def getTextSize(text) -> list[int]:
+	if not gfx.USE_OPENGL:
+		return list(gfx.get_font(fontSize).size(text))
 	sizes = [0,0]
 	for i in text:
 		fid = int(ord( i )) - 32
@@ -150,6 +181,11 @@ def getTextSize(text) -> list[int]:
 
 
 def RenderText(x,y, text) -> None:
+	if not gfx.USE_OPENGL:
+		ox, oy = gfx.current_offset()
+		surf = gfx.get_font(fontSize-10).render(text, True, (255,255,255))
+		gfx.target_surface().blit(surf, (round(ox + x), round(oy + y - Label_v_spacer)))
+		return
 	global fontChars
 	global fonts
 	glPushAttrib(GL_ENABLE_BIT)
@@ -220,14 +256,14 @@ def GenFontTexture() -> None:
 	global fontChars
 	global fonts
 	global fontSize
+	if not gfx.USE_OPENGL:
+		gfx.get_font(fontSize)
+		return
 
 	#surface
 	texture_buffer_surf = pygame.Surface((512, 512))
 	texture_buffer_surf.fill(pygame.Color('black'))
-	if sys.platform.startswith('win'):
-		font = pygame.font.SysFont( 'Arial' , fontSize-10 )
-	else:
-		font = pygame.font.Font( None , fontSize )
+	font = gfx.get_font(fontSize-10)
 
 	x = 2
 	y = 0
