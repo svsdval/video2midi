@@ -1,4 +1,5 @@
 
+import json
 import os
 from configparser import ConfigParser
 
@@ -77,6 +78,12 @@ def savesettings(settingsfile: str) -> None:
 	for i in prefs.keyp_colors_alternate_sensitivity:
 		s+= str(int(i))+','
 	config.set(section, 'keyp_colors_alternate_sensitivity', s[0:-1])
+
+	# note editor: falling-notes overlay zoom/position, and the edited notes themselves
+	config.set(section, 'editor_pps', str(float(prefs.editor_pps)))
+	config.set(section, 'editor_keyboard_y_offset', str(float(prefs.editor_keyboard_y_offset)))
+	config.set(section, 'notes_events_basenote', str(int(prefs.notes_events_basenote)))
+	config.set(section, 'notes_events', json.dumps(prefs.notes_events))
 
 	with open(settingsfile, 'w') as configfile:
 		config.write(configfile)
@@ -224,6 +231,17 @@ def loadsettings(cfgfile: str) -> None:
 		s = config.get(section, 'percolor_sensitivity')
 		prefs.percolor_delta = [ float(x) for x in s.split(',') ]
 		print('percolor_sensitivity', prefs.percolor_delta)
+
+	if config.has_option(section, 'editor_pps'):
+		prefs.editor_pps = config.getfloat(section, 'editor_pps')
+	if config.has_option(section, 'editor_keyboard_y_offset'):
+		prefs.editor_keyboard_y_offset = config.getfloat(section, 'editor_keyboard_y_offset')
+	if config.has_option(section, 'notes_events_basenote'):
+		prefs.notes_events_basenote = config.getint(section, 'notes_events_basenote')
+	if config.has_option(section, 'notes_events'):
+		s = config.get(section, 'notes_events')
+		if s.strip() != '':
+			prefs.notes_events = json.loads(s)
 
 
 def compatibleColors(colorBtns: list) -> None:

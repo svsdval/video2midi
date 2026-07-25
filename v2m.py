@@ -253,6 +253,34 @@ notes_grid_size=32
 
 midi_file_format = 0
 
+# editable note events produced by processmidi(), in video-seconds (not midi beats):
+# {'key': 0..143 virtual-key index (position on the piano), 'channel': int, 'start': float sec, 'duration': float sec, 'volume': int}
+notes_events = []
+notes_events_basenote = 0
+
+editor_mode = False          # note editor (falling-notes overlay) on/off
+editor_pps = 220.0           # note editor vertical zoom, pixels per second
+editor_selected_note = -1    # index into notes_events
+editor_drag = None           # active mouse drag state on a note, or None
+editor_note_min_duration = 0.02
+editor_current_channel = 0   # MIDI channel (0-based) used for notes added via "add note"
+
+# vertical position of the "keyboard start" (hit) line in the note editor overlay,
+# in pixels, relative to prefs.yoffset_whitekeys. Kept separate from the actual key
+# positions so the hit line can be placed to match the video without moving keys.
+editor_keyboard_y_offset = 0.0
+
+# pps calibration: mark the video frame where the selected note's bar has fully
+# appeared at the top of the screen; combined with its already-detected
+# start/duration and the keyboard-line position above, this gives the fall speed (pps).
+editor_pps_calib_full_time = None
+
+# last raw (screen-space) mouse position seen over the note editor canvas (i.e. not
+# over any GUI window). Used by the "add note"/"split at mouse" buttons, since by
+# the time they're clicked the mouse itself is over the button, not the canvas.
+editor_hover_mx = 0.0
+editor_hover_my = 0.0
+
 line_height = 20
 running = 1
 
@@ -273,9 +301,17 @@ def update_size() -> None:
 
 def loadsettings(cfgfile: str) -> None:
   global colorBtns, colorWindow_colorBtns_channel_labels
+  global editor_pps, editor_keyboard_y_offset, notes_events, notes_events_basenote, editor_selected_note, editor_drag
 
   settings.loadsettings(cfgfile)
   settings.compatibleColors(colorBtns)
+
+  editor_pps = prefs.editor_pps
+  editor_keyboard_y_offset = prefs.editor_keyboard_y_offset
+  notes_events = prefs.notes_events
+  notes_events_basenote = prefs.notes_events_basenote
+  editor_selected_note = -1
+  editor_drag = None
 
   if len(colorWindow_colorBtns_channel_labels) > 0:
    for i in range(len(colorBtns)):
@@ -298,6 +334,8 @@ def loadsettings(cfgfile: str) -> None:
     use_hsv_compare_btn.switch_status = prefs.use_hsv_compare
     notes_overlap_btn.switch_status = prefs.notes_overlap
     ignore_notes_with_minimal_duration_btn.switch_status = prefs.ignore_minimal_duration
+    editorWindow_slider1.setvalue(editor_pps)
+    editorWindow_slider2.setvalue(editor_keyboard_y_offset)
 
 
 
@@ -668,6 +706,10 @@ def scroll_to_end(sender):
   loadImage(frame)
 
 def btndown_save_settings(sender):
+  prefs.editor_pps = editor_pps
+  prefs.editor_keyboard_y_offset = editor_keyboard_y_offset
+  prefs.notes_events_basenote = notes_events_basenote
+  prefs.notes_events = notes_events
   settings.savesettings(settingsfile)
 
 def btndown_load_settings(sender):
@@ -724,6 +766,361 @@ def halign(sender):
   vertical_align_keys(align=0)
 
 
+# ---------------------------------------------------------------------------
+# Note editor: a Synthesia-like falling-notes overlay drawn over the virtual
+# keyboard, so the detected notes can be visually compared against the video
+# and corrected (moved, resized, split, deleted) before saving the midi file.
+# ---------------------------------------------------------------------------
+
+def nearest_key_index(x: float) -> int:
+  best_i, best_d = 0, None
+  for i in range(len(prefs.keys_pos)):
+    d = abs(prefs.keys_pos[i][0] - x)
+    if best_d is None or d < best_d:
+      best_d = d
+      best_i = i
+  return best_i
+
+def editor_note_color(channel: int) -> tuple[float, float, float]:
+  hue = (channel * 47 % 360) / 360.0
+  return colorsys.hsv_to_rgb(hue, 0.65, 0.95)
+
+def editor_note_halfwidth(key: int) -> float:
+  return 4.0 if is_black_key(key) else 6.0
+
+def editor_current_time() -> float:
+  return (frame / fps) if fps else 0.0
+
+def editor_note_y_range(ev, current_time: float) -> list[float]:
+  y_top = (current_time - (ev['start'] + ev['duration'])) * editor_pps + editor_keyboard_y_offset
+  y_bottom = (current_time - ev['start']) * editor_pps + editor_keyboard_y_offset
+  return [y_top, y_bottom]
+
+def editor_hit_test(mx: float, my: float):
+  current_time = editor_current_time()
+  local_x = mx - prefs.xoffset_whitekeys
+  local_y = my - prefs.yoffset_whitekeys
+  found_idx, found_mode = -1, None
+  for idx, ev in enumerate(notes_events):
+    if not (0 <= ev['key'] < len(prefs.keys_pos)):
+      continue
+    x = prefs.keys_pos[ev['key']][0]
+    hw = editor_note_halfwidth(ev['key'])
+    if local_x < x - hw or local_x > x + hw:
+      continue
+    y_top, y_bottom = editor_note_y_range(ev, current_time)
+    if local_y < y_top - 2 or local_y > y_bottom + 2:
+      continue
+    edge = 4.0
+    if abs(local_y - y_bottom) <= edge:
+      found_idx, found_mode = idx, 'resize_start'
+    elif abs(local_y - y_top) <= edge:
+      found_idx, found_mode = idx, 'resize_end'
+    else:
+      found_idx, found_mode = idx, 'move'
+  return found_idx, found_mode
+
+def editor_mouse_down(mx: float, my: float) -> None:
+  global editor_selected_note, editor_drag
+  idx, mode = editor_hit_test(mx, my)
+  editor_selected_note = idx
+  editor_drag = None
+  if idx == -1:
+    local_y = my - prefs.yoffset_whitekeys
+    if abs(local_y - editor_keyboard_y_offset) <= 4:
+      editor_drag = {'mode': 'keyboard_line'}
+    return
+  ev = notes_events[idx]
+  current_time = editor_current_time()
+  local_x = mx - prefs.xoffset_whitekeys
+  local_y = my - prefs.yoffset_whitekeys
+  if mode == 'move':
+    click_time = current_time - ((local_y - editor_keyboard_y_offset) / editor_pps if editor_pps else 0)
+    key_x = prefs.keys_pos[ev['key']][0] if 0 <= ev['key'] < len(prefs.keys_pos) else local_x
+    editor_drag = {'idx': idx, 'mode': mode, 'time_offset': click_time - ev['start'], 'x_offset': local_x - key_x}
+  else:
+    editor_drag = {'idx': idx, 'mode': mode}
+
+def editor_mouse_move(mx: float, my: float) -> None:
+  global editor_drag, editor_keyboard_y_offset
+  if editor_drag is None:
+    return
+  if editor_drag.get('mode') == 'keyboard_line':
+    editor_keyboard_y_offset = my - prefs.yoffset_whitekeys
+    return
+  idx = editor_drag['idx']
+  if not (0 <= idx < len(notes_events)):
+    editor_drag = None
+    return
+  if editor_pps <= 0:
+    return
+  ev = notes_events[idx]
+  current_time = editor_current_time()
+  local_x = mx - prefs.xoffset_whitekeys
+  local_y = my - prefs.yoffset_whitekeys
+  target_time = current_time - ((local_y - editor_keyboard_y_offset) / editor_pps)
+
+  if editor_drag['mode'] == 'move':
+    new_start = target_time - editor_drag['time_offset']
+    ev['start'] = max(0.0, new_start)
+    target_x = local_x - editor_drag['x_offset']
+    ev['key'] = nearest_key_index(target_x)
+  elif editor_drag['mode'] == 'resize_start':
+    end_time = ev['start'] + ev['duration']
+    new_start = min(target_time, end_time - editor_note_min_duration)
+    new_start = max(0.0, new_start)
+    ev['start'] = new_start
+    ev['duration'] = end_time - new_start
+  elif editor_drag['mode'] == 'resize_end':
+    new_end = max(target_time, ev['start'] + editor_note_min_duration)
+    ev['duration'] = new_end - ev['start']
+
+def editor_mouse_up() -> None:
+  global editor_drag
+  editor_drag = None
+
+def delete_selected_note() -> None:
+  global editor_selected_note, editor_drag
+  if 0 <= editor_selected_note < len(notes_events):
+    del notes_events[editor_selected_note]
+  editor_selected_note = -1
+  editor_drag = None
+
+def editor_delete_note_at(mx: float, my: float) -> bool:
+  global editor_selected_note, editor_drag
+  idx, _ = editor_hit_test(mx, my)
+  if idx == -1:
+    return False
+  del notes_events[idx]
+  if editor_selected_note == idx:
+    editor_selected_note = -1
+    editor_drag = None
+  elif editor_selected_note > idx:
+    editor_selected_note -= 1
+  return True
+
+def split_note_at_time(idx: int, split_time: float) -> bool:
+  if not (0 <= idx < len(notes_events)):
+    return False
+  ev = notes_events[idx]
+  if (split_time <= ev['start'] + editor_note_min_duration) or (split_time >= ev['start'] + ev['duration'] - editor_note_min_duration):
+    return False
+  new_ev = dict(ev)
+  new_ev['start'] = split_time
+  new_ev['duration'] = (ev['start'] + ev['duration']) - split_time
+  ev['duration'] = split_time - ev['start']
+  notes_events.insert(idx + 1, new_ev)
+  return True
+
+def split_selected_note_at_playhead() -> None:
+  global editor_selected_note
+  if not (0 <= editor_selected_note < len(notes_events)):
+    print('note editor: select a note first (left click on it)')
+    return
+  if fps == 0:
+    return
+  if split_note_at_time(editor_selected_note, frame / fps):
+    editor_selected_note = editor_selected_note + 1
+  else:
+    print('note editor: move the playhead inside the selected note to split it')
+
+def split_selected_note_in_half() -> None:
+  global editor_selected_note
+  if not (0 <= editor_selected_note < len(notes_events)):
+    print('note editor: select a note first (left click on it)')
+    return
+  ev = notes_events[editor_selected_note]
+  split_time = ev['start'] + ev['duration'] * 0.5
+  if split_note_at_time(editor_selected_note, split_time):
+    editor_selected_note = editor_selected_note + 1
+  else:
+    print('note editor: selected note is too short to split in half')
+
+def mouse_over_any_glwindow(mx: float, my: float) -> bool:
+  for wnd in glwindows:
+    if getattr(wnd, 'fullhidden', False):
+      continue
+    # collapsed windows only block their title bar, same as GLWindow.update_mouse_down -
+    # otherwise a hidden "note editor"/"note sync" panel would keep blocking hover
+    # capture over the area it used to cover, even though it's no longer drawn there.
+    if getattr(wnd, 'hidden', False):
+      w = getattr(wnd, 'titlewidth', wnd.w)
+      h = getattr(wnd, 'titleheight', wnd.h)
+    else:
+      w = wnd.w
+      h = wnd.h
+    if (mx >= wnd.x) and (mx <= wnd.x + w) and (my >= wnd.y) and (my <= wnd.y + h):
+      return True
+  return False
+
+def split_note_at_mouse() -> None:
+  global editor_selected_note
+  idx, _ = editor_hit_test(editor_hover_mx, editor_hover_my)
+  if idx == -1:
+    print('note editor: hover the mouse over a note, then click this')
+    return
+  current_time = editor_current_time()
+  local_y = editor_hover_my - prefs.yoffset_whitekeys
+  split_time = current_time - ((local_y - editor_keyboard_y_offset) / editor_pps if editor_pps else 0)
+  if split_note_at_time(idx, split_time):
+    editor_selected_note = idx + 1
+  else:
+    print('note editor: hover closer to the middle of the note to split it there')
+
+def add_note_at_mouse() -> None:
+  global editor_selected_note
+  local_x = editor_hover_mx - prefs.xoffset_whitekeys
+  local_y = editor_hover_my - prefs.yoffset_whitekeys
+  current_time = editor_current_time()
+  start = current_time - ((local_y - editor_keyboard_y_offset) / editor_pps if editor_pps else 0)
+  start = max(0.0, start)
+
+  if 0 <= editor_selected_note < len(notes_events):
+    duration = notes_events[editor_selected_note]['duration']
+  else:
+    duration = (60.0 / prefs.tempo) if prefs.tempo else 0.25
+
+  key = nearest_key_index(local_x)
+  notes_events.append({'key': key, 'channel': editor_current_channel, 'start': start, 'duration': duration, 'volume': 100})
+  editor_selected_note = len(notes_events) - 1
+
+def click_channel_step(sender) -> None:
+  global editor_current_channel
+  editor_current_channel = max(0, min(15, editor_current_channel + sender.index))
+  editorWindow_channel_label.text = "channel: %d" % (editor_current_channel + 1)
+
+def toggle_editor_mode(sender=None) -> None:
+  global editor_mode
+  if sender is None:
+    editor_mode = not editor_mode
+    editor_mode_btn.switch_status = editor_mode
+  else:
+    editor_mode = sender.switch_status
+
+def update_editor_pps(sender, value) -> None:
+  global editor_pps
+  editor_pps = max(5.0, value)
+
+def update_editor_keyboard_y(sender, value) -> None:
+  global editor_keyboard_y_offset
+  editor_keyboard_y_offset = value
+
+def click_delete_selected_note(sender=None) -> None:
+  delete_selected_note()
+
+def click_split_selected_note(sender=None) -> None:
+  split_selected_note_at_playhead()
+
+def click_split_selected_note_in_half(sender=None) -> None:
+  split_selected_note_in_half()
+
+def click_split_note_at_mouse(sender=None) -> None:
+  split_note_at_mouse()
+
+def click_add_note_at_mouse(sender=None) -> None:
+  add_note_at_mouse()
+
+def click_save_edited_midi(sender=None) -> None:
+  global showoutputpath
+  save_midi_to_disk(build_midi_from_events())
+  showoutputpath = time.time() + 5
+
+# ---------------------------------------------------------------------------
+# pps calibration.
+# pps (pixels/sec fall speed) can be measured straight from the video instead of
+# eyeballing the zoom slider: pick the note whose bar is clearly visible falling
+# in the video, scrub to the frame where it has fully appeared at the top of the
+# screen and mark it. The time between "leading edge enters the screen" and
+# "trailing edge enters the screen" is exactly the note's own duration (constant,
+# independent of pps), so that mark alone gives us the appear time; the note's
+# already-detected start time is when it reaches the keyboard line. Together with
+# the pixel distance from the top of the video down to the keyboard start line
+# (editor_keyboard_y_offset), that's distance/time = pps.
+# ---------------------------------------------------------------------------
+
+def click_mark_pps_full(sender=None) -> None:
+  global editor_pps_calib_full_time
+  if not (0 <= editor_selected_note < len(notes_events)):
+    print('pps calib: select a note first (left click on it)')
+    return
+  editor_pps_calib_full_time = editor_current_time()
+  print('pps calib: "fully visible" mark set at %.3fs' % editor_pps_calib_full_time)
+
+def click_clear_pps_calib(sender=None) -> None:
+  global editor_pps_calib_full_time
+  editor_pps_calib_full_time = None
+
+def click_calc_pps(sender=None) -> None:
+  global editor_pps, editor_pps_calib_full_time
+  if editor_pps_calib_full_time is None:
+    print('pps calib: mark the frame where the note is fully visible at the top of the screen first')
+    return
+  if not (0 <= editor_selected_note < len(notes_events)):
+    print('pps calib: select a note first (left click on it)')
+    return
+  ev = notes_events[editor_selected_note]
+  appear_time = editor_pps_calib_full_time - ev['duration']
+  fall_time = ev['start'] - appear_time
+  if fall_time <= 1e-3:
+    print('pps calib: bad marks (computed fall time is %.3fs) - re-check the mark and the selected note' % fall_time)
+    return
+  distance = prefs.yoffset_whitekeys + editor_keyboard_y_offset
+  if distance <= 0:
+    print('pps calib: keyboard start line is not below the top of the video - check the "keyboard start Y offset" slider')
+    return
+  editor_pps = max(5.0, distance / fall_time)
+  editorWindow_slider1.setvalue(editor_pps)
+  print('pps calib: distance=%.1fpx fall_time=%.3fs -> pps=%.1f' % (distance, fall_time, editor_pps))
+  editor_pps_calib_full_time = None
+
+# ---------------------------------------------------------------------------
+# Note/video sync: shift every note's start time by a fixed amount, to correct
+# a constant lead/lag between the detected notes and the video.
+# ---------------------------------------------------------------------------
+
+def editor_nudge_notes(delta: float) -> None:
+  for ev in notes_events:
+    ev['start'] = max(0.0, ev['start'] + delta)
+
+def click_nudge_notes(sender) -> None:
+  editor_nudge_notes(sender.index)
+
+def draw_note_editor() -> None:
+  if not editor_mode:
+    return
+  current_time = editor_current_time()
+  half_window = (max(height, 400) / editor_pps) + 1.0 if editor_pps else 0
+
+  glDisable(GL_TEXTURE_2D)
+  glEnable(GL_BLEND)
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+
+  # keyboard start / "now" line: notes above it are upcoming, notes below it already played.
+  # positioned independently from the actual key markers via editor_keyboard_y_offset.
+  glColor4f(1.0, 1.0, 0.2, 0.85)
+  DrawQuad(-width, editor_keyboard_y_offset - 1, width, editor_keyboard_y_offset + 1)
+
+  for idx, ev in enumerate(notes_events):
+    if not (0 <= ev['key'] < len(prefs.keys_pos)):
+      continue
+    if ev['start'] + ev['duration'] < current_time - half_window:
+      continue
+    if ev['start'] > current_time + half_window:
+      continue
+
+    x = prefs.keys_pos[ev['key']][0]
+    y_top, y_bottom = editor_note_y_range(ev, current_time)
+    hw = editor_note_halfwidth(ev['key'])
+    selected = (idx == editor_selected_note)
+
+    r, g, b = editor_note_color(ev['channel'])
+    glColor4f(r, g, b, 0.95 if selected else 0.75)
+    DrawQuad(x - hw, y_top, x + hw, y_bottom)
+
+    glColor4f(1.0, 1.0, 1.0, 1.0 if selected else 0.6)
+    DrawRect(x - hw, y_top, x + hw, y_bottom, 2 if selected else 1)
+
+
 wh = ( (len(prefs.keyp_colors) // 2)+2 ) * 24 - 24
 colorWindow = GLWindow(24, 50, 274, wh, "color map")
 settingsWindow = GLWindow(24+275, 80, 550, 380, "Settings")
@@ -732,6 +1129,9 @@ helpWindow = GLWindow(24+270, 50, 750, 535, "help")
 extraWindow = GLWindow(24+270+550+6, 80, 510, 250, "extra/experimental")
 
 sparksWindow = GLWindow(24+270+550+6, 300, 510, 185, "sparks & color settings")
+
+editorWindow = GLWindow(24, 50+wh+10, 320, 525, "note editor")
+syncWindow = GLWindow(24+320+10, 50+wh+10, 376, 110, "note sync (offset)")
 
 
 glwindows = []
@@ -746,6 +1146,8 @@ glwindows.append(helpWindow)
 
 glwindows.append(extraWindow)
 glwindows.append(sparksWindow)
+glwindows.append(editorWindow)
+glwindows.append(syncWindow)
 
 helpWindow.hidden=1
 helpWindow_label1 = GLLabel(0,0, """h - on window title, show/hide the window
@@ -931,6 +1333,56 @@ sparksWindow.appendChild( selected_color_delta )
 sparksWindow.appendChild( use_percolor_delta )
 #colorSettingsWindow.appendChild( GLButton(413   ,24 ,64,22,1, [96,96,128], "Pallette" , None ) )
 #
+
+editor_mode_btn = GLButton(5,0 ,150,22,1, [128,128,128], "note editor", toggle_editor_mode, switch=1, switch_status=editor_mode, hint = "n - hot key, falling-notes overlay to compare detected notes against the video")
+editorWindow.appendChild( editor_mode_btn )
+editorWindow.appendChild( GLButton(160,0 ,150,22,1, [128,128,128], "save edited midi", click_save_edited_midi, hint = "write the edited notes to a new midi file" ) )
+
+editorWindow.appendChild( GLButton(5,25 ,150,22,1, [128,128,128], "delete note", click_delete_selected_note, hint = "Delete/Backspace - hot key" ) )
+editorWindow.appendChild( GLButton(160,25 ,150,22,1, [128,128,128], "split at playhead", click_split_selected_note, hint = "x - hot key, split the selected note at the current video frame" ) )
+
+editorWindow.appendChild( GLButton(5,  50,150,22,1, [128,128,128], "add note", click_add_note_at_mouse, hint = "a - hot key, add a note under the mouse; duration = selected note's duration, or a quarter note if none selected" ) )
+editorWindow.appendChild( GLButton(160,50,150,22,1, [128,128,128], "split in half", click_split_selected_note_in_half, hint = "split the selected note into two equal halves" ) )
+
+#editorWindow.appendChild( GLButton(106,50,98,22,1, [128,128,128], "split at mouse", click_split_note_at_mouse, hint = "split the note under the mouse at the mouse's position" ) )
+
+editorWindow_channel_label = GLLabel(5,78, "channel: %d" % (editor_current_channel + 1))
+editorWindow.appendChild( editorWindow_channel_label )
+editorWindow_channel_dec_btn = GLButton(120,  78,30,22,-1, [128,128,128], "-", click_channel_step, hint = "channel used for notes added with \"add note\"" )
+editorWindow.appendChild( editorWindow_channel_dec_btn )
+editorWindow_channel_inc_btn = GLButton(90,78,30,22,1, [128,128,128], "+", click_channel_step, hint = "channel used for notes added with \"add note\"" )
+editorWindow.appendChild( editorWindow_channel_inc_btn )
+
+editorWindow_slider1 = GLSlider(5,125, 305,18, 20,800, editor_pps, update_editor_pps, label="notes zoom (px/sec)")
+editorWindow_slider1.round=0
+editorWindow.appendChild( editorWindow_slider1 )
+
+editorWindow_slider2 = GLSlider(5,165, 305,18, -height, height, editor_keyboard_y_offset, update_editor_keyboard_y, label="keyboard start Y offset (px)")
+editorWindow_slider2.round=0
+editorWindow.appendChild( editorWindow_slider2 )
+
+editorWindow.appendChild( GLButton(5,  195,150,22,1, [128,128,128], "mark note visible", click_mark_pps_full, hint = "select a note, scrub the video to the frame where its whole bar has just fully appeared at the top of the screen, then click this" ) )
+editorWindow.appendChild( GLButton(160,195,150,22,1, [128,128,128], "calc pps", click_calc_pps, hint = "uses the mark above + the note's detected start/duration + the keyboard start Y offset to compute and apply the fall speed (pps)" ) )
+
+editorWindow_label1 = GLLabel(5,240, "No note selected")
+editorWindow.appendChild( editorWindow_label1 )
+
+editorWindow_label2 = GLLabel(5,320, """Left-drag note middle: move (time + key)
+Left-drag note edge: resize (duration)
+Right click note: delete
+a: add note at mouse (uses channel above)
+x: split selected note at mouse pos
+n: toggle this overlay
+Left-drag yellow line: move keyboard start""")
+editorWindow.appendChild( editorWindow_label2 )
+
+syncWindow.appendChild( GLLabel(5,0, "shift every note by a fixed amount:") )
+
+sync_nudge_amounts = [-0.5, -0.1, -0.01, 0.01, 0.1, 0.5]
+for _i, _amount in enumerate(sync_nudge_amounts):
+  _btn = GLButton(_i*62, 20, 60,22,1, [128,128,128], ("%+.2fs" % _amount), click_nudge_notes, hint = "shift every note's start time by %+.2fs" % _amount)
+  _btn.index = _amount
+  syncWindow.appendChild(_btn)
 
 #extra_slider2.showvalue=True
 #extra.appendChild(extra_label2)
@@ -1152,6 +1604,8 @@ def drawframe( lastimage = None):
 
     glPopMatrix()
 
+ draw_note_editor()
+
  glPopMatrix()
 
  glDisable(GL_BLEND)
@@ -1174,6 +1628,17 @@ def drawframe( lastimage = None):
  for i in range(len(prefs.keyp_colors)):
      colorBtns[i].color = prefs.keyp_colors[i]
 
+ if 0 <= editor_selected_note < len(notes_events):
+   sel = notes_events[editor_selected_note]
+   editorWindow_label1.text = "selected: key %d (pitch %d) ch %d\nstart %.3fs  duration %.3fs" % (
+     sel['key'], notes_events_basenote + sel['key'], sel['channel'], sel['start'], sel['duration'])
+ else:
+   editorWindow_label1.text = "no note selected"
+ editorWindow_label1.text += "\nnotes: %d   playhead: %.3fs" % (len(notes_events), editor_current_time())
+ if editor_pps_calib_full_time is not None:
+   editorWindow_label1.text += "\npps calib: fully-visible mark at %.3fs" % editor_pps_calib_full_time
+ editorWindow_slider2.setvalue(editor_keyboard_y_offset)
+
  glPushMatrix()
  glTranslatef(mousex,mousey,0)
  glColor4f(0.2, 0.5, 1, 0.9)
@@ -1184,6 +1649,33 @@ def drawframe( lastimage = None):
   drawHint( width *0.5, height -20, prefs.save_to_disk_message, True)
 
 
+
+def build_midi_from_events():
+ mf = midinotes( int(midi_file_format))
+ mf.setup_track(0, prefs.miditrackname, prefs.tempo)
+ for i in range(len(prefs.keyp_colors_channel)):
+  mf.addProgramChange(0, prefs.keyp_colors_channel[i], prefs.keyp_colors_channel_prog[i])
+ for ev in notes_events:
+  mf.addNote(0, ev['channel'], notes_events_basenote + ev['key'], ev['start'] * prefs.tempo / 60.0, ev['duration'] * prefs.tempo / 60.0, ev['volume'])
+ return mf
+
+def save_midi_to_disk(mf):
+ global outputmid
+
+ fileid=0
+ while os.path.exists( outputmid ):
+  outputmid = ntpath.basename( filepath ) + "_"+str(fileid)+ "_output.mid"
+  fileid+=1
+  if ( fileid > 999 ): break
+
+ if prefs.sync_notes_start_pos:
+   mf.sync_start_pos(prefs.sync_notes_start_pos_time_delta, False)
+
+ if prefs.save_to_disk_per_channel:
+   status, prefs.save_to_disk_message = mf.save_to_disk_per_channel(outputmid)
+ else:
+   status, prefs.save_to_disk_message = mf.save_to_disk(outputmid)
+ return status
 
 def processmidi():
  global frame
@@ -1201,20 +1693,15 @@ def processmidi():
  global separate_note_id
  global outputmid
  global basenote
+ global notes_events
+ global notes_events_basenote
 
  print("video " + str(width) + "x" + str(height))
 
  basenote = prefs.octave * 12
- mf = midinotes( int(midi_file_format))
- track = 0 # the only track
- time = 0 # start at the beginning
-
- mf.setup_track(time, prefs.miditrackname, prefs.tempo)
+ notes_events = []
+ notes_events_basenote = basenote
  first_note_time=0
-
- channel_has_note = [ 0 for x in range(16) ]
- for i in range(len(prefs.keyp_colors_channel)):
-  mf.addProgramChange(track, prefs.keyp_colors_channel[i], prefs.keyp_colors_channel_prog[i])
 
  print("starting from frame:" + str(prefs.startframe))
  getFrame( prefs.startframe )
@@ -1388,8 +1875,7 @@ def processmidi():
           print("midi add white keys, note : " +str(note) + " time:" +str(time) + " duration:" + str(duration))
 
         if ( not ignore ):
-          mf.addNote(track, notes_channel[note] , basenote + note, time * prefs.tempo / 60.0 , duration * prefs.tempo / 60.0 , volume )
-          channel_has_note[ note_channel ] = 1
+          notes_events.append({'key': note, 'channel': notes_channel[note], 'start': time, 'duration': duration, 'volume': volume})
           notecnt+=1
 
         notes_db[ note ] = frame
@@ -1421,9 +1907,8 @@ def processmidi():
           print("keys, note released :" + str(note ) + " de = " + str(notes_de[note]) + "- db =" + str(notes_db[note]))
           print("midi add white keys, note : " +str(note) + " time:" +str(time) + " duration:" + str(duration))
         if ( not ignore ):
-          mf.addNote(track, notes_channel[note] , basenote+ note, time * prefs.tempo / 60.0 , duration * prefs.tempo / 60.0 , volume )
+          notes_events.append({'key': note, 'channel': notes_channel[note], 'start': time, 'duration': duration, 'volume': volume})
 
-          channel_has_note[ note_channel ] = 1
           notecnt+=1
         # coming here when use sparks is true and previous state is keypressed==1. We consider the key is released and then pressed again
         if (keypressed==2):
@@ -1459,20 +1944,7 @@ def processmidi():
 
  print("saved notes: " + str(notecnt))
 
- #search free id for name ...
- fileid=0
- while os.path.exists( outputmid ):
-  outputmid = ntpath.basename( filepath ) + "_"+str(fileid)+ "_output.mid"
-  fileid+=1
-  if ( fileid > 999 ): break
- if prefs.sync_notes_start_pos:
-   mf.sync_start_pos(prefs.sync_notes_start_pos_time_delta, False)
-
- if prefs.save_to_disk_per_channel:
-   status, prefs.save_to_disk_message = mf.save_to_disk_per_channel(outputmid)
- else:
-   status, prefs.save_to_disk_message = mf.save_to_disk(outputmid)
- return status
+ return save_midi_to_disk( build_midi_from_events() )
 
 
 def doinit():
@@ -1510,6 +1982,9 @@ def main():
   global screen
   global lastkeygrabid
   global running
+  global editor_selected_note
+  global editor_drag
+  global editor_hover_mx, editor_hover_my
   #global old_spark_color, cur_spark_color
 
   keygrab=0
@@ -1685,6 +2160,17 @@ def main():
          if (abs( mousex - (prefs.keys_pos[i][0] + prefs.xoffset_whitekeys) )< size) and (abs( mousey - (prefs.keys_pos[i][1] + prefs.yoffset_whitekeys) )< size):
            separate_note_id=i
 
+      if event.key == pygame.K_n:
+        toggle_editor_mode(None)
+
+      if editor_mode:
+        if event.key == pygame.K_x:
+          split_note_at_mouse()
+        if event.key == pygame.K_DELETE or event.key == pygame.K_BACKSPACE:
+          delete_selected_note()
+        if event.key == pygame.K_a:
+          add_note_at_mouse()
+
       if event.key == pygame.K_KP4:
         if lastkeygrabid >0 and lastkeygrabid < len(prefs.keys_pos):
           prefs.keys_pos[lastkeygrabid][0] -= 1
@@ -1715,6 +2201,7 @@ def main():
       if ( event.button == 1 ):
         keygrab = 0
         keygrabid = -1
+        editor_mouse_up()
       if ( event.button == 3 ):
         keygrab = 0
 
@@ -1761,31 +2248,43 @@ def main():
             Gl.keyp_colormap_id = -1
          #keyp_colormap_id = -1
         size=5
+
+        editor_note_grabbed = False
+        if editor_mode and not mouseOnWindows and not (mods & pygame.KMOD_CTRL):
+          editor_mouse_down(mousex, mousey)
+          editor_note_grabbed = editor_selected_note != -1
+
         if (mods & pygame.KMOD_CTRL):
           lastkeygrabid=-1
 
-        for i in range( len( prefs.keys_pos) ):
-         if (abs( mousex - (prefs.keys_pos[i][0] + prefs.xoffset_whitekeys) )< size) and (abs( mousey - (prefs.keys_pos[i][1] + prefs.yoffset_whitekeys) )< size):
-          keygrab=1
-          if not ( mods & pygame.KMOD_CTRL ):
-            keygrabid=i
-          lastkeygrabid=i
-          extra_slider1.setvalue( prefs.keyp_colors_alternate_sensitivity[i] )
-          print("ok click found on : "+str(keygrabid))
-          break
+        if not editor_note_grabbed:
+          for i in range( len( prefs.keys_pos) ):
+           if (abs( mousex - (prefs.keys_pos[i][0] + prefs.xoffset_whitekeys) )< size) and (abs( mousey - (prefs.keys_pos[i][1] + prefs.yoffset_whitekeys) )< size):
+            keygrab=1
+            if not ( mods & pygame.KMOD_CTRL ):
+              keygrabid=i
+            lastkeygrabid=i
+            extra_slider1.setvalue( prefs.keyp_colors_alternate_sensitivity[i] )
+            print("ok click found on : "+str(keygrabid))
+            break
 #      if ( event.button == 2 ):
 #        lastkeygrabid=-1
       if ( event.button == 3 ):
-        keygrab = 2
-        size=5
-        print("x offset " + str(prefs.xoffset_whitekeys) + " y offset: " +str(prefs.yoffset_whitekeys))
-        keygrabaddx=0
-        for i in range( len( prefs.keys_pos) ):
-         if (abs( mousex - (prefs.keys_pos[i][0] + prefs.xoffset_whitekeys) )< size) and (abs( mousey - (prefs.keys_pos[i][1] + prefs.yoffset_whitekeys) )< size):
-          keygrab=2
-          keygrabaddx=prefs.keys_pos[i][0]
-          print("ok click found on : "+str(keygrabid))
-          break
+        note_deleted = False
+        if editor_mode and not mouseOnWindows:
+          note_deleted = editor_delete_note_at(mousex, mousey)
+
+        if not note_deleted:
+          keygrab = 2
+          size=5
+          print("x offset " + str(prefs.xoffset_whitekeys) + " y offset: " +str(prefs.yoffset_whitekeys))
+          keygrabaddx=0
+          for i in range( len( prefs.keys_pos) ):
+           if (abs( mousex - (prefs.keys_pos[i][0] + prefs.xoffset_whitekeys) )< size) and (abs( mousey - (prefs.keys_pos[i][1] + prefs.yoffset_whitekeys) )< size):
+            keygrab=2
+            keygrabaddx=prefs.keys_pos[i][0]
+            print("ok click found on : "+str(keygrabid))
+            break
 
     if ( keygrab == 1) and ( keygrabid >-1 ):
 #     print "moving keyid = " + str(keygrabid)
@@ -1795,6 +2294,11 @@ def main():
 #      print "moving offsets : "+ str(mousex) + " x " + str(mousey)
       prefs.xoffset_whitekeys = mousex - keygrabaddx
       prefs.yoffset_whitekeys = mousey
+    if editor_mode:
+      editor_mouse_move(mousex, mousey)
+      if not mouse_over_any_glwindow(mousex, mousey):
+        editor_hover_mx = mousex
+        editor_hover_my = mousey
     for wnd in glwindows:
       wnd.update_mouse_move(mousex,mousey)
 

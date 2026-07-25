@@ -72,3 +72,9 @@ class prefs:
 	sync_notes_start_pos_time_delta = 1000
 	save_to_disk_message = ''
 	save_to_disk_per_channel = False
+
+	# note editor: falling-notes overlay zoom/position, and the edited notes themselves
+	editor_pps = 220.0
+	editor_keyboard_y_offset = 0.0
+	notes_events = []
+	notes_events_basenote = 0
