@@ -140,6 +140,68 @@ fps    = float(vidcap.get(CAP_PROP_FPS))
 width = video_width
 height = video_height
 
+# video/keys canvas zoom (ctrl+wheel), centered on the cursor. 1x..5x, world space is
+# the current window's pixel space (0..width, 0..height); GUI windows are unaffected.
+view_zoom = 1.0
+view_offset_x = 0.0
+view_offset_y = 0.0
+VIEW_ZOOM_MIN = 1.0
+VIEW_ZOOM_MAX = 5.0
+
+def clamp_view_offset() -> None:
+  global view_offset_x, view_offset_y
+  max_offset_x = max(0.0, width - width / view_zoom)
+  max_offset_y = max(0.0, height - height / view_zoom)
+  view_offset_x = min(max(view_offset_x, 0.0), max_offset_x)
+  view_offset_y = min(max(view_offset_y, 0.0), max_offset_y)
+
+def apply_zoom_step(mouse_x: float, mouse_y: float, factor: float) -> None:
+  global view_zoom, view_offset_x, view_offset_y
+  old_zoom = view_zoom
+  new_zoom = min(VIEW_ZOOM_MAX, max(VIEW_ZOOM_MIN, view_zoom * factor))
+  if new_zoom == old_zoom:
+    return
+  world_x = view_offset_x + mouse_x / old_zoom
+  world_y = view_offset_y + mouse_y / old_zoom
+  view_zoom = new_zoom
+  view_offset_x = world_x - mouse_x / new_zoom
+  view_offset_y = world_y - mouse_y / new_zoom
+  clamp_view_offset()
+
+def reset_view_zoom() -> None:
+  global view_zoom, view_offset_x, view_offset_y
+  view_zoom = 1.0
+  view_offset_x = 0.0
+  view_offset_y = 0.0
+  stop_pan()
+
+# middle-mouse-button drag panning (only has visible effect while zoomed in)
+panning = False
+pan_anchor_mouse_x = 0.0
+pan_anchor_mouse_y = 0.0
+pan_anchor_offset_x = 0.0
+pan_anchor_offset_y = 0.0
+
+def start_pan(mouse_x: float, mouse_y: float) -> None:
+  global panning, pan_anchor_mouse_x, pan_anchor_mouse_y, pan_anchor_offset_x, pan_anchor_offset_y
+  panning = True
+  pan_anchor_mouse_x = mouse_x
+  pan_anchor_mouse_y = mouse_y
+  pan_anchor_offset_x = view_offset_x
+  pan_anchor_offset_y = view_offset_y
+
+def stop_pan() -> None:
+  global panning
+  panning = False
+
+def update_pan(mouse_x: float, mouse_y: float) -> None:
+  global view_offset_x, view_offset_y
+  if not panning:
+    return
+  view_offset_x = pan_anchor_offset_x - (mouse_x - pan_anchor_mouse_x) / view_zoom
+  view_offset_y = pan_anchor_offset_y - (mouse_y - pan_anchor_mouse_y) / view_zoom
+  clamp_view_offset()
+
 def fit_to_the_screen() -> None:
   global width, height
   infoObject = pygame.display.Info()
@@ -164,6 +226,37 @@ def get_display_flags():
     return DOUBLEBUF|OPENGL|pygame.RESIZABLE
   return DOUBLEBUF|pygame.RESIZABLE
 
+def rescale_keys_for_window_size() -> None:
+  # keeps xoffset_whitekeys/yoffset_whitekeys/whitekey_width/keys_pos - and the note
+  # editor's pps/keyboard-line-offset, which live in the same pixel space - at the
+  # same % position/scale of the displayed video whenever the window size changes,
+  # since the video is always stretched to exactly fill the window (no letterboxing)
+  # - so a fixed % of the window is always the same % of the source video's frame too.
+  global editor_pps, editor_keyboard_y_offset
+
+  if prefs.keys_ref_width <= 0 or prefs.keys_ref_height <= 0:
+    prefs.keys_ref_width, prefs.keys_ref_height = video_width, video_height
+
+  if (width == prefs.keys_ref_width) and (height == prefs.keys_ref_height):
+    return
+
+  sx = width / prefs.keys_ref_width if prefs.keys_ref_width else 1.0
+  sy = height / prefs.keys_ref_height if prefs.keys_ref_height else 1.0
+
+  prefs.xoffset_whitekeys *= sx
+  prefs.yoffset_whitekeys *= sy
+  prefs.whitekey_width *= sx
+  prefs.yoffset_blackkeys *= sy
+  for kp in prefs.keys_pos:
+    kp[0] *= sx
+    kp[1] *= sy
+
+  editor_pps *= sy
+  editor_keyboard_y_offset *= sy
+
+  prefs.keys_ref_width, prefs.keys_ref_height = width, height
+  reset_view_zoom()
+
 def resize_window() -> None:
   global screen, width, height
 
@@ -176,6 +269,7 @@ def resize_window() -> None:
     fit_to_the_screen()
   screen = pygame.display.set_mode((width,height), get_display_flags())
 
+  rescale_keys_for_window_size()
   doinit()
 
 # set start frame
@@ -298,6 +392,7 @@ def update_size() -> None:
     height = prefs.resize_height
   else:
     fit_to_the_screen()
+  rescale_keys_for_window_size()
 
 def loadsettings(cfgfile: str) -> None:
   global colorBtns, colorWindow_colorBtns_channel_labels
@@ -431,9 +526,11 @@ def get_scaled_background_surface():
   global _bg_surface_scaled, _bg_surface_scaled_key
   if bg_surface is None:
     return None
-  key = (id(bg_surface), int(width), int(height))
+  target_w = max(1, round(width * view_zoom))
+  target_h = max(1, round(height * view_zoom))
+  key = (id(bg_surface), target_w, target_h)
   if key != _bg_surface_scaled_key:
-    _bg_surface_scaled = pygame.transform.scale(bg_surface, (int(width), int(height)))
+    _bg_surface_scaled = pygame.transform.scale(bg_surface, (target_w, target_h))
     _bg_surface_scaled_key = key
   return _bg_surface_scaled
 
@@ -1423,6 +1520,7 @@ def drawframe( lastimage = None):
  global pyfont
  global helptext
  global mousex, mousey
+ global mousex_world, mousey_world
  global keyp_colormap_colors_pos
  global keyp_colormap_pos
  global frame, image
@@ -1436,8 +1534,9 @@ def drawframe( lastimage = None):
   print_for_frame_debug = True
  printed_for_frame = frame
 
- scale=1.0
  mousex, mousey = pygame.mouse.get_pos()
+ mousex_world = mousex / view_zoom + view_offset_x
+ mousey_world = mousey / view_zoom + view_offset_y
 
  gfx.set_target_surface(screen)
  if gfx.USE_OPENGL:
@@ -1449,19 +1548,24 @@ def drawframe( lastimage = None):
   glMatrixMode(GL_MODELVIEW)
   glLoadIdentity()
   glDisable(GL_DEPTH_TEST)
-
-  glScale(scale,scale,1)
-  glColor4f(1.0, 1.0, 1.0, 1.0)
-
-  glBindTexture(GL_TEXTURE_2D, Gl.bgImgGL)
-  glEnable(GL_TEXTURE_2D)
-  DrawQuad(0,0,width,height)
  else:
   screen.fill((0,0,0))
   bg = get_scaled_background_surface()
   if bg is not None:
-   screen.blit(bg, (0,0))
+   screen.blit(bg, (round(-view_offset_x * view_zoom), round(-view_offset_y * view_zoom)))
 
+ # ctrl+wheel canvas zoom (1x..5x), centered on the cursor - wraps the video texture
+ # (opengl mode only, the software background above is already blitted pre-zoomed)
+ # and everything drawn on top of it (keys, note editor), so it all zooms/pans together.
+ glPushMatrix()
+ glScalef(view_zoom, view_zoom, 1)
+ glTranslatef(-view_offset_x, -view_offset_y, 0)
+
+ if gfx.USE_OPENGL:
+  glColor4f(1.0, 1.0, 1.0, 1.0)
+  glBindTexture(GL_TEXTURE_2D, Gl.bgImgGL)
+  glEnable(GL_TEXTURE_2D)
+  DrawQuad(0,0,width,height)
 
  glEnable(GL_BLEND)
  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
@@ -1611,6 +1715,8 @@ def drawframe( lastimage = None):
  glDisable(GL_BLEND)
  glDisable(GL_TEXTURE_2D)
 
+ glPopMatrix()
+
  for i in range(len(glwindows)):
    glwindows[i].draw()
 
@@ -1637,6 +1743,7 @@ def drawframe( lastimage = None):
  editorWindow_label1.text += "\nnotes: %d   playhead: %.3fs" % (len(notes_events), editor_current_time())
  if editor_pps_calib_full_time is not None:
    editorWindow_label1.text += "\npps calib: fully-visible mark at %.3fs" % editor_pps_calib_full_time
+ editorWindow_slider1.setvalue(editor_pps)
  editorWindow_slider2.setvalue(editor_keyboard_y_offset)
 
  glPushMatrix()
@@ -2022,6 +2129,7 @@ def main():
        width =  prefs.resize_width
        height =  prefs.resize_height
        screen = pygame.display.set_mode( (width,height) , get_display_flags())
+       rescale_keys_for_window_size()
      elif event.type == pygame.KEYUP:
       for wnd in glwindows:
        wnd.update_key_up(event.key)
@@ -2157,7 +2265,7 @@ def main():
         size=5
         separate_note_id=-1
         for i in range( len( prefs.keys_pos) ):
-         if (abs( mousex - (prefs.keys_pos[i][0] + prefs.xoffset_whitekeys) )< size) and (abs( mousey - (prefs.keys_pos[i][1] + prefs.yoffset_whitekeys) )< size):
+         if (abs( mousex_world - (prefs.keys_pos[i][0] + prefs.xoffset_whitekeys) )< size) and (abs( mousey_world - (prefs.keys_pos[i][1] + prefs.yoffset_whitekeys) )< size):
            separate_note_id=i
 
       if event.key == pygame.K_n:
@@ -2204,6 +2312,8 @@ def main():
         editor_mouse_up()
       if ( event.button == 3 ):
         keygrab = 0
+      if ( event.button == 2 ):
+        stop_pan()
 
      elif event.type == pygame.MOUSEBUTTONDOWN:
       resort=False
@@ -2217,19 +2327,25 @@ def main():
         glwindows.sort(key=lambda x: x.active, reverse=False)
 #      print event.button
       if ( event.button == 4 ):
-        prefs.whitekey_width+=0.05
+        if (mods & pygame.KMOD_CTRL) and not mouseOnWindows:
+          apply_zoom_step(mousex, mousey, 1.1)
+        else:
+          prefs.whitekey_width+=0.05
 #        print "whitekey_width="+str(whitekey_width)
-        updatekeys( )
+          updatekeys( )
 #        scale+=0.1
       if ( event.button == 5 ):
-        prefs.whitekey_width-=0.05
+        if (mods & pygame.KMOD_CTRL) and not mouseOnWindows:
+          apply_zoom_step(mousex, mousey, 1/1.1)
+        else:
+          prefs.whitekey_width-=0.05
 #        print "whitekey_width="+str(whitekey_width)
-        updatekeys( )
+          updatekeys( )
 
       if ( event.button == 1 ):
         if mods & pygame.KMOD_CTRL and Gl.keyp_colormap_id != -1:
-         pixx = int(mousex)
-         pixy = int(mousey)
+         pixx = int(mousex_world)
+         pixy = int(mousey_world)
          if not (( pixx >= width ) or ( pixy >= height ) or ( pixx < 0 ) or ( pixy < 0 )):
            if ( prefs.resize == 1 ):
              pixx= int(round( pixx * ( video_width / float(prefs.resize_width) )))
@@ -2251,7 +2367,7 @@ def main():
 
         editor_note_grabbed = False
         if editor_mode and not mouseOnWindows and not (mods & pygame.KMOD_CTRL):
-          editor_mouse_down(mousex, mousey)
+          editor_mouse_down(mousex_world, mousey_world)
           editor_note_grabbed = editor_selected_note != -1
 
         if (mods & pygame.KMOD_CTRL):
@@ -2259,7 +2375,7 @@ def main():
 
         if not editor_note_grabbed:
           for i in range( len( prefs.keys_pos) ):
-           if (abs( mousex - (prefs.keys_pos[i][0] + prefs.xoffset_whitekeys) )< size) and (abs( mousey - (prefs.keys_pos[i][1] + prefs.yoffset_whitekeys) )< size):
+           if (abs( mousex_world - (prefs.keys_pos[i][0] + prefs.xoffset_whitekeys) )< size) and (abs( mousey_world - (prefs.keys_pos[i][1] + prefs.yoffset_whitekeys) )< size):
             keygrab=1
             if not ( mods & pygame.KMOD_CTRL ):
               keygrabid=i
@@ -2267,12 +2383,13 @@ def main():
             extra_slider1.setvalue( prefs.keyp_colors_alternate_sensitivity[i] )
             print("ok click found on : "+str(keygrabid))
             break
-#      if ( event.button == 2 ):
-#        lastkeygrabid=-1
+      if ( event.button == 2 ):
+        if not mouseOnWindows:
+          start_pan(mousex, mousey)
       if ( event.button == 3 ):
         note_deleted = False
         if editor_mode and not mouseOnWindows:
-          note_deleted = editor_delete_note_at(mousex, mousey)
+          note_deleted = editor_delete_note_at(mousex_world, mousey_world)
 
         if not note_deleted:
           keygrab = 2
@@ -2280,7 +2397,7 @@ def main():
           print("x offset " + str(prefs.xoffset_whitekeys) + " y offset: " +str(prefs.yoffset_whitekeys))
           keygrabaddx=0
           for i in range( len( prefs.keys_pos) ):
-           if (abs( mousex - (prefs.keys_pos[i][0] + prefs.xoffset_whitekeys) )< size) and (abs( mousey - (prefs.keys_pos[i][1] + prefs.yoffset_whitekeys) )< size):
+           if (abs( mousex_world - (prefs.keys_pos[i][0] + prefs.xoffset_whitekeys) )< size) and (abs( mousey_world - (prefs.keys_pos[i][1] + prefs.yoffset_whitekeys) )< size):
             keygrab=2
             keygrabaddx=prefs.keys_pos[i][0]
             print("ok click found on : "+str(keygrabid))
@@ -2288,17 +2405,19 @@ def main():
 
     if ( keygrab == 1) and ( keygrabid >-1 ):
 #     print "moving keyid = " + str(keygrabid)
-     prefs.keys_pos[ keygrabid ][0] = mousex - prefs.xoffset_whitekeys
-     prefs.keys_pos[ keygrabid ][1] = mousey - prefs.yoffset_whitekeys
+     prefs.keys_pos[ keygrabid ][0] = mousex_world - prefs.xoffset_whitekeys
+     prefs.keys_pos[ keygrabid ][1] = mousey_world - prefs.yoffset_whitekeys
     if ( keygrab == 2):
 #      print "moving offsets : "+ str(mousex) + " x " + str(mousey)
-      prefs.xoffset_whitekeys = mousex - keygrabaddx
-      prefs.yoffset_whitekeys = mousey
+      prefs.xoffset_whitekeys = mousex_world - keygrabaddx
+      prefs.yoffset_whitekeys = mousey_world
+    if panning:
+      update_pan(mousex, mousey)
     if editor_mode:
-      editor_mouse_move(mousex, mousey)
+      editor_mouse_move(mousex_world, mousey_world)
       if not mouse_over_any_glwindow(mousex, mousey):
-        editor_hover_mx = mousex
-        editor_hover_my = mousey
+        editor_hover_mx = mousex_world
+        editor_hover_my = mousey_world
     for wnd in glwindows:
       wnd.update_mouse_move(mousex,mousey)
 

@@ -41,6 +41,7 @@ def gl_import_error():
 
 
 _offset_stack = [(0.0, 0.0)]
+_scale_stack = [1.0]
 _current_color = (255, 255, 255, 255)
 _target_surface = None
 _font_cache = {}
@@ -90,6 +91,7 @@ def glPushMatrix() -> None:
 		_GL.glPushMatrix()
 	else:
 		_offset_stack.append(_offset_stack[-1])
+		_scale_stack.append(_scale_stack[-1])
 
 
 def glPopMatrix() -> None:
@@ -97,6 +99,7 @@ def glPopMatrix() -> None:
 		_GL.glPopMatrix()
 	else:
 		_offset_stack.pop()
+		_scale_stack.pop()
 
 
 def glTranslatef(x, y, z=0) -> None:
@@ -104,7 +107,19 @@ def glTranslatef(x, y, z=0) -> None:
 		_GL.glTranslatef(x, y, z)
 	else:
 		ox, oy = _offset_stack[-1]
-		_offset_stack[-1] = (ox + x, oy + y)
+		s = _scale_stack[-1]
+		_offset_stack[-1] = (ox + x * s, oy + y * s)
+
+
+def glScalef(sx, sy=None, sz=1) -> None:
+	if USE_OPENGL:
+		_GL.glScalef(sx, sx if sy is None else sy, sz)
+	else:
+		_scale_stack[-1] *= sx
+
+
+def current_scale() -> float:
+	return _scale_stack[-1]
 
 
 def glColor4f(r, g, b, a=1.0) -> None:

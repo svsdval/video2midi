@@ -34,6 +34,13 @@ class prefs:
 	yoffset_blackkeys = -30
 	whitekey_width=24.6
 
+	# window size (px) that xoffset_whitekeys/yoffset_whitekeys/whitekey_width/keys_pos
+	# are currently valid for. 0 means "unknown" (e.g. an older settings file) - treated
+	# as the source video's native resolution, so key positions are effectively bound to
+	# a % of it and get rescaled to match whenever the window is resized.
+	keys_ref_width = 0
+	keys_ref_height = 0
+
 	keyp_colors_alternate = []
 	keyp_colors_alternate_sensitivity = []
 	keyp_colors = [

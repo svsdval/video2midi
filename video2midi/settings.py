@@ -43,10 +43,12 @@ def savesettings(settingsfile: str) -> None:
 	config.set(section, 'color_channel_accordance',skeyp_colors_channel[0:-1])
 	config.set(section, 'channel_prog_accordance', skeyp_colors_channel_prog[0:-1])
 
-	config.set(section, 'xoffset_whitekeys',str(int(prefs.xoffset_whitekeys)))
-	config.set(section, 'yoffset_whitekeys',str(int(prefs.yoffset_whitekeys)))
-	config.set(section, 'yoffset_blackkeys',str(int(prefs.yoffset_blackkeys)))
-	config.set(section, 'whitekey_width',str(int(prefs.whitekey_width)))
+	config.set(section, 'xoffset_whitekeys',str(float(prefs.xoffset_whitekeys)))
+	config.set(section, 'yoffset_whitekeys',str(float(prefs.yoffset_whitekeys)))
+	config.set(section, 'yoffset_blackkeys',str(float(prefs.yoffset_blackkeys)))
+	config.set(section, 'whitekey_width',str(float(prefs.whitekey_width)))
+	config.set(section, 'keys_ref_width', str(int(prefs.keys_ref_width)))
+	config.set(section, 'keys_ref_height', str(int(prefs.keys_ref_height)))
 
 	skeyp_colors=''
 	for i in prefs.keyp_colors:
@@ -170,13 +172,17 @@ def loadsettings(cfgfile: str) -> None:
 		print('read color channel = prog ', prefs.keyp_colors_channel_prog)
 
 	if config.has_option(section, 'xoffset_whitekeys'):
-		prefs.xoffset_whitekeys = config.getint(section, 'xoffset_whitekeys')
+		prefs.xoffset_whitekeys = config.getfloat(section, 'xoffset_whitekeys')
 	if config.has_option(section, 'yoffset_whitekeys'):
-		prefs.yoffset_whitekeys = config.getint(section, 'yoffset_whitekeys')
+		prefs.yoffset_whitekeys = config.getfloat(section, 'yoffset_whitekeys')
 	if config.has_option(section, 'yoffset_blackkeys'):
-		prefs.yoffset_blackkeys = config.getint(section, 'yoffset_blackkeys')
+		prefs.yoffset_blackkeys = config.getfloat(section, 'yoffset_blackkeys')
 	if config.has_option(section, 'whitekey_width'):
-		prefs.whitekey_width = config.getint(section, 'whitekey_width')
+		prefs.whitekey_width = config.getfloat(section, 'whitekey_width')
+	if config.has_option(section, 'keys_ref_width'):
+		prefs.keys_ref_width = config.getint(section, 'keys_ref_width')
+	if config.has_option(section, 'keys_ref_height'):
+		prefs.keys_ref_height = config.getint(section, 'keys_ref_height')
 
 	if config.has_option(section, 'keyp_colors'):
 		skeyp_colors = config.get(section, 'keyp_colors')

@@ -34,9 +34,10 @@ def doinitGl() -> None:
 def DrawQuad(vx,vy,vx2,vy2) -> None:
 	if not gfx.USE_OPENGL:
 		ox, oy = gfx.current_offset()
-		x = ox + min(vx, vx2)
-		y = oy + min(vy, vy2)
-		s = gfx.get_scratch_surface('quad', abs(vx2 - vx), abs(vy2 - vy))
+		scale = gfx.current_scale()
+		x = ox + min(vx, vx2) * scale
+		y = oy + min(vy, vy2) * scale
+		s = gfx.get_scratch_surface('quad', abs(vx2 - vx) * scale, abs(vy2 - vy) * scale)
 		s.fill(gfx.current_color())
 		gfx.target_surface().blit(s, (round(x), round(y)))
 		return
@@ -78,11 +79,12 @@ def DrawQuad_old(x,y,x2,y2, texx=1, texy=-1) -> None:
 def DrawRect(vx,vy,vx2,vy2,w=1) -> None:
 	if not gfx.USE_OPENGL:
 		ox, oy = gfx.current_offset()
-		x = ox + min(vx, vx2)
-		y = oy + min(vy, vy2)
-		bw, bh = abs(vx2 - vx), abs(vy2 - vy)
+		scale = gfx.current_scale()
+		x = ox + min(vx, vx2) * scale
+		y = oy + min(vy, vy2) * scale
+		bw, bh = abs(vx2 - vx) * scale, abs(vy2 - vy) * scale
 		s = gfx.get_scratch_surface('rect', bw, bh)
-		pygame.draw.rect(s, gfx.current_color(), s.get_rect(), width=max(1, int(w)))
+		pygame.draw.rect(s, gfx.current_color(), s.get_rect(), width=max(1, round(w * scale)))
 		gfx.target_surface().blit(s, (round(x), round(y)))
 		return
 	glLineWidth(w)
@@ -137,6 +139,8 @@ def DrawTriangle(x,y, s,r=0) -> None:
 
 	if not gfx.USE_OPENGL:
 		ox, oy = gfx.current_offset()
+		scale = gfx.current_scale()
+		pts = [ (px * scale, py * scale) for px, py in pts ]
 		minx = min(p[0] for p in pts)
 		miny = min(p[1] for p in pts)
 		maxx = max(p[0] for p in pts)
