@@ -107,7 +107,7 @@ Download the video with your favorite melody (I recommend 720p), launch the prog
   * **a**- add note at mouse uses the specified channel in the note editor window
   * **x**- split selected note at mouse pos
   * **n** - toggle note editor overlay
-  * **Left-drag yellow line** - move keyboard start
+  * **Slider "keyboard start Y offset (px)"** - move keyboard start
 
 
 # How it works
@@ -209,9 +209,9 @@ pip install midiutil
   * **ЛКМ за край ноты** - изменение длительности
   * **ПКМ по ноте** - удалить ноту
   * **a** - добавить ноту по позиции курсора мыши (использует указанный канал в окне редактора нот)
-  * **x** - разделить выбранную ноту в точке, на которую навела курсор мыши
-  * **n** - включить/выключить наложение редактора нот
-  * **Перетащить желтую линию влево** - переместить начало клавиши клавиатуры
+  * **x** - разделить выбранную ноту в точке по позиции курсора мыши
+  * **n** - включить/выключить оверлей редактора нот
+  * **Используйте слайдер "keyboard start Y offset (px)"** - переместить начало виртуальной клавиатуры
 
 ## как это работает
 
