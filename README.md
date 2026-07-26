@@ -94,6 +94,20 @@ Download the video with your favorite melody (I recommend 720p), launch the prog
   * **[ / ]** - change base octave
   * **Escape** - quit
   * **Space** - abort re-creation and save midi file to disk
+  * **F4** - move all windows to the mouse point
+  * **TAB** - Show/Hide all windows
+
+  * **CTRL + Mouse Wheel** - Zoom
+  * **CTRL + Mouse Middle button** - Panning zoomed image
+
+  In note editor:
+  * **Left-click on the middle of a note** - Move the note
+  * **Left-click on the edge of a note** - Change the duration
+  * **Right click note** - delete
+  * **a**- add note at mouse uses the specified channel in the note editor window
+  * **x**- split selected note at mouse pos
+  * **n** - toggle note editor overlay
+  * **Left-drag yellow line** - move keyboard start
 
 
 # How it works
@@ -185,6 +199,19 @@ pip install midiutil
   * **F2/F3** - записать / загрузить настройки.
   * **ESCAPE** - выход / quit
   * **SPACE** - прервать воссоздание и записать midi файл на диск / abort re-creation and save midi file to disk
+  * **F4** - переместить все окна по курсору мыши
+  * **TAB** - показать/скрыть все окна
+  * **CTRL + колесико мыши** - масштабирование
+  * **CTRL + средняя кнопка мыши** - панорамирование увеличенного изображения
+
+В редакторе нот:
+  * **ЛКМ за ноту** - перемещение ноты
+  * **ЛКМ за край ноты** - изменение длительности
+  * **ПКМ по ноте** - удалить ноту
+  * **a** - добавить ноту по позиции курсора мыши (использует указанный канал в окне редактора нот)
+  * **x** - разделить выбранную ноту в точке, на которую навела курсор мыши
+  * **n** - включить/выключить наложение редактора нот
+  * **Перетащить желтую линию влево** - переместить начало клавиши клавиатуры
 
 ## как это работает
 
