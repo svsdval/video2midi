@@ -136,7 +136,41 @@ The default all channels is 0 midi instrument.
 channel_prog_accordance = 0,0, 0,0, 0,0, 0,0, 0,0, 0,0
 ```
 
+# Automatic mode (v2m_auto.py)
+
+`v2m_auto.py` converts a video without any manual setup: no key adjustment, no colour picking.
+
+```bash
+python v2m_auto.py video.mp4                 # -> video.mp4_auto.mid
+python v2m_auto.py a.mp4 b.mkv c.webm        # several videos at once
+python v2m_auto.py video.mp4 --debug         # also saves a picture with the detected keys
+python v2m_auto.py video.mp4 --start 10 --end 95 --octave -1 --mode roll
+```
+
+What it does on its own:
+- finds the keyboard by its black-key pattern (any size, position, 61/76/88 keys), measures every black key on many frames, so hands and camera perspective do not shift the notes;
+- learns the note colours of the video (any palette, light bars on dark or dark bars on light, moving or changing backgrounds);
+- keeps only what really falls (a still or animated background picture is ignored), bridges short flashes;
+- reads the falling bars right above the keyboard (`roll`) or, if the video has none, the lit keys (`keys`); `auto` picks;
+- writes one MIDI channel per note colour (usually one per hand), higher hand first.
+
+Check on synthetic videos with a known answer (7 styles, needs `pip install mido`):
+```bash
+python tests/synth_video.py synth
+python tests/score_auto.py synth
+```
+
 # RU:
+
+## Автоматический режим (v2m_auto.py)
+
+Без ручной настройки клавиш и цветов:
+```bash
+python v2m_auto.py video.mp4            # -> video.mp4_auto.mid
+python v2m_auto.py video.mp4 --debug    # плюс картинка с найденными клавишами
+```
+Программа сама находит клавиатуру, цвета нот, скорость падения, отбрасывает фон и вспышки, раскладывает руки по каналам по цвету.
+Опции: `--start/--end` (секунды), `--octave N`, `--mode auto|roll|keys`.
 
 ## зависимости
 
